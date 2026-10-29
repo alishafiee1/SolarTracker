@@ -815,7 +815,7 @@
   </svg>
 
   <div class="cover-content">
-    <div class="cover-kicker">پروپوزال فنی — نسخه ۱.۷</div>
+    <div class="cover-kicker">پروپوزال فنی — نسخه ۱.۸</div>
     <h1 class="cover-title">تراکر خورشیدی<br>تک‌محوره</h1>
     <p class="cover-subtitle">سیستم کنترل هوشمند زاویه پنل خورشیدی با ESP32، شتاب‌سنج MPU6050 و باد سنج Hall</p>
     <div class="cover-divider"></div>
@@ -829,7 +829,7 @@
       </div>
       <div class="cover-meta-item">
         <span class="cover-meta-label">نسخه</span>
-        <span class="cover-meta-value">۱.۷ — طرح اولیه، قیمت‌ها حدودی</span>
+        <span class="cover-meta-value">۱.۸ — طرح اولیه، قیمت‌ها حدودی</span>
       </div>
       <div class="cover-meta-item">
         <span class="cover-meta-label">مخاطب</span>
@@ -1054,7 +1054,7 @@
       </tr>
       <tr>
         <td>۹</td>
-        <td>ترانس جریان *</td>
+        <td>ترانس جریان * (اختیاری)</td>
         <td>SCT-013 (مدل ۵ آمپر)، غیرتماسی و ایزوله روی سیم مشترک جک</td>
         <td style="text-align:center;">۱</td>
         <td style="text-align:left;" dir="ltr">۶۰۰٬۰۰۰</td>
@@ -1062,7 +1062,7 @@
       </tr>
       <tr>
         <td>۱۰</td>
-        <td>حفاظت ورودی *</td>
+        <td>حفاظت ورودی * (اختیاری)</td>
         <td>فیوز و جافیوزی، وریستور ورودی ۲۲۰ ولت، اسنابر RC روی کنتاکت رله جک، دیود TVS روی ورودی سنسورها</td>
         <td style="text-align:center;">۱ ست</td>
         <td style="text-align:left;" dir="ltr">۳۰۰٬۰۰۰</td>
@@ -1135,103 +1135,172 @@
   </p>
 
   <p class="body-text">
-    <strong>هزینه طراحی و ساخت سیستم از صفر.</strong> این جدول خود کار است: تحقیق و پروپوزال، طراحی مدار و جعبه نمونه، برنامه‌نویسی، تست، مونتاژ کنترلر و سنسورها، و پیاده‌سازی. ساخت سازه و طراحی جک داخل این جدول نیست. جمع این بخش <span class="accent">۶۹٬۳۰۰٬۰۰۰ تومان</span> است.
+    <strong>هزینه طراحی و ساخت، به تفکیک فاز.</strong> کار به چهار فاز طراحی، سخت‌افزار، نرم‌افزار و تست تقسیم شده است. هر ردیف یا <strong>پایه</strong> است، یعنی برای کار درست و ایمن تراکر لازم است، یا <strong>اختیاری</strong> است و اگر بودجه محدود باشد می‌توان آن را حذف کرد. قفل جهت، حفاظت باد، تأخیر ایمن حرکت و watchdog جزو بخش پایه‌اند و حذف‌شدنی نیستند. ساخت سازه و طراحی جک داخل این جدول نیست. جمع با همه ماژول‌ها <span class="accent">۶۹٬۳۰۰٬۰۰۰ تومان</span> است.
   </p>
 
   <table>
     <thead>
       <tr>
-        <th style="width: 28px;">#</th>
+        <th style="width: 30px;">#</th>
         <th>بخش کار</th>
         <th>چه کاری انجام می‌شود</th>
-        <th style="width: 42px;">ساعت</th>
-        <th style="width: 78px;">نرخ ساعتی</th>
+        <th style="width: 52px;">نوع</th>
+        <th style="width: 40px;">ساعت</th>
+        <th style="width: 72px;">نرخ ساعتی</th>
         <th style="width: 88px;">مبلغ (تومان)</th>
       </tr>
     </thead>
     <tbody>
+      <tr><td colspan="7" style="background:var(--c-bg-card);font-weight:700;color:var(--c-primary,inherit);">فاز الف — طراحی و مستندات</td></tr>
       <tr>
-        <td>۱</td>
+        <td>الف۱</td>
         <td>ایده‌پردازی و پروپوزال</td>
         <td>تحقیق، معماری سیستم کنترل و نگارش پروپوزال</td>
+        <td style="text-align:center;"><span style="color:var(--c-success);font-weight:700;">پایه</span></td>
         <td style="text-align:center;">۱۶</td>
         <td style="text-align:left;" dir="ltr">۵۰۰٬۰۰۰</td>
         <td style="text-align:left;" dir="ltr">۸٬۰۰۰٬۰۰۰</td>
       </tr>
+      <tr><td colspan="7" style="background:var(--c-bg-card);font-weight:700;color:var(--c-primary,inherit);">فاز ب — سخت‌افزار</td></tr>
       <tr>
-        <td>۲</td>
-        <td>طراحی مدار و برد</td>
-        <td>شماتیک، رله با قفل جهت، ترانس جریان، حفاظت ورودی و PCB</td>
-        <td style="text-align:center;">۲۱</td>
+        <td>ب۱</td>
+        <td>مدار پایه و PCB</td>
+        <td>شماتیک و برد: ESP32، ساعت، شتاب‌سنج، بادسنج، رله با قفل جهت و تغذیه</td>
+        <td style="text-align:center;"><span style="color:var(--c-success);font-weight:700;">پایه</span></td>
+        <td style="text-align:center;">۱۵</td>
         <td style="text-align:left;" dir="ltr">۵۰۰٬۰۰۰</td>
-        <td style="text-align:left;" dir="ltr">۱۰٬۵۰۰٬۰۰۰</td>
+        <td style="text-align:left;" dir="ltr">۷٬۵۰۰٬۰۰۰</td>
       </tr>
       <tr>
-        <td>۳</td>
+        <td>ب۲</td>
+        <td>حفاظت جریان (مدار)</td>
+        <td>مدار ترانس جریان SCT-013 و ورودی آنالوگ آن</td>
+        <td style="text-align:center;"><span style="color:var(--c-accent);font-weight:700;">اختیاری</span></td>
+        <td style="text-align:center;">۳</td>
+        <td style="text-align:left;" dir="ltr">۵۰۰٬۰۰۰</td>
+        <td style="text-align:left;" dir="ltr">۱٬۵۰۰٬۰۰۰</td>
+      </tr>
+      <tr>
+        <td>ب۳</td>
+        <td>حفاظت ورودی و ضربه</td>
+        <td>فیوز، وریستور، اسنابر رله و TVS ورودی سنسورها</td>
+        <td style="text-align:center;"><span style="color:var(--c-accent);font-weight:700;">اختیاری</span></td>
+        <td style="text-align:center;">۳</td>
+        <td style="text-align:left;" dir="ltr">۵۰۰٬۰۰۰</td>
+        <td style="text-align:left;" dir="ltr">۱٬۵۰۰٬۰۰۰</td>
+      </tr>
+      <tr>
+        <td>ب۴</td>
         <td>طراحی جعبه نمونه</td>
-        <td>مدل سه‌بعدی جعبه نمونه برای برد و منبع، و قاب سنسور</td>
+        <td>مدل سه‌بعدی جعبه برای برد و منبع</td>
+        <td style="text-align:center;"><span style="color:var(--c-success);font-weight:700;">پایه</span></td>
         <td style="text-align:center;">۵</td>
         <td style="text-align:left;" dir="ltr">۴۰۰٬۰۰۰</td>
         <td style="text-align:left;" dir="ltr">۲٬۰۰۰٬۰۰۰</td>
       </tr>
       <tr>
-        <td>۴</td>
+        <td>ب۵</td>
         <td>فیلامنت جعبه</td>
         <td>فیلامنت مقاوم در برابر آفتاب (PETG یا ASA)</td>
+        <td style="text-align:center;"><span style="color:var(--c-success);font-weight:700;">پایه</span></td>
         <td style="text-align:center;">—</td>
-        <td style="text-align:center;">—</td>
+        <td style="text-align:center;" dir="ltr">—</td>
         <td style="text-align:left;" dir="ltr">۱٬۰۰۰٬۰۰۰</td>
       </tr>
       <tr>
-        <td>۵</td>
-        <td>برنامه‌نویسی فرم‌ور</td>
-        <td>محاسبه خورشید و زاویه چرخش، ماشین حالت، باد، جریان، watchdog و سه حالت حرکت</td>
-        <td style="text-align:center;">۳۰</td>
+        <td>ب۶</td>
+        <td>مونتاژ</td>
+        <td>لحیم برد، بستن سنسورها، بادسنج و جعبه</td>
+        <td style="text-align:center;"><span style="color:var(--c-success);font-weight:700;">پایه</span></td>
+        <td style="text-align:center;">۱۲</td>
+        <td style="text-align:left;" dir="ltr">۳۵۰٬۰۰۰</td>
+        <td style="text-align:left;" dir="ltr">۴٬۲۰۰٬۰۰۰</td>
+      </tr>
+      <tr><td colspan="7" style="background:var(--c-bg-card);font-weight:700;color:var(--c-primary,inherit);">فاز ج — نرم‌افزار</td></tr>
+      <tr>
+        <td>ج۱</td>
+        <td>فرم‌ور پایه</td>
+        <td>محاسبه خورشید و زاویه چرخش، ماشین حالت، حرکت با تأخیر ایمن، باد، تشخیص گیرکردن با زاویه، کالیبراسیون و watchdog</td>
+        <td style="text-align:center;"><span style="color:var(--c-success);font-weight:700;">پایه</span></td>
+        <td style="text-align:center;">۲۷</td>
         <td style="text-align:left;" dir="ltr">۵۰۰٬۰۰۰</td>
-        <td style="text-align:left;" dir="ltr">۱۵٬۰۰۰٬۰۰۰</td>
+        <td style="text-align:left;" dir="ltr">۱۳٬۵۰۰٬۰۰۰</td>
       </tr>
       <tr>
-        <td>۶</td>
-        <td>پنل وب و حافظه</td>
-        <td>رابط موبایل، هات‌اسپات با رمز، اتصال WiFi محل، اعلان خطا با ربات بله، به‌روزرسانی آفلاین، لاگ و خروجی CSV</td>
-        <td style="text-align:center;">۱۹</td>
+        <td>ج۲</td>
+        <td>حفاظت جریان (نرم‌افزار)</td>
+        <td>محاسبه RMS، تشخیص گیرکردن با جریان، تشخیص لیمیت و چسبیدن رله</td>
+        <td style="text-align:center;"><span style="color:var(--c-accent);font-weight:700;">اختیاری</span></td>
+        <td style="text-align:center;">۳</td>
         <td style="text-align:left;" dir="ltr">۵۰۰٬۰۰۰</td>
-        <td style="text-align:left;" dir="ltr">۹٬۵۰۰٬۰۰۰</td>
+        <td style="text-align:left;" dir="ltr">۱٬۵۰۰٬۰۰۰</td>
       </tr>
       <tr>
-        <td>۷</td>
+        <td>ج۳</td>
+        <td>پنل وب پایه</td>
+        <td>نمایش وضعیت، تنظیمات، حالت دستی، رمز، هات‌اسپات و لاگ</td>
+        <td style="text-align:center;"><span style="color:var(--c-success);font-weight:700;">پایه</span></td>
+        <td style="text-align:center;">۱۰</td>
+        <td style="text-align:left;" dir="ltr">۵۰۰٬۰۰۰</td>
+        <td style="text-align:left;" dir="ltr">۵٬۰۰۰٬۰۰۰</td>
+      </tr>
+      <tr>
+        <td>ج۴</td>
+        <td>به‌روزرسانی آفلاین از وب</td>
+        <td>نصب نسخه جدید از گوشی با بازگشت خودکار به نسخه قبلی</td>
+        <td style="text-align:center;"><span style="color:var(--c-accent);font-weight:700;">اختیاری</span></td>
+        <td style="text-align:center;">۴</td>
+        <td style="text-align:left;" dir="ltr">۵۰۰٬۰۰۰</td>
+        <td style="text-align:left;" dir="ltr">۲٬۰۰۰٬۰۰۰</td>
+      </tr>
+      <tr>
+        <td>ج۵</td>
+        <td>WiFi محل و اعلان بله</td>
+        <td>اتصال به WiFi محل، همگام‌سازی ساعت و ارسال خطا به ربات بله</td>
+        <td style="text-align:center;"><span style="color:var(--c-accent);font-weight:700;">اختیاری</span></td>
+        <td style="text-align:center;">۳</td>
+        <td style="text-align:left;" dir="ltr">۵۰۰٬۰۰۰</td>
+        <td style="text-align:left;" dir="ltr">۱٬۵۰۰٬۰۰۰</td>
+      </tr>
+      <tr>
+        <td>ج۶</td>
+        <td>خروجی CSV لاگ</td>
+        <td>دانلود لاگ رویدادها از پنل وب</td>
+        <td style="text-align:center;"><span style="color:var(--c-accent);font-weight:700;">اختیاری</span></td>
+        <td style="text-align:center;">۲</td>
+        <td style="text-align:left;" dir="ltr">۵۰۰٬۰۰۰</td>
+        <td style="text-align:left;" dir="ltr">۱٬۰۰۰٬۰۰۰</td>
+      </tr>
+      <tr>
+        <td>ج۷</td>
+        <td>ابزار و نرم‌افزار توسعه</td>
+        <td>اشتراک ابزارهای نرم‌افزاری طراحی، شبیه‌سازی و توسعه</td>
+        <td style="text-align:center;"><span style="color:var(--c-success);font-weight:700;">پایه</span></td>
+        <td style="text-align:center;">—</td>
+        <td style="text-align:center;" dir="ltr">—</td>
+        <td style="text-align:left;" dir="ltr">۵٬۸۰۰٬۰۰۰</td>
+      </tr>
+      <tr><td colspan="7" style="background:var(--c-bg-card);font-weight:700;color:var(--c-primary,inherit);">فاز د — تست و تحویل</td></tr>
+      <tr>
+        <td>د۱</td>
         <td>کد تست و شبیه‌سازی</td>
         <td>سناریوهای آزمون و شبیه‌سازی منطق حرکت قبل از نصب</td>
+        <td style="text-align:center;"><span style="color:var(--c-success);font-weight:700;">پایه</span></td>
         <td style="text-align:center;">۹</td>
         <td style="text-align:left;" dir="ltr">۵۰۰٬۰۰۰</td>
         <td style="text-align:left;" dir="ltr">۴٬۵۰۰٬۰۰۰</td>
       </tr>
       <tr>
-        <td>۸</td>
-        <td>ابزار و نرم‌افزار توسعه</td>
-        <td>اشتراک ابزارهای نرم‌افزاری طراحی، شبیه‌سازی و توسعه</td>
-        <td style="text-align:center;">—</td>
-        <td style="text-align:center;">—</td>
-        <td style="text-align:left;" dir="ltr">۵٬۸۰۰٬۰۰۰</td>
-      </tr>
-      <tr>
-        <td>۹</td>
-        <td>مونتاژ</td>
-        <td>لحیم برد، بستن سنسورها، بادسنج و جعبه پرینت‌شده</td>
-        <td style="text-align:center;">۱۲</td>
-        <td style="text-align:left;" dir="ltr">۳۵۰٬۰۰۰</td>
-        <td style="text-align:left;" dir="ltr">۴٬۲۰۰٬۰۰۰</td>
-      </tr>
-      <tr>
-        <td>۱۰</td>
+        <td>د۲</td>
         <td>پیاده‌سازی و تحویل</td>
-        <td>کالیبراسیون، آزمون روی نمونه و آموزش کارفرما</td>
+        <td>نصب، کالیبراسیون، آزمون روی نمونه و آموزش کارفرما</td>
+        <td style="text-align:center;"><span style="color:var(--c-success);font-weight:700;">پایه</span></td>
         <td style="text-align:center;">۲۲</td>
         <td style="text-align:left;" dir="ltr">۴۰۰٬۰۰۰</td>
         <td style="text-align:left;" dir="ltr">۸٬۸۰۰٬۰۰۰</td>
       </tr>
       <tr class="table-total">
-        <td colspan="3" style="text-align:left;">جمع طراحی و ساخت سیستم (۱۳۴ ساعت به‌علاوه دو قلم ثابت)</td>
+        <td colspan="4" style="text-align:left;">جمع طراحی و ساخت با همه ماژول‌ها</td>
         <td style="text-align:center;">۱۳۴</td>
         <td></td>
         <td style="text-align:left;" dir="ltr">۶۹٬۳۰۰٬۰۰۰</td>
@@ -1242,11 +1311,68 @@
     فیلامنت و ابزار توسعه ساعتی نیستند. بقیه ردیف‌ها دستمزد همان کار است. قیمت‌ها حدودی‌اند و در فاکتور نهایی قطعی می‌شوند.
   </p>
 
+  <p class="body-text">
+    <strong>ماژول‌های اختیاری.</strong> جدول زیر نشان می‌دهد حذف هر ماژول چقدر از جمع کل کم می‌کند (دستمزد به‌علاوه قطعات همان ماژول) و چه چیزی از دست می‌رود.
+  </p>
+
+  <table>
+    <thead>
+      <tr>
+        <th style="width: 28px;">#</th>
+        <th style="width: 130px;">ماژول</th>
+        <th style="width: 60px;">ردیف‌ها</th>
+        <th>اگر حذف شود</th>
+        <th style="width: 96px;">کاهش هزینه (تومان)</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>۱</td>
+        <td>حفاظت جریان</td>
+        <td>ب۲ + ج۲</td>
+        <td>گیرکردن فقط از روی زاویه تشخیص داده می‌شود؛ چسبیدن رله و رسیدن به لیمیت قابل تشخیص نیست.</td>
+        <td style="text-align:left;" dir="ltr">۳٬۶۰۰٬۰۰۰</td>
+      </tr>
+      <tr>
+        <td>۲</td>
+        <td>حفاظت ورودی و ضربه</td>
+        <td>ب۳</td>
+        <td>برد در برابر نوسان برق، صاعقه و جرقه رله آسیب‌پذیرتر است. توصیه می‌شود حذف نشود.</td>
+        <td style="text-align:left;" dir="ltr">۱٬۸۰۰٬۰۰۰</td>
+      </tr>
+      <tr>
+        <td>۳</td>
+        <td>به‌روزرسانی آفلاین از وب</td>
+        <td>ج۴</td>
+        <td>برای هر به‌روزرسانی باید جعبه باز و برد با لپ‌تاپ و کابل USB برنامه‌ریزی شود.</td>
+        <td style="text-align:left;" dir="ltr">۲٬۰۰۰٬۰۰۰</td>
+      </tr>
+      <tr>
+        <td>۴</td>
+        <td>WiFi محل و اعلان بله</td>
+        <td>ج۵</td>
+        <td>خطاها فقط با مراجعه حضوری و اتصال به هات‌اسپات دیده می‌شوند.</td>
+        <td style="text-align:left;" dir="ltr">۱٬۵۰۰٬۰۰۰</td>
+      </tr>
+      <tr>
+        <td>۵</td>
+        <td>خروجی CSV لاگ</td>
+        <td>ج۶</td>
+        <td>لاگ فقط روی صفحه پنل دیده می‌شود.</td>
+        <td style="text-align:left;" dir="ltr">۱٬۰۰۰٬۰۰۰</td>
+      </tr>
+      <tr class="table-total">
+        <td colspan="4" style="text-align:left;">حذف همه ماژول‌های اختیاری</td>
+        <td style="text-align:left;" dir="ltr">۹٬۹۰۰٬۰۰۰</td>
+      </tr>
+    </tbody>
+  </table>
+
   <table>
     <thead>
       <tr>
         <th>جمع نمونه اول (بدون سازه و بدون جک)</th>
-        <th style="width: 120px;">مبلغ (تومان)</th>
+        <th style="width: 130px;">مبلغ (تومان)</th>
       </tr>
     </thead>
     <tbody>
@@ -1255,51 +1381,50 @@
         <td style="text-align:left;" dir="ltr">۷٬۴۷۰٬۰۰۰</td>
       </tr>
       <tr>
-        <td>ایده‌پردازی، طراحی، برنامه‌نویسی، مونتاژ و پیاده‌سازی</td>
+        <td>طراحی، ساخت، نرم‌افزار، تست و تحویل (همه ماژول‌ها)</td>
         <td style="text-align:left;" dir="ltr">۶۹٬۳۰۰٬۰۰۰</td>
       </tr>
       <tr class="table-total">
-        <td style="text-align:left;">جمع نمونه اول</td>
+        <td style="text-align:left;">جمع نمونه اول با همه ماژول‌ها</td>
         <td style="text-align:left;" dir="ltr">۷۶٬۷۷۰٬۰۰۰</td>
+      </tr>
+      <tr>
+        <td>جمع نمونه اول فقط با بخش پایه</td>
+        <td style="text-align:left;" dir="ltr">۶۶٬۸۷۰٬۰۰۰</td>
       </tr>
     </tbody>
   </table>
 
   <div class="price-chart">
-    <div class="arch-title">نمودار سهم هر بخش از جمع ۷۶٫۸ میلیون تومان</div>
+    <div class="arch-title">نمودار سهم هر فاز از جمع ۷۶٫۸ میلیون تومان</div>
     <div class="price-row">
-      <div class="price-label">سخت‌افزار</div>
-      <div class="price-track"><div class="price-fill" style="width:9.7%;"></div></div>
+      <div class="price-label">طراحی و مستندات</div>
+      <div class="price-track"><div class="price-fill b" style="width:10.4%;"></div></div>
+      <div class="price-num">۸ م</div>
+    </div>
+    <div class="price-row">
+      <div class="price-label">قطعات سخت‌افزار</div>
+      <div class="price-track"><div class="price-fill " style="width:9.7%;"></div></div>
       <div class="price-num">۷٫۵ م</div>
     </div>
     <div class="price-row">
-      <div class="price-label">ایده‌پردازی و طراحی</div>
-      <div class="price-track"><div class="price-fill b" style="width:26.7%;"></div></div>
-      <div class="price-num">۲۰٫۵ م</div>
+      <div class="price-label">ساخت سخت‌افزار</div>
+      <div class="price-track"><div class="price-fill c" style="width:23.1%;"></div></div>
+      <div class="price-num">۱۷٫۷ م</div>
     </div>
     <div class="price-row">
-      <div class="price-label">مونتاژ</div>
-      <div class="price-track"><div class="price-fill c" style="width:6.8%;"></div></div>
-      <div class="price-num">۵٫۲ م</div>
+      <div class="price-label">نرم‌افزار</div>
+      <div class="price-track"><div class="price-fill d" style="width:39.5%;"></div></div>
+      <div class="price-num">۳۰٫۳ م</div>
     </div>
     <div class="price-row">
-      <div class="price-label">برنامه‌نویسی</div>
-      <div class="price-track"><div class="price-fill d" style="width:37.8%;"></div></div>
-      <div class="price-num">۲۹ م</div>
-    </div>
-    <div class="price-row">
-      <div class="price-label">پیاده‌سازی</div>
-      <div class="price-track"><div class="price-fill e" style="width:11.5%;"></div></div>
-      <div class="price-num">۸٫۸ م</div>
-    </div>
-    <div class="price-row">
-      <div class="price-label">ابزار توسعه</div>
-      <div class="price-track"><div class="price-fill f" style="width:7.6%;"></div></div>
-      <div class="price-num">۵٫۸ م</div>
+      <div class="price-label">تست و تحویل</div>
+      <div class="price-track"><div class="price-fill e" style="width:17.3%;"></div></div>
+      <div class="price-num">۱۳٫۳ م</div>
     </div>
   </div>
   <p class="table-caption">
-    طول هر نوار سهم همان بخش از نمونه اول است. مونتاژ شامل فیلامنت جعبه هم هست. ایده‌پردازی و طراحی شامل پروپوزال، مدار و طراحی جعبه است. برنامه‌نویسی شامل فرم‌ور، پنل وب و کد تست است.
+    طول هر نوار سهم همان فاز از نمونه اول با همه ماژول‌هاست. ابزار توسعه داخل فاز نرم‌افزار حساب شده است.
   </p>
 
   <!-- ===== SECTION 4: Wiring ===== -->
@@ -1679,12 +1804,12 @@
     <div class="ending-tag">پایان پروپوزال</div>
     <h1 class="ending-title">آماده آغاز همکاری</h1>
     <p class="ending-text">
-      این سند طرح اولیه برای توافق با کارفرماست و قرارداد نیست. محدوده آن طراحی و ساخت سیستم کنترل تراکر است: برد، سنسورها و بادسنج. سازه و جک در این برآورد نیستند. هزینه طراحی و ساخت ۶۹٬۳۰۰٬۰۰۰ تومان و قطعات نمونه ۷٬۷۲۰٬۰۰۰ تومان است. جمع نمونه اول ۷۶٬۷۷۰٬۰۰۰ تومان می‌شود. قیمت‌ها حدودی‌اند و در فاکتور نهایی قطعی می‌شوند.
+      این سند طرح اولیه برای توافق با کارفرماست و قرارداد نیست. محدوده آن طراحی و ساخت سیستم کنترل تراکر است: برد، سنسورها و بادسنج. سازه و جک در این برآورد نیستند. هزینه طراحی و ساخت ۶۹٬۳۰۰٬۰۰۰ تومان و قطعات نمونه ۷٬۴۷۰٬۰۰۰ تومان است. جمع نمونه اول با همه ماژول‌ها ۷۶٬۷۷۰٬۰۰۰ تومان و فقط با بخش پایه ۶۶٬۸۷۰٬۰۰۰ تومان می‌شود. قیمت‌ها حدودی‌اند و در فاکتور نهایی قطعی می‌شوند.
     </p>
     <div class="ending-divider"></div>
     <div class="ending-meta">
       <div class="ending-meta-item">
-        نسخه سند<strong>۱.۷ — آبان ۱۴۰۵</strong>
+        نسخه سند<strong>۱.۸ — آبان ۱۴۰۵</strong>
       </div>
       <div class="ending-meta-item">
         مدت پروژه<strong>۷ هفته کاری</strong>
