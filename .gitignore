@@ -33,3 +33,6 @@ secrets.h
 .env
 
 rodo/**/*.rodo.md
+
+# Device secrets (default passwords): copy firmware/src/secrets.example.h to firmware/src/secrets.h
+firmware/src/secrets.h

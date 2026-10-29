@@ -82,6 +82,13 @@ public:
     virtual size_t size(const char* key) = 0;
 };
 
+// Random bytes (hardware RNG on the device); used for session tokens and password salts.
+class IRandom {
+public:
+    virtual ~IRandom() = default;
+    virtual void bytes(uint8_t* out, size_t len) = 0;
+};
+
 enum class EventType : uint8_t {
     PowerUp,
     StateChange,

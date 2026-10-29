@@ -163,4 +163,20 @@ private:
     std::vector<std::pair<hal::EventType, std::string>> events_;
 };
 
+// Repeatable pseudo-random bytes (xorshift) for tests.
+class FakeRandom : public hal::IRandom {
+public:
+    void bytes(uint8_t* out, size_t len) override {
+        for (size_t i = 0; i < len; ++i) {
+            state_ ^= state_ << 13;
+            state_ ^= state_ >> 17;
+            state_ ^= state_ << 5;
+            out[i] = static_cast<uint8_t>(state_);
+        }
+    }
+
+private:
+    uint32_t state_ = 2463534242u;
+};
+
 }  // namespace sim

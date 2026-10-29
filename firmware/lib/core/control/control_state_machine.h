@@ -78,6 +78,7 @@ public:
 
     ActiveState state() const { return state_; }
     FaultCode fault() const { return fault_; }
+    settings::Mode mode() const { return mode_; }
 
 private:
     ActiveState decide(const Inputs& in);
