@@ -5,12 +5,14 @@
 #include <stdint.h>
 
 #include "angle_provider.h"
+#include "anemometer.h"
 #include "control_state_machine.h"
 #include "ds3231_clock.h"
 #include "littlefs_event_log.h"
 #include "motion_controller.h"
 #include "mpu6050_accel.h"
 #include "settings.h"
+#include "wind_monitor.h"
 
 namespace drivers {
 
@@ -28,6 +30,8 @@ struct BenchStatus {
     Ds3231Clock* clock;
     control::ControlStateMachine* ctl;
     LittleFsEventLog* log;
+    wind::WindMonitor* wind;
+    Anemometer* anemometer;
 };
 
 // True after `move`/`stop`: the console then drives the MotionController directly and the state
@@ -53,6 +57,7 @@ hal::IEventLog* benchEventLog();
 //   log [n]   the newest n (default 10) event lines; `loggen n` writes n test events (rotation test)
 //   ctl       state machine: state, fault, target, angle, status text
 //   ctl auto|manual|e|w|stop|ka|reset   mode and manual commands (e/w need manual mode and a keep-alive every 3 s)
+//   wind      wind speed, stow state, pulses seen; `windgen <hz>` makes the real pin generate pulses (0 stops)
 //   pins      relay pin levels (1 = inactive/high, 0 = active/low)
 //   hang      stop feeding the watchdog; the chip must reset with reason "watchdog"
 //   reboot    software reset (reason "software")

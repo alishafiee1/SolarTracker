@@ -23,6 +23,8 @@ public:
 SerialEventLog serialEventLog;
 
 bool directMotion = false;
+uint32_t genHz = 0;       // pulse generator on the anemometer pin (bench only)
+uint32_t genLastUs = 0;
 
 char lineBuf[32];
 size_t lineLen = 0;
@@ -139,6 +141,14 @@ void handle(const char* cmd, const BenchStatus& s) {
         Serial.printf("I ctl: state=%s fault=%s target=%.1f angle=%.1f moving=%d text=%d wait_s=%lu result=%d\n", control::stateName(st.state),
                       control::faultName(st.fault), st.targetDeg, st.angleDeg, st.moving, static_cast<int>(st.text),
                       static_cast<unsigned long>(st.waitS), static_cast<int>(res));
+    } else if (strncmp(cmd, "windgen ", 8) == 0) {
+        genHz = static_cast<uint32_t>(atoi(cmd + 8));
+        Serial.printf("I windgen: %lu Hz\n", static_cast<unsigned long>(genHz));
+    } else if (strcmp(cmd, "wind") == 0) {
+        const wind::Config wc{s.cfg->anemometerFactor, s.cfg->windStowKmh, s.cfg->windStowDelayS, s.cfg->windReturnKmh, s.cfg->windReturnMin};
+        Serial.printf("I wind: speed=%.1f stow=%d return_in_s=%lu pulses=%lu factor=%.2f\n", s.wind->speedKmh(), s.wind->stow(),
+                      static_cast<unsigned long>(s.wind->returnRemainingS(s.uptimeMs, wc)), static_cast<unsigned long>(s.anemometer->total()),
+                      s.cfg->anemometerFactor);
     } else if (strcmp(cmd, "pins") == 0) {
         printPins();
     } else if (strcmp(cmd, "hang") == 0) {
@@ -164,6 +174,13 @@ bool benchDirectMotion() { return directMotion; }
 hal::IEventLog* benchEventLog() { return &serialEventLog; }
 
 void benchConsolePoll(const BenchStatus& status) {
+    if (genHz > 0 && micros() - genLastUs >= 1000000UL / genHz) {  // one falling edge on the real input pin
+        genLastUs = micros();
+        pinMode(Anemometer::kPin, OUTPUT);
+        digitalWrite(Anemometer::kPin, LOW);
+        delayMicroseconds(100);
+        pinMode(Anemometer::kPin, INPUT_PULLUP);
+    }
     while (Serial.available() > 0) {
         const char c = static_cast<char>(Serial.read());
         if (c == '\n' || c == '\r') {

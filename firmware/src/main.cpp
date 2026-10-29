@@ -3,6 +3,7 @@
 #include <Wire.h>
 
 #include "angle_provider.h"
+#include "anemometer.h"
 #include "boot_info.h"
 #include "control_loop.h"
 #include "control_state_machine.h"
@@ -16,6 +17,7 @@
 #include "settings.h"
 #include "supply_watch.h"
 #include "tick_scheduler.h"
+#include "wind_monitor.h"
 #ifdef BENCH_CONSOLE
 #include "bench_console.h"
 #endif
@@ -47,6 +49,8 @@ settings::SupplyWatch supplyWatch;
 angle::AngleProvider angleProvider(accel);
 motion::MotionController* motionCtl = nullptr;  // created in setup(), after the relays are forced off
 control::ControlStateMachine* controller = nullptr;
+drivers::Anemometer anemometer;
+wind::WindMonitor windMonitor;
 int64_t cachedUtc = 0;       // the DS3231 is read once a second, in between the time is extrapolated
 uint32_t cachedUtcAtMs = 0;
 bool cachedClockValid = false;
@@ -90,6 +94,7 @@ void setup() {
     motionCtl = new motion::MotionController(relays, timingFrom(cfg), espTime.nowMs());  // R9: starts settling
     motionCtl->setEventLog(&eventLog);
     controller = new control::ControlStateMachine(*motionCtl, cfg, &eventLog);
+    anemometer.begin();
 
     controlTick = core::TickScheduler(espTime.nowMs(), core::kControlPeriodMs);
     lastSupplyMs = espTime.nowMs();
@@ -111,7 +116,18 @@ void loop() {
         in.calibrated = angleProvider.calibrated();
         in.clockValid = cachedClockValid;
         in.utcEpoch = cachedUtc + (now - cachedUtcAtMs) / 1000;
-        // windStow comes with cycle 006; currentA with the optional current module.
+        uint32_t pulses[16];
+        for (size_t n; (n = anemometer.drain(pulses, 16)) > 0;)
+            for (size_t i = 0; i < n; ++i) windMonitor.feed(pulses[i]);
+        const wind::Config wc{cfg.anemometerFactor, cfg.windStowKmh, cfg.windStowDelayS, cfg.windReturnKmh, cfg.windReturnMin};
+        const wind::Result wr = windMonitor.update(now, micros(), wc);
+        if (wr.stowStarted || wr.stowEnded) {
+            char detail[48];
+            snprintf(detail, sizeof(detail), "wind stow %s, peak %.0f km/h", wr.stowStarted ? "start" : "end", static_cast<double>(wr.peakKmh));
+            eventLog.append(hal::EventType::StateChange, detail);
+        }
+        in.windStow = windMonitor.stow();
+        // currentA comes with the optional current module (cycle 009).
 #ifdef BENCH_CONSOLE
         if (drivers::benchDirectMotion()) {
             motionCtl->tick(now, in.angleDeg, 0.0f);  // relay bench tests drive the motion layer directly
@@ -133,7 +149,7 @@ void loop() {
 #ifdef BENCH_CONSOLE
     drivers::benchConsolePoll({FW_VERSION, core::resetReasonName(resetReason), now, controlLoop.ticks(),
                                controlLoop.lastTickMs(), &accel, &angleProvider, motionCtl, &cfg, &settingsStore, &rtcClock, controller,
-                               &eventLog});
+                               &eventLog, &windMonitor, &anemometer});
 #endif
     delay(1);
 }

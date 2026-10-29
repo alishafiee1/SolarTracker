@@ -56,6 +56,10 @@ Status in 008: «باد: n km/h — عادی» / «باد شدید — حالت 
 
 ## Decisions
 
+- Debounce (5 ms) runs twice: in the interrupt (cheap, keeps the ring buffer small) and in `WindMonitor::feed` (testable on the host). Because the same rule must hold in both places and only one of them can be unit-tested.
+- The stow flag is not stored: after a reboot the panel starts calm and the wind is measured again within seconds (the 5 s delay applies again). Because a stale flag after a long power cut would keep the panel flat for no reason, and a re-measured strong wind stows it again at once.
+- Stow start and end are logged as `StateChange` events with the text `wind stow start/end, peak N km/h` instead of a new event type. Because the log format is fixed and the state machine already logs `Auto->Wind`.
+- On the board the pulse input is tested by letting the bench console pull the real pin low (`windgen`), which runs the real interrupt, ring buffer and speed code. A real anemometer still has to be calibrated on site against a handheld meter.
 - Anemometer: locally built cup rotor, 20 cm diameter, one Hall pulse per revolution; default factor 6.8 km/h per Hz, calibrated on site. Because that is the hardware the user chose (answer of 2026-10-29).
 - Speed from pulse periods, not pulse counts. Because one pulse per revolution gives only ~6 pulses/s at the 40 km/h threshold.
 - Decisions on raw 3 s average, not gust peaks. Because the proposal thresholds are sustained-wind thresholds with explicit delays. (default, not asked)
