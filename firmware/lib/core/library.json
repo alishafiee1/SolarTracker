@@ -4,6 +4,6 @@
   "description": "Pure SunTracker logic: no Arduino headers, compiled for the ESP32 and for host tests",
   "build": {
     "srcFilter": ["+<*>"],
-    "flags": ["-Ilib/core/sun"]
+    "flags": ["-Ilib/core/sun", "-Ilib/core/angle"]
   }
 }

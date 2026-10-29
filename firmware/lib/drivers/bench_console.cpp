@@ -1,6 +1,7 @@
 #include "bench_console.h"
 
 #include <Arduino.h>
+#include <math.h>
 #include <stdlib.h>
 #include <string.h>
 
@@ -39,6 +40,22 @@ void handle(const char* cmd, const BenchStatus& s) {
         Serial.printf("I sun: epoch=%lld azimuth=%.4f zenith=%.4f rotation=%.4f us_per_call=%lu\n",
                       static_cast<long long>(epoch), p.azimuthDeg, p.zenithDeg, tracking::rotation(p),
                       static_cast<unsigned long>(usPerCall));
+    } else if (strcmp(cmd, "angle") == 0) {
+        hal::Vec3 g{0, 0, 0};
+        const bool read = s.accel->read(g);
+        Serial.printf("I angle: whoami=0x%02X read=%d g=(%.3f,%.3f,%.3f) |g|=%.3f calibrated=%d angle_deg=%.2f ok=%d\n",
+                      s.accel->lastWhoAmI(), read, g.x, g.y, g.z, sqrtf(g.x * g.x + g.y * g.y + g.z * g.z),
+                      s.angle->calibrated(), s.angle->angleDeg(), s.angle->ok());
+    } else if (strcmp(cmd, "cal h") == 0 || strcmp(cmd, "cal e") == 0) {
+        const bool east = cmd[4] == 'e';
+        const bool started = s.angle->beginCapture(east ? angle::CalStep::East : angle::CalStep::Horizontal);
+        Serial.printf("%c cal: %s capture %s (5 s, keep the panel still)\n", started ? 'I' : 'E', east ? "east" : "horizontal",
+                      started ? "started" : "refused: do the horizontal step first");
+    } else if (strcmp(cmd, "cal") == 0) {
+        static const char* const names[] = {"ok", "pending", "moving", "too-small-angle", "too-large-angle",
+                                            "bad-gravity", "sensor-fault", "not-captured"};
+        Serial.printf("I cal: capturing=%d result=%s calibrated=%d\n", s.angle->capturing(),
+                      names[static_cast<int>(s.angle->captureResult())], s.angle->calibrated());
     } else if (strcmp(cmd, "pins") == 0) {
         printPins();
     } else if (strcmp(cmd, "hang") == 0) {
@@ -51,7 +68,7 @@ void handle(const char* cmd, const BenchStatus& s) {
         Serial.flush();
         ESP.restart();
     } else if (strcmp(cmd, "help") == 0) {
-        Serial.println("I commands: status pins hang reboot help");
+        Serial.println("I commands: status sun angle cal pins hang reboot help");
     } else if (cmd[0] != '\0') {
         Serial.printf("E unknown command '%s' (try help)\n", cmd);
     }

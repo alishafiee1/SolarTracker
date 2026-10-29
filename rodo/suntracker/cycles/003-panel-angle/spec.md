@@ -20,7 +20,7 @@ Read the on-board MPU6050, turn the gravity vector into a signed rotation angle 
 
 ## 4. API / logic
 
-`class AngleProvider { void sample(); float angleDeg() const; bool ok() const; bool calibrated() const; CalResult captureHorizontal(); CalResult captureEast(); }`
+`class AngleProvider { void sample(); float angleDeg() const; bool ok() const; void clearFault(); bool calibrated() const; bool beginCapture(CalStep); bool capturing() const; CalResult captureResult() const; bool saveTo(ISettingsStore&) const; bool loadFrom(ISettingsStore&); }`. A capture is non-blocking: `beginCapture()`, keep calling `sample()` (50 ticks = 5 s), poll `captureResult()` (`Pending` until done).
 
 ## 5. Screens
 
@@ -55,5 +55,9 @@ None here (calibration wizard in 008). Error texts the web panel will show: «س
 
 ## Decisions
 
+- A capture is non-blocking (begin, poll). Because a 5 s blocking call from a web handler would stall the single control thread. (default, not asked)
+- Every kind of invalid sample (failed read, NaN, |g| outside 0.8–1.2, implausible angle) counts the same: 5 in a row (0.5 s) latch the fault, which stays until `clearFault()` (the state machine's fault reset). Because it keeps the rule simple and a recovering sensor must not resume automatic motion by itself. (default, not asked)
+- A missing sensor is retried once per second, not every tick. Because each failed I2C attempt prints an error and the control tick must stay fast. (default, not asked)
+- `WHO_AM_I` must be 0x68 as the spec says; some GY-521 clones answer another value and would be reported as a sensor fault. If the real module does that, allow its value in `Mpu6050Accel::kWhoAmIExpected`. (default, not asked)
 - East = negative angle. Because the proposal defines R positive towards west.
 - Reject calibration if the panel moved during capture. Because a bad calibration silently breaks tracking and stall detection. (default, not asked)
