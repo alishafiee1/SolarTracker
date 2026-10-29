@@ -9,7 +9,7 @@
 | Part | Technology | Path | Why |
 |---|---|---|---|
 | Firmware | C++17, Arduino-ESP32 core on PlatformIO (`esp32dev`, ESP32-WROOM-32, 4 MB flash) | `firmware/` | Mature drivers for DS3231/MPU6050, async web server, OTA and NVS without ESP-IDF boilerplate |
-| Core logic (pure, no Arduino headers) | Plain C++ | `firmware/lib/core/` | Sun position, angle math, state machine, motion safety, wind filter. Compiles on the host, so it is unit-tested and simulated |
+| Core logic (pure, no Arduino headers) | Plain C++ | `firmware/lib/core/` (+ `sun/`, …) | Sun position, angle math, state machine, motion safety, wind filter. Compiles on the host, so it is unit-tested and simulated |
 | Hardware abstraction (HAL) | C++ interfaces | `firmware/lib/hal/` | `IClock`, `IAccel`, `IWindPulse`, `IRelays`, `ICurrentSensor`, `ISupplyMonitor`, `ISettingsStore`, `IEventLog`, `ITime` (monotonic ms) |
 | Drivers (ESP32 only) | Arduino libraries | `firmware/lib/drivers/` | RTClib (DS3231), MPU6050 over raw I2C, GPIO relays, ADC for SCT-013, Preferences (NVS), LittleFS |
 | Web panel | ESPAsyncWebServer + JSON REST; static HTML/CSS/JS (Persian, RTL), gzipped and embedded in the firmware image | `firmware/lib/web/`, `firmware/web/` | One `.bin` holds firmware and panel (needed for offline update) |
@@ -50,6 +50,7 @@
 
 - Safety first: relays are OFF after every boot, reset and watchdog trip; CH2 (direction) never switches under load; every timing interlock also applies in manual and wind modes.
 - Angles are in degrees. Panel rotation `R` is positive towards **west**; 0° = horizontal (stow).
+- New subfolders of `lib/core` must be added to `-I` in `platformio.ini` (and `lib/core/library.json`); the library is named in `lib_deps` because PlatformIO's dependency finder does not see headers in subfolders. Native tests need `-DUNITY_INCLUDE_DOUBLE` (set in the `native` env), otherwise Unity's double asserts always fail.
 - Time is stored and computed in UTC; only the web panel shows local time.
 - Core logic never includes `Arduino.h` and never calls `millis()` directly; time and sensors come through the HAL.
 - No secrets in the repo or in rodo files: Wi-Fi and settings passwords and the Bale bot token live only in NVS on the device.

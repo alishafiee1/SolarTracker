@@ -16,6 +16,7 @@ struct BenchStatus {
 
 // Call once per loop pass. Commands (one per line):
 //   status   one-line state: version, reset reason, uptime, tick count, relay pin levels
+//   sun [t]  sun position for Kerman at UTC epoch t (default 2027-06-21 07:00) and the time per call
 //   pins     relay pin levels (1 = inactive/high, 0 = active/low)
 //   hang     stop feeding the watchdog; the chip must reset with reason "watchdog"
 //   reboot   software reset (reason "software")
