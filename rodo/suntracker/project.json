@@ -2,9 +2,9 @@
   "schemaVersion": 2,
   "projectSlug": "suntracker",
   "name": "SunTracker",
-  "serverUrl": null,
-  "boardId": null,
-  "repoFingerprint": null,
+  "serverUrl": "https://rodo.n3xus.ir",
+  "boardId": "cmvtmdx8d02jemk01k2c45u4l",
+  "repoFingerprint": "sha256:b48ce6c3a1cd330aaee83f1b4fed8a565c32954dda6b5b70add79c8160ba5759",
   "language": { "simple": "fa", "technical": "en" },
   "testCommand": "pio test -d firmware -e native -f \"test_cycle_{NNN}*\"",
   "stepsDirs": []

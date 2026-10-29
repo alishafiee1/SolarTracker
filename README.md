@@ -6,7 +6,21 @@ An ESP32-based controller for a single-axis solar tracker. It computes the sun p
 
 ## Status
 
-Planning. The technical proposal is in [`docs/solar_tracker_proposal.html`](docs/solar_tracker_proposal.html). The software plan is 13 RODO cycles in [`rodo/suntracker/MAP.md`](rodo/suntracker/MAP.md). No firmware or hardware files yet.
+Early development. The technical proposal is in [`docs/solar_tracker_proposal.html`](docs/solar_tracker_proposal.html). The software plan is 13 RODO cycles in [`rodo/suntracker/MAP.md`](rodo/suntracker/MAP.md). The firmware skeleton (cycle 001) is in `firmware/`; no hardware files yet.
+
+## Build and test
+
+Requires [PlatformIO Core](https://platformio.org/install/cli). Host tests also need a C++17 compiler on `PATH` (on Windows: MinGW-w64, e.g. `winget install -e --id BrechtSanders.WinLibs.POSIX.UCRT`).
+
+```sh
+pio run -d firmware -e esp32dev            # build the ESP32 image
+pio run -d firmware -e esp32dev -t upload  # flash over USB
+pio device monitor -d firmware             # serial log, 115200 baud
+pio test -d firmware -e native             # all host tests
+rodo test 001                              # tests of one cycle
+```
+
+Firmware layout: `src/main.cpp` (wiring only), `lib/core` (pure logic), `lib/hal` (hardware interfaces), `lib/drivers` (ESP32 drivers), `lib/sim` (fakes for host tests), `lib/web` (web panel), `test/test_cycle_NNN_*` (tests per cycle).
 
 ## Scope
 
@@ -20,7 +34,7 @@ Planning. The technical proposal is in [`docs/solar_tracker_proposal.html`](docs
 | `docs/` | Proposal and project documentation |
 | `rodo/` | Planning with the RODO method (brief, architecture, map, memory) |
 | `.agents/skills/rodo/` | RODO kit files — do not edit; checksums in `rodo/kit.json` |
-| `firmware/` | *(planned)* PlatformIO project for the ESP32 |
+| `firmware/` | PlatformIO project for the ESP32 |
 | `hardware/` | *(planned)* Schematic, PCB (KiCad) and BOM |
 | `enclosure/` | *(planned)* Enclosure models (STEP / STL) |
 

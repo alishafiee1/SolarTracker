@@ -31,3 +31,5 @@ desktop.ini
 # Secrets (WiFi passwords, bot tokens)
 secrets.h
 .env
+
+rodo/**/*.rodo.md
