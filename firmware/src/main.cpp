@@ -133,6 +133,7 @@ void setup() {
     };
     webApi = new webapi::WebApi(deps);
     panel = new web::PanelServer(*webApi);
+    panel->setLogCsv(&eventLog, [] { return static_cast<int>(cfg.tzOffsetMin); }, utcNow);
     const char* apPassword = strlen(cfg.apPassword) >= 8 ? cfg.apPassword : DEFAULT_AP_PASSWORD;
     if (panel->begin(apPassword)) {
         Serial.printf("I hotspot %s up, panel at http://192.168.4.1/\n", panel->ssid());

@@ -4,6 +4,9 @@
 
 #include <stdint.h>
 
+#include <functional>
+
+#include "littlefs_event_log.h"
 #include "web_api.h"
 
 namespace web {
@@ -23,6 +26,12 @@ public:
 
     const char* ssid() const { return ssid_; }
     uint8_t clients() const;
+
+    // CSV download of the event log (module 012). Set before begin(); both are optional.
+    void setLogCsv(drivers::LittleFsEventLog* log, std::function<int()> tzOffsetMin, std::function<int64_t()> utcNow);
+    drivers::LittleFsEventLog* csvLog() const { return csvLog_; }
+    int tzOffsetMin() const { return tz_ ? tz_() : 0; }
+    int64_t utcNow() const { return utc_ ? utc_() : 0; }
     uint32_t requestsServed() const { return served_; }
     webapi::WebApi& api() { return api_; }
     void countServed() { ++served_; }
@@ -32,6 +41,9 @@ private:
     char ssid_[24] = {};
     void* mutex_ = nullptr;
     uint32_t served_ = 0;
+    drivers::LittleFsEventLog* csvLog_ = nullptr;
+    std::function<int()> tz_;
+    std::function<int64_t()> utc_;
 };
 
 }  // namespace web

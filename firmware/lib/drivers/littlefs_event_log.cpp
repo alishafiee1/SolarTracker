@@ -1,6 +1,7 @@
 #include "littlefs_event_log.h"
 
 #include <Arduino.h>
+#include <FS.h>
 #include <LittleFS.h>
 #include <string.h>
 
@@ -77,6 +78,40 @@ void LittleFsEventLog::writeBuffered() {
         f.close();
     }
     bufferLen_ = 0;
+}
+
+void LittleFsEventLog::beginRead() {
+    writeBuffered();
+    readStep_ = 0;
+    reading_ = true;
+    readFile_ = File();
+}
+
+void LittleFsEventLog::endRead() {
+    if (readFile_) readFile_.close();
+    reading_ = false;
+}
+
+bool LittleFsEventLog::readLine(char* out, size_t len) {
+    while (reading_ && readStep_ < 2) {
+        if (!readFile_) {
+            readFile_ = LittleFS.open(pathFor(readStep_ == 0 ? 1 - active_ : active_), "r");
+            if (!readFile_) {
+                ++readStep_;
+                continue;
+            }
+        }
+        if (readFile_.available()) {
+            const size_t n = readFile_.readBytesUntil('\n', out, len - 2);
+            out[n] = '\n';
+            out[n + 1] = '\0';
+            return true;
+        }
+        readFile_.close();
+        readFile_ = File();
+        ++readStep_;
+    }
+    return false;
 }
 
 size_t LittleFsEventLog::readLatest(char* out, size_t outLen, size_t max) {

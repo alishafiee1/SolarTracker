@@ -1,4 +1,5 @@
 #pragma once
+#include <FS.h>
 #include <hal.h>
 
 namespace drivers {
@@ -22,6 +23,10 @@ public:
 
     // The newest `max` lines (newest last) into out as "line\n"; returns the byte count.
     size_t readLatest(char* out, size_t outLen, size_t max);
+    // Reading the whole log oldest line first (CSV export). One reader at a time; appends are buffered meanwhile.
+    void beginRead();
+    bool readLine(char* out, size_t len);  // false at the end
+    void endRead();
     size_t activeFileBytes() const { return activeBytes_; }
     int activeFileIndex() const { return active_; }
 
@@ -38,6 +43,9 @@ private:
     char buffer_[kBufferBytes];
     size_t bufferLen_ = 0;
     uint32_t lastFlushMs_ = 0;
+    int readStep_ = 0;  // 0 = oldest file, 1 = newest file, 2 = done
+    bool reading_ = false;
+    File readFile_;
 };
 
 }  // namespace drivers

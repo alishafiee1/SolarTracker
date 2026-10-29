@@ -49,5 +49,9 @@ Button «دانلود CSV» on the Log page.
 
 ## Decisions
 
+- The download is a chunked response produced by `CsvStream` (one row of memory, each chunk built under the control-loop lock), not a pre-built file. Because the log can be 128 KB and the ESP32 has no room for a copy.
+- Writes are not paused during a download (the spec's R5): new events are buffered in RAM while a reader is open, and the reader holds the same lock as the loop for each chunk. A rotation in the middle of a download can cut the oldest part of the file; nothing else is affected. Accepted because a rotation needs 64 KB of new events.
+- Rows from a clock that was not set (epoch 0) have empty time cells instead of a 1970 date.
+- The export needs a live session cookie, like every other protected endpoint.
 - Client wants all optional modules (answer of 2026-10-29). Because the user confirmed the full scope.
 - Login required for the download. Because the log reveals the operating pattern of the site. (default, not asked)

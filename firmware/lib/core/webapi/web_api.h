@@ -58,6 +58,8 @@ class WebApi {
 public:
     explicit WebApi(Deps deps) : d_(std::move(deps)) {}
     Response handle(const Request& req);
+    // True when the request carries a live session cookie (for endpoints that stream, like the CSV download).
+    bool isLoggedIn(const Request& req);
 
 private:
     Response status();

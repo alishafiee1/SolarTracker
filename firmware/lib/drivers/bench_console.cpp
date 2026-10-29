@@ -5,6 +5,7 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include "csv_stream.h"
 #include "esp_platform.h"
 #include "relays_gpio.h"
 #include "sun_position.h"
@@ -149,6 +150,23 @@ void handle(const char* cmd, const BenchStatus& s) {
         Serial.printf("I wind: speed=%.1f stow=%d return_in_s=%lu pulses=%lu factor=%.2f\n", s.wind->speedKmh(), s.wind->stow(),
                       static_cast<unsigned long>(s.wind->returnRemainingS(s.uptimeMs, wc)), static_cast<unsigned long>(s.anemometer->total()),
                       s.cfg->anemometerFactor);
+    } else if (strncmp(cmd, "csv", 3) == 0) {
+        // The export path of module 012 on real flash data: header and the first `max` bytes, then the total size.
+        const size_t max = cmd[3] == ' ' ? static_cast<size_t>(atoi(cmd + 4)) : 600;
+        CsvStream stream(*s.log, s.cfg->tzOffsetMin);
+        char buf[200];
+        size_t total = 0, shown = 0, n;
+        Serial.println("I csv begin");
+        while ((n = stream.next(buf, sizeof(buf))) > 0) {
+            if (shown < max) {
+                const size_t w = n < max - shown ? n : max - shown;
+                Serial.write(reinterpret_cast<const uint8_t*>(buf), w);
+                shown += w;
+            }
+            total += n;
+            feedWatchdog();
+        }
+        Serial.printf("\nI csv end: total_bytes=%u\n", static_cast<unsigned>(total));
     } else if (strncmp(cmd, "current", 7) == 0) {
         if (strcmp(cmd, "current on") == 0) s.current->begin(s.cfg->currentFactor);
         Serial.printf("I current: started=%d rms_v=%.4f amps=%.3f factor=%.2f module_present_setting=%d\n", s.current->present(),

@@ -6,7 +6,9 @@
 #include <esp_wifi.h>
 #include <freertos/semphr.h>
 
+#include "csv_stream.h"
 #include "panel_files.h"
+#include "rtc_time.h"
 
 namespace web {
 
@@ -40,8 +42,45 @@ void onBody(AsyncWebServerRequest* r, uint8_t* data, size_t len, size_t index, s
     if (r->_tempObject) memcpy(static_cast<char*>(r->_tempObject) + index, data, len);
 }
 
+// Module 012: stream the event log as CSV. The login is checked once; the rows are produced chunk by chunk
+// under the same lock the control loop uses, so a download never holds the loop for more than one chunk.
+void sendCsv(AsyncWebServerRequest* r) {
+    if (!self->csvLog()) {
+        r->send(404, "text/plain", "not found");
+        return;
+    }
+    webapi::Request req;
+    if (r->hasHeader("Cookie")) req.cookie = r->header("Cookie").c_str();
+    req.nowMs = millis();
+    self->lock();
+    const bool ok = self->api().isLoggedIn(req);
+    self->unlock();
+    if (!ok) {
+        r->send(401, "application/json", "{\"error\":\"login-required\"}");
+        return;
+    }
+    auto* stream = new drivers::CsvStream(*self->csvLog(), self->tzOffsetMin());
+    const rtc::DateTime d = rtc::fromEpoch(self->utcNow() + static_cast<int64_t>(self->tzOffsetMin()) * 60);
+    char name[64];
+    snprintf(name, sizeof(name), "attachment; filename=\"suntracker-%s-%04d-%02d-%02d.csv\"", self->ssid() + 11, d.year > 2000 ? d.year : 1970, d.month, d.day);
+    AsyncWebServerResponse* out = r->beginChunkedResponse("text/csv; charset=utf-8", [stream](uint8_t* buffer, size_t maxLen, size_t) -> size_t {
+        self->lock();
+        const size_t n = stream->next(reinterpret_cast<char*>(buffer), maxLen);
+        self->unlock();
+        return n;
+    });
+    out->addHeader("Content-Disposition", name);
+    out->addHeader("Cache-Control", "no-store");
+    r->onDisconnect([stream]() { delete stream; });
+    r->send(out);
+}
+
 void onRequest(AsyncWebServerRequest* r) {
     const String url = r->url();
+    if (url == "/api/log.csv") {
+        sendCsv(r);
+        return;
+    }
     if (url.startsWith("/api/")) {
         webapi::Request req;
         req.post = r->method() == HTTP_POST;
@@ -82,6 +121,12 @@ void PanelServer::unlock() {
 }
 
 uint8_t PanelServer::clients() const { return WiFi.softAPgetStationNum(); }
+
+void PanelServer::setLogCsv(drivers::LittleFsEventLog* log, std::function<int()> tz, std::function<int64_t()> utc) {
+    csvLog_ = log;
+    tz_ = tz;
+    utc_ = utc;
+}
 
 bool PanelServer::begin(const char* apPassword) {
     self = this;

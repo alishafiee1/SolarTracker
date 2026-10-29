@@ -98,6 +98,11 @@ std::string statusTextFa(control::StatusText t, uint32_t waitS) {
     return "";
 }
 
+bool WebApi::isLoggedIn(const Request& req) {
+    const std::string token = cookieValue(req.cookie, "st");
+    return d_.auth.check(token.c_str(), req.nowMs);
+}
+
 Response WebApi::handle(const Request& req) {
     nowMs_ = req.nowMs;
     const std::string& p = req.path;
