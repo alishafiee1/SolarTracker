@@ -12,6 +12,7 @@
 #include "angle_provider.h"
 #include "auth.h"
 #include "control_state_machine.h"
+#include "net_logic.h"
 #include "settings.h"
 #include "wind_monitor.h"
 
@@ -30,6 +31,13 @@ struct Response {
     int status = 200;
     std::string body;       // always JSON
     std::string setCookie;  // full Set-Cookie header value, empty if none
+};
+
+// Site Wi-Fi and notification state shown by the API (module 011). No secrets.
+struct NetInfo {
+    bool connected = false;
+    char ip[16] = "";
+    int lastNotify = -1;  // -1 never tried, 0 failed, 1 sent
 };
 
 struct Deps {
@@ -52,6 +60,10 @@ struct Deps {
     std::function<int64_t()> utcNow = [] { return int64_t{0}; };
     std::function<size_t(char*, size_t, size_t)> readLog;  // (buffer, size, newest N lines) -> bytes
     std::function<void()> onSettingsChanged = [] {};
+    // Module 011 (all optional): the stored network configuration lives in `blobs`.
+    std::function<void()> onNetworkChanged = [] {};
+    std::function<NetInfo()> netInfo = [] { return NetInfo(); };
+    std::function<bool()> sendTestMessage = [] { return false; };
 };
 
 class WebApi {
@@ -75,6 +87,10 @@ private:
     Response getLog(const Request& req);
     Response postPassword(const Request& req);
     Response cities();
+    Response getNetwork();
+    Response postNetwork(const Request& req);
+    Response postNotify(const Request& req);
+    Response testNotify();
     bool saveCfg(const settings::Settings& next, Response& err);
 
     Deps d_;

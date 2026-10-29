@@ -137,6 +137,10 @@ Response WebApi::handle(const Request& req) {
     if (!req.post && p == "/api/calibrate") return getCalibrate();
     if (req.post && p.rfind("/api/calibrate/", 0) == 0) return calibrate(req, p.substr(15));
     if (!req.post && p == "/api/log") return getLog(req);
+    if (!req.post && p == "/api/network") return getNetwork();
+    if (req.post && p == "/api/network") return postNetwork(req);
+    if (req.post && p == "/api/notify") return postNotify(req);
+    if (req.post && p == "/api/notify/test") return testNotify();
     if (req.post && p == "/api/password") return postPassword(req);
     return error(404, "not-found", "پیدا نشد");
 }
@@ -163,6 +167,11 @@ Response WebApi::status() {
     d["tzOffsetMin"] = d_.cfg.tzOffsetMin;
     d["fwVersion"] = d_.fwVersion;
     d["passwordIsDefault"] = d_.cfg.passwordIsDefault;
+    const NetInfo ni = d_.netInfo();
+    d["staConnected"] = ni.connected;
+    d["staIp"] = ni.ip;
+    if (ni.lastNotify < 0) d["lastNotifyOk"] = nullptr;
+    else d["lastNotifyOk"] = ni.lastNotify == 1;
     return json(200, d);
 }
 
@@ -360,6 +369,57 @@ Response WebApi::calibrate(const Request& req, const std::string& step) {
         return ok();
     }
     return error(404, "not-found", "پیدا نشد");
+}
+
+Response WebApi::getNetwork() {
+    net::NetConfig c;
+    net::load(d_.blobs, c);
+    const NetInfo ni = d_.netInfo();
+    JsonDocument d;
+    d["ssid"] = c.ssid;
+    d["passwordSet"] = c.password[0] != '\0';  // the secrets themselves are never sent back
+    d["tokenSet"] = c.botToken[0] != '\0';
+    d["chatId"] = c.chatId;
+    d["enabled"] = c.notifyEnabled;
+    d["connected"] = ni.connected;
+    d["ip"] = ni.ip;
+    return json(200, d);
+}
+
+Response WebApi::postNetwork(const Request& req) {
+    JsonDocument in;
+    if (deserializeJson(in, req.body)) return error(400, "bad-json", "درخواست نامعتبر است");
+    net::NetConfig c;
+    net::load(d_.blobs, c);
+    if (in["ssid"].is<const char*>()) snprintf(c.ssid, sizeof(c.ssid), "%s", in["ssid"].as<const char*>());
+    if (in["password"].is<const char*>()) snprintf(c.password, sizeof(c.password), "%s", in["password"].as<const char*>());
+    const char* bad = nullptr;
+    if (!net::validate(c, &bad) || !net::save(d_.blobs, c)) return error(400, "invalid", "مقدار نامعتبر؛ رمز وای‌فای دست‌کم ۸ نویسه است", bad);
+    d_.log.append(hal::EventType::SettingsChange, "site wifi changed");  // never the password
+    d_.onNetworkChanged();
+    return getNetwork();
+}
+
+Response WebApi::postNotify(const Request& req) {
+    JsonDocument in;
+    if (deserializeJson(in, req.body)) return error(400, "bad-json", "درخواست نامعتبر است");
+    net::NetConfig c;
+    net::load(d_.blobs, c);
+    if (in["token"].is<const char*>()) snprintf(c.botToken, sizeof(c.botToken), "%s", in["token"].as<const char*>());
+    if (in["chatId"].is<const char*>()) snprintf(c.chatId, sizeof(c.chatId), "%s", in["chatId"].as<const char*>());
+    if (in["enabled"].is<bool>()) c.notifyEnabled = in["enabled"].as<bool>();
+    const char* bad = nullptr;
+    if (!net::validate(c, &bad) || !net::save(d_.blobs, c)) return error(400, "invalid", "مقدار نامعتبر", bad);
+    d_.log.append(hal::EventType::SettingsChange, "notification settings changed");  // never the token
+    d_.onNetworkChanged();
+    return getNetwork();
+}
+
+Response WebApi::testNotify() {
+    net::NetConfig c;
+    if (!net::load(d_.blobs, c) || c.botToken[0] == '\0' || c.chatId[0] == '\0') return error(409, "not-configured", "ابتدا توکن ربات و شناسه گفتگو را ثبت کنید");
+    if (!d_.sendTestMessage()) return error(502, "send-failed", "ارسال پیام آزمایشی ناموفق بود؛ اتصال اینترنت و توکن را بررسی کنید");
+    return ok();
 }
 
 Response WebApi::getLog(const Request& req) {

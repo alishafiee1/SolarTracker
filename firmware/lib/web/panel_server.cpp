@@ -167,7 +167,7 @@ bool PanelServer::begin(const char* apPassword) {
     esp_read_mac(mac, ESP_MAC_WIFI_SOFTAP);
     snprintf(ssid_, sizeof(ssid_), "SunTracker-%02X%02X", mac[4], mac[5]);
 
-    WiFi.mode(WIFI_AP);
+    WiFi.mode(WIFI_AP_STA);  // the hotspot always stays up; the station part is used by the site Wi-Fi module
     if (!WiFi.softAP(ssid_, apPassword, 6, 0, 4)) return false;
     WiFi.softAPConfig(IPAddress(192, 168, 4, 1), IPAddress(192, 168, 4, 1), IPAddress(255, 255, 255, 0));
 

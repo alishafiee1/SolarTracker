@@ -183,6 +183,36 @@ async function loadLog() {
 }
 $("logReload").onclick = loadLog;
 
+// ---- site Wi-Fi and notifications (module 011) ----
+async function loadNetwork() {
+  const r = await api("GET", "/api/network");
+  if (!r.ok) return;
+  $("netSsid").value = r.data.ssid;
+  $("chatId").value = r.data.chatId;
+  $("notifyOn").checked = r.data.enabled;
+  $("netState").textContent = r.data.ssid ? (r.data.connected ? "متصل · " + r.data.ip : "متصل نیست") : "تنظیم نشده";
+  $("botToken").placeholder = r.data.tokenSet ? "ثبت شده" : "";
+  $("netPass").placeholder = r.data.passwordSet ? "ثبت شده" : "";
+}
+$("netSave").onclick = async () => {
+  const body = { ssid: $("netSsid").value };
+  if ($("netPass").value) body.password = $("netPass").value;
+  const r = await api("POST", "/api/network", body);
+  say($("netMsg"), r.ok ? "ثبت شد؛ در حال اتصال" : errText(r), r.ok ? "ok" : "err");
+  if (r.ok) { $("netPass").value = ""; loadNetwork(); }
+};
+$("notifySave").onclick = async () => {
+  const body = { chatId: $("chatId").value, enabled: $("notifyOn").checked };
+  if ($("botToken").value) body.token = $("botToken").value;
+  const r = await api("POST", "/api/notify", body);
+  say($("notifyMsg"), r.ok ? "ثبت شد" : errText(r), r.ok ? "ok" : "err");
+  if (r.ok) { $("botToken").value = ""; loadNetwork(); }
+};
+$("notifyTest").onclick = async () => {
+  const r = await api("POST", "/api/notify/test", {});
+  say($("notifyMsg"), r.ok ? "پیام آزمایشی در صف ارسال است؛ وضعیت را در بله ببینید" : errText(r), r.ok ? "ok" : "err");
+};
+
 // ---- firmware update ----
 $("fwSend").onclick = () => {
   const f = $("fwFile").files[0];
@@ -210,7 +240,7 @@ $("pwSave").onclick = async () => {
   else say($("pwMsg"), errText(r), "err");
 };
 
-async function loadAll() { await loadCities(); await loadSettings(); }
+async function loadAll() { await loadCities(); await loadSettings(); loadNetwork(); }
 
 (async () => {
   await poll();

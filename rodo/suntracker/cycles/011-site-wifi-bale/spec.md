@@ -52,5 +52,11 @@ Network page: SSID field, password field (write-only), connection state; notific
 
 ## Decisions
 
+- The Bale HTTPS call does not verify the server certificate (`setInsecure`): the image has no CA bundle for tapi.bale.ai. The token is encrypted in transit but the server identity is not checked. Pin the certificate or embed a CA before shipping if the client cares.
+- The Wi-Fi password, the bot token and the chat id live in their own NVS blob (`netcfg`, CRC-protected), never in `Settings`, and no API or log returns them: GET shows only «set / not set». Saving only the SSID keeps the stored password and token.
+- The test message is queued, not sent inside the HTTP request, so a request never waits up to 10 s for the internet; its result shows in `lastNotifyOk`. Test messages use unique keys so they are never merged away.
+- A fault is announced when it appears (new fault code), a wind stow when it starts; both go through the queue (merged within 10 min, one message per 10 s, 20 kept offline).
+- The station connection is opened with a backoff from 5 s to 5 min and the hotspot is never touched; NTP runs at the first connection and then daily, and only moves the clock when it differs by more than 2 s.
+- Flash use is now 72 % of one OTA slot (the TLS client is big). Keep an eye on it before adding more.
 - Client wants all optional modules (answer of 2026-10-29). Because the user confirmed the full scope.
 - Keep the AP always on in AP+STA mode. Because the proposal promises the hotspot stays available when site Wi-Fi fails.

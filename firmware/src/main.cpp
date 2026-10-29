@@ -16,6 +16,7 @@
 #include "ota_update.h"
 #include "panel_server.h"
 #include "relays_gpio.h"
+#include "site_net.h"
 #include "sct013_current.h"
 #include "settings.h"
 #include "supply_watch.h"
@@ -67,6 +68,9 @@ motion::MotionController* motionCtl = nullptr;  // created in setup(), after the
 control::ControlStateMachine* controller = nullptr;
 drivers::Anemometer anemometer;
 drivers::OtaUpdate otaUpdate;
+drivers::SiteNet siteNet;
+net::NetConfig netCfg;
+control::FaultCode lastNotifiedFault = control::FaultCode::None;
 bool panelStarted = false;
 drivers::Sct013Current currentSensor;
 wind::WindMonitor windMonitor;
@@ -125,12 +129,29 @@ void setup() {
     anemometer.begin();
     if (cfg.currentPresent) currentSensor.begin(cfg.currentFactor);  // module 009
 
+    net::load(nvs, netCfg);  // site Wi-Fi and Bale settings (module 011), empty until configured
+    siteNet.apply(netCfg);
+
     webapi::Deps deps(*controller, cfg, settingsStore, nvs, angleProvider, rtcClock, eventLog, windMonitor, auth);
     deps.fwVersion = FW_VERSION;
     deps.defaultPassword = DEFAULT_PANEL_PASSWORD;
     deps.clockValid = [] { return cachedClockValid; };
     deps.utcNow = utcNow;
     deps.readLog = [](char* buf, size_t len, size_t n) { return eventLog.readLatest(buf, len, n); };
+    deps.onNetworkChanged = [] {
+        net::load(nvs, netCfg);
+        siteNet.apply(netCfg);
+    };
+    deps.netInfo = [] {
+        webapi::NetInfo n;
+        n.connected = siteNet.connected();
+        snprintf(n.ip, sizeof(n.ip), "%s", siteNet.ip());
+        n.lastNotify = siteNet.lastNotify();
+        return n;
+    };
+    deps.sendTestMessage = [] {  // queued, not sent here: a request must never wait for the internet
+        return siteNet.notify("test:" + std::to_string(millis()), "SunTracker: پیام آزمایشی", millis());  // a unique key: tests are never merged
+    };
     deps.onSettingsChanged = [] {
         motionCtl->setTiming(timingFrom(cfg));
         if (cfg.currentPresent) currentSensor.begin(cfg.currentFactor);
@@ -181,6 +202,7 @@ void loop() {
             char detail[48];
             snprintf(detail, sizeof(detail), "wind stow %s, peak %.0f km/h", wr.stowStarted ? "start" : "end", static_cast<double>(wr.peakKmh));
             eventLog.append(hal::EventType::StateChange, detail);
+            if (wr.stowStarted) siteNet.notify("wind", net::formatNotification(panel->ssid(), "باد شدید — حالت ایمن", utcNow(), cfg.tzOffsetMin), now);
         }
         in.windStow = windMonitor.stow();
         in.currentA = cfg.currentPresent ? currentSensor.rmsAmps() : 0.0f;  // optional module 009
@@ -191,6 +213,13 @@ void loop() {
 #endif
         controller->tick(now, in);  // also ticks the MotionController
         controlLoop.tick(now);
+        const control::Status st = controller->status(now);  // a new fault goes to the phone (module 011)
+        if (st.fault != lastNotifiedFault) {
+            lastNotifiedFault = st.fault;
+            if (st.fault != control::FaultCode::None) {
+                siteNet.notify(std::string("fault:") + control::faultName(st.fault), net::formatNotification(panel->ssid(), webapi::statusTextFa(st.text, 0).c_str(), utcNow(), cfg.tzOffsetMin), now);
+            }
+        }
     }
     if (now - lastSupplyMs >= 1000) {  // R8
         lastSupplyMs = now;
@@ -202,6 +231,7 @@ void loop() {
         }
     }
     eventLog.service();
+    siteNet.service(now, rtcClock, cachedClockValid, &eventLog);
     otaUpdate.confirmIfHealthy(now, panelStarted && controlLoop.ticks() > 100, &eventLog);
     if (otaUpdate.restartDue(now)) {
         eventLog.flush();

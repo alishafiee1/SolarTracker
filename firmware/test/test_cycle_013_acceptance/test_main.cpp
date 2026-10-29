@@ -208,7 +208,7 @@ static void scenario_09_fault_reset() {
 }
 
 // 10 --------------------------------------------------------------------------- offline update
-static void scenario_10_offline_update() { TEST_IGNORE_MESSAGE("needs module 010 (offline update)"); }
+static void scenario_10_offline_update() { TEST_IGNORE_MESSAGE("the HTTP upload and the rollback are checked on the board and from a phone (module 010, docs/acceptance-checklist.md)"); }
 
 // 11 --------------------------------------------------------------------------- a whole sunny day
 static void scenario_11_tracking_accuracy() {

@@ -80,6 +80,9 @@ struct Rig {
     webapi::Auth auth;
     webapi::WebApi api;
     int changedCalls = 0;
+    int networkChanged = 0;
+    int testCalls = 0;
+    bool testResult = true;
     std::string logText;
     uint32_t nowMs = 100000;
 
@@ -89,6 +92,18 @@ struct Rig {
         d.defaultPassword = "default-pass-1";
         d.utcNow = [&r] { return r.clock.utc(); };
         d.onSettingsChanged = [&r] { ++r.changedCalls; };
+        d.onNetworkChanged = [&r] { ++r.networkChanged; };
+        d.sendTestMessage = [&r] {
+            ++r.testCalls;
+            return r.testResult;
+        };
+        d.netInfo = [] {
+            webapi::NetInfo n;
+            n.connected = true;
+            strcpy(n.ip, "192.168.1.50");
+            n.lastNotify = 1;
+            return n;
+        };
         d.readLog = [&r](char* buf, size_t len, size_t n) {
             (void)n;
             snprintf(buf, len, "%s", r.logText.c_str());
@@ -361,6 +376,66 @@ static void log_lines_come_back_as_json() {
     TEST_ASSERT_EQUAL_STRING("stall; retry 1", a[2]["detail"] | "?");
 }
 
+// Module 011: site Wi-Fi and notification settings. The password and the bot token are write-only.
+static void network_and_notification_settings_never_return_their_secrets() {
+    Rig r;
+    const std::string c = r.login();
+    TEST_ASSERT_EQUAL_INT(401, r.call(true, "/api/network", "{\"ssid\":\"x\"}").status);
+    const Response res = r.call(true, "/api/network", "{\"ssid\":\"HomeWifi\",\"password\":\"router-pass-1\"}", c);
+    TEST_ASSERT_EQUAL_INT(200, res.status);
+    TEST_ASSERT_TRUE(res.body.find("router-pass-1") == std::string::npos);
+    TEST_ASSERT_EQUAL_INT(1, r.networkChanged);
+    const Response n = r.call(true, "/api/notify", "{\"token\":\"123456:ABC-DEF\",\"chatId\":\"987\",\"enabled\":true}", c);
+    TEST_ASSERT_EQUAL_INT(200, n.status);
+    TEST_ASSERT_TRUE(n.body.find("123456:ABC-DEF") == std::string::npos);
+    JsonDocument d = parse(r.call(false, "/api/network", "", c));
+    TEST_ASSERT_EQUAL_STRING("HomeWifi", d["ssid"] | "?");
+    TEST_ASSERT_TRUE(d["passwordSet"].as<bool>());
+    TEST_ASSERT_TRUE(d["tokenSet"].as<bool>());
+    TEST_ASSERT_TRUE(d["enabled"].as<bool>());
+    TEST_ASSERT_EQUAL_STRING("987", d["chatId"] | "?");
+    // Nothing secret in the event log either.
+    for (const auto& e : r.log.events()) {
+        TEST_ASSERT_TRUE(e.second.find("router-pass-1") == std::string::npos);
+        TEST_ASSERT_TRUE(e.second.find("123456:ABC-DEF") == std::string::npos);
+    }
+    // A later change of only the SSID keeps the stored password and token.
+    r.call(true, "/api/network", "{\"ssid\":\"OtherWifi\"}", c);
+    net::NetConfig stored;
+    TEST_ASSERT_TRUE(net::load(r.blobs, stored));
+    TEST_ASSERT_EQUAL_STRING("OtherWifi", stored.ssid);
+    TEST_ASSERT_EQUAL_STRING("router-pass-1", stored.password);
+    TEST_ASSERT_EQUAL_STRING("123456:ABC-DEF", stored.botToken);
+}
+
+static void invalid_network_values_are_refused() {
+    Rig r;
+    const std::string c = r.login();
+    TEST_ASSERT_EQUAL_INT(400, r.call(true, "/api/network", "{\"ssid\":\"Home\",\"password\":\"short\"}", c).status);
+    TEST_ASSERT_EQUAL_INT(400, r.call(true, "/api/notify", "{\"token\":\"bad/token\"}", c).status);
+    TEST_ASSERT_EQUAL_INT(0, r.networkChanged);
+}
+
+static void the_test_message_needs_a_configuration_and_reports_failure() {
+    Rig r;
+    const std::string c = r.login();
+    TEST_ASSERT_EQUAL_INT(409, r.call(true, "/api/notify/test", "{}", c).status);
+    TEST_ASSERT_EQUAL_INT(0, r.testCalls);
+    r.call(true, "/api/notify", "{\"token\":\"123456:ABC\",\"chatId\":\"987\",\"enabled\":true}", c);
+    TEST_ASSERT_EQUAL_INT(200, r.call(true, "/api/notify/test", "{}", c).status);
+    TEST_ASSERT_EQUAL_INT(1, r.testCalls);
+    r.testResult = false;
+    TEST_ASSERT_EQUAL_INT(502, r.call(true, "/api/notify/test", "{}", c).status);
+}
+
+static void status_shows_the_site_connection_without_secrets() {
+    Rig r;
+    JsonDocument d = parse(r.call(false, "/api/status"));
+    TEST_ASSERT_TRUE(d["staConnected"].as<bool>());
+    TEST_ASSERT_EQUAL_STRING("192.168.1.50", d["staIp"] | "?");
+    TEST_ASSERT_TRUE(d["lastNotifyOk"].as<bool>());
+}
+
 static void unknown_paths_are_404() {
     Rig r;
     const std::string c = r.login();
@@ -393,6 +468,10 @@ int main() {
     RUN_TEST(manual_commands_and_their_refusals);
     RUN_TEST(calibration_wizard);
     RUN_TEST(log_lines_come_back_as_json);
+    RUN_TEST(network_and_notification_settings_never_return_their_secrets);
+    RUN_TEST(invalid_network_values_are_refused);
+    RUN_TEST(the_test_message_needs_a_configuration_and_reports_failure);
+    RUN_TEST(status_shows_the_site_connection_without_secrets);
     RUN_TEST(unknown_paths_are_404);
     RUN_TEST(persian_status_texts_exist_for_every_id);
     return UNITY_END();

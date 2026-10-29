@@ -30,6 +30,7 @@
   <button data-tab="log">لاگ</button>
   <button data-tab="account">رمز</button>
   <button data-tab="update">به‌روزرسانی</button>
+  <button data-tab="network">شبکه</button>
 </nav>
 
 <main>
@@ -124,6 +125,28 @@
     <button id="logReload">بازخوانی</button>
     <a href="/api/log.csv" download><button type="button" id="logCsv">دانلود CSV</button></a>
     <table><thead><tr><th>زمان</th><th>نوع</th><th>جزئیات</th></tr></thead><tbody id="logRows"></tbody></table>
+  </div>
+</section>
+
+<section id="network" class="hidden">
+  <div class="card">
+    <h2>وای‌فای محل نصب</h2>
+    <p class="small">اختیاری. هات‌اسپات دستگاه همیشه روشن می‌ماند. اتصال به اینترنت برای همگام‌سازی ساعت و ارسال هشدار لازم است. پنل روی اینترنت باز نمی‌شود.</p>
+    <p>وضعیت: <b id="netState">—</b></p>
+    <label>نام شبکه <input id="netSsid" dir="ltr"></label>
+    <label>رمز شبکه (نمایش داده نمی‌شود؛ خالی = بدون تغییر) <input id="netPass" type="password" autocomplete="off"></label>
+    <button id="netSave" class="primary">ثبت وای‌فای</button>
+    <p id="netMsg" class="msg"></p>
+  </div>
+  <div class="card">
+    <h2>هشدار در بله</h2>
+    <p class="small">ربات خود را در بله بسازید و توکن آن و شناسه گفتگو را اینجا بگذارید. توکن نمایش داده نمی‌شود.</p>
+    <label>توکن ربات <input id="botToken" type="password" dir="ltr" autocomplete="off"></label>
+    <label>شناسه گفتگو (chat id) <input id="chatId" dir="ltr"></label>
+    <label><input id="notifyOn" type="checkbox" style="width:auto;min-height:0"> ارسال هشدار فعال باشد</label>
+    <button id="notifySave" class="primary">ثبت</button>
+    <button id="notifyTest">ارسال پیام آزمایشی</button>
+    <p id="notifyMsg" class="msg"></p>
   </div>
 </section>
 
