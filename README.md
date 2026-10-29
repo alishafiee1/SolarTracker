@@ -38,6 +38,8 @@ Firmware layout: `src/main.cpp` (wiring only), `lib/core` (pure logic), `lib/hal
 | `hardware/` | *(planned)* Schematic, PCB (KiCad) and BOM |
 | `enclosure/` | *(planned)* Enclosure models (STEP / STL) |
 
+Acceptance on delivery: [`docs/acceptance-checklist.md`](docs/acceptance-checklist.md) (the same 13 scenarios also run on the simulator).
+
 ## Web panel
 
 The device opens its own Wi-Fi hotspot `SunTracker-XXXX` (WPA2, same default password for every device, changeable in the panel). Connect a phone and open `http://192.168.4.1/`. The panel (Persian, right to left) needs no internet. Default passwords come from `firmware/src/secrets.h`, which is not in git: copy `firmware/src/secrets.example.h` and set the values given to the client (without it, public development placeholders are used).

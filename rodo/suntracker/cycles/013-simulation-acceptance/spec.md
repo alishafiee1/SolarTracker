@@ -51,4 +51,8 @@ None.
 
 ## Decisions
 
+- The simulator steps in 100 ms (the control period), not 10 ms. Because the firmware only reacts every 100 ms; smaller steps would only add cost. A simulated day runs in about 1 s.
+- Calibration in the simulator is done with no sensor noise, the 0.3 degree noise models wind and vibration during operation. Because the calibration itself requires a still panel (it rejects samples that vary by more than 0.3 degrees).
+- Scenarios 6, 7 and 10 are reported as ignored with a reason until modules 009 and 010 exist. Because their expected behaviour (current-based fault, end of stroke, update) cannot happen without those modules.
+- Scenario 11 measures the error only after the panel has first come within 5 degrees of the sun target after sunrise (it has to travel from the night position), and only while the sun is up. The time to get there is printed.
 - Scenario tests run against the real `ControlLoop`, not a copy. Because the point is to test the code that ships.
