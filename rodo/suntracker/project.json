@@ -1,0 +1,11 @@
+{
+  "schemaVersion": 2,
+  "projectSlug": "suntracker",
+  "name": "SunTracker",
+  "serverUrl": null,
+  "boardId": null,
+  "repoFingerprint": null,
+  "language": { "simple": "fa", "technical": "en" },
+  "testCommand": null,
+  "stepsDirs": []
+}

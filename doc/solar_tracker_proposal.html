@@ -1,0 +1,1638 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>پروپوزال تراکر خورشیدی تک‌محوره</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@300;400;500;600;700;800;900&family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+  @page {
+    size: 794px 1123px;
+    margin: 0;
+  }
+  :root {
+    --c-bg: #FAF7F2;
+    --c-bg-section: #F2EEE5;
+    --c-bg-card: #FFFFFF;
+    --c-text: #1E3A5F;
+    --c-text-muted: #5A6F85;
+    --c-accent: #F59E0B;
+    --c-accent-d: #B5740A;
+    --c-accent-l: #FDE4AC;
+    --c-accent-xl: #FEF5DC;
+    --c-border: #E5D9C2;
+    --c-border-l: #EFE6D2;
+    --c-success: #2D6B4A;
+    --c-success-l: #D9E8DD;
+    --c-error: #B85A48;
+    --c-error-l: #F2D8D2;
+    --c-info: #2A5298;
+    --c-info-l: #DCE6F5;
+  }
+  * {
+    box-sizing: border-box;
+  }
+  html, body {
+    margin: 0;
+    padding: 0;
+    width: 794px;
+    background: var(--c-bg);
+    color: var(--c-text);
+    font-family: 'Vazirmatn', 'Inter', sans-serif;
+    direction: rtl;
+    line-height: 1.7;
+    font-size: 14px;
+  }
+  @media screen {
+    html {
+      height: auto;
+      display: flex;
+      justify-content: center;
+      background: #444;
+    }
+    body {
+      transform-origin: top center;
+      margin: 20px auto;
+      box-shadow: 0 0 30px rgba(0,0,0,0.3);
+    }
+  }
+
+  /* ===== Cover Page ===== */
+  .cover {
+    width: 794px;
+    height: 1123px;
+    position: relative;
+    background: var(--c-bg);
+    overflow: hidden;
+    break-after: page;
+    page-break-after: always;
+  }
+  .cover-bg {
+    position: absolute;
+    inset: 0;
+    overflow: hidden;
+    z-index: 1;
+  }
+  .cover-grid {
+    position: absolute;
+    inset: 0;
+    background-image:
+      linear-gradient(to right, rgba(245, 158, 11, 0.04) 1px, transparent 1px),
+      linear-gradient(to bottom, rgba(245, 158, 11, 0.04) 1px, transparent 1px);
+    background-size: 50px 50px;
+  }
+  .cover-watermark {
+    position: absolute;
+    bottom: 60px;
+    left: 60px;
+    font-family: 'Inter', sans-serif;
+    font-size: 140px;
+    font-weight: 900;
+    color: rgba(245, 158, 11, 0.08);
+    letter-spacing: -6px;
+    line-height: 0.9;
+  }
+  .cover-anchor-line {
+    position: absolute;
+    right: 60px;
+    top: 130px;
+    bottom: 280px;
+    width: 6px;
+    background: var(--c-accent);
+    z-index: 2;
+  }
+  .cover-content {
+    position: absolute;
+    inset: 0;
+    z-index: 3;
+    padding: 100px 130px 100px 60px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+  }
+  .cover-kicker {
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--c-accent-d);
+    letter-spacing: 4px;
+    margin-bottom: 24px;
+    opacity: 0.8;
+  }
+  .cover-title {
+    font-size: 64px;
+    font-weight: 900;
+    color: var(--c-text);
+    line-height: 1.15;
+    margin: 0 0 20px 0;
+    letter-spacing: -1px;
+  }
+  .cover-subtitle {
+    font-size: 22px;
+    font-weight: 500;
+    color: var(--c-text-muted);
+    line-height: 1.5;
+    margin: 0 0 40px 0;
+    max-width: 540px;
+  }
+  .cover-divider {
+    width: 80px;
+    height: 3px;
+    background: var(--c-accent);
+    margin-bottom: 40px;
+  }
+  .cover-summary {
+    font-size: 15px;
+    font-weight: 400;
+    color: var(--c-text);
+    line-height: 1.8;
+    max-width: 540px;
+    margin-bottom: 60px;
+    opacity: 0.85;
+  }
+  .cover-meta {
+    display: flex;
+    gap: 40px;
+    margin-top: auto;
+  }
+  .cover-meta-item {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+  .cover-meta-label {
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--c-accent-d);
+    letter-spacing: 2px;
+    opacity: 0.8;
+  }
+  .cover-meta-value {
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--c-text);
+  }
+  .cover-sun-icon {
+    position: absolute;
+    top: 80px;
+    left: 80px;
+    width: 100px;
+    height: 100px;
+    z-index: 2;
+  }
+
+  /* ===== Main Content ===== */
+  .main-content {
+    padding: 50px 60px 50px 60px;
+  }
+
+  /* Section headers */
+  .section-header {
+    break-after: avoid;
+    page-break-after: avoid;
+    break-inside: avoid;
+    margin-bottom: 18px;
+    margin-top: 0;
+  }
+  .section-header.spaced {
+    margin-top: 24px;
+  }
+  .section-tag {
+    display: inline-block;
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--c-accent-d);
+    background: var(--c-accent-xl);
+    padding: 4px 12px;
+    border-radius: 4px;
+    letter-spacing: 2px;
+    margin-bottom: 10px;
+  }
+  .section-title {
+    font-size: 26px;
+    font-weight: 800;
+    color: var(--c-text);
+    margin: 0 0 40px 0;
+    line-height: 1.3;
+  }
+  .section-subtitle {
+    font-size: 14px;
+    font-weight: 400;
+    color: var(--c-text-muted);
+    margin: 0 0 14px 0;
+    line-height: 1.5;
+  }
+  .section-divider {
+    width: 50px;
+    height: 3px;
+    background: var(--c-accent);
+    margin-bottom: 40px;
+  }
+
+  /* Body text */
+  .body-text {
+    font-size: 13.5px;
+    line-height: 1.85;
+    color: var(--c-text);
+    margin: 0 0 12px 0;
+    text-align: justify;
+  }
+  .body-text strong {
+    color: var(--c-text);
+    font-weight: 700;
+  }
+  .body-text .accent {
+    color: var(--c-accent-d);
+    font-weight: 600;
+  }
+
+  /* Cards */
+  .card {
+    break-inside: avoid;
+    page-break-inside: avoid;
+    background: var(--c-bg-card);
+    border: 1px solid var(--c-border);
+    border-radius: 6px;
+    padding: 16px 18px;
+    margin-bottom: 12px;
+    border-right: 4px solid var(--c-accent);
+  }
+  .card-title {
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--c-text);
+    margin: 0 0 6px 0;
+  }
+  .card-text {
+    font-size: 12.5px;
+    line-height: 1.7;
+    color: var(--c-text-muted);
+    margin: 0;
+  }
+
+  /* Two-column grid */
+  .grid-2 {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    margin-bottom: 12px;
+  }
+
+  /* Tables */
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 12px 0;
+    background: var(--c-bg-card);
+    border-radius: 6px;
+    overflow: hidden;
+    border: 1px solid var(--c-border);
+    break-inside: avoid;
+    page-break-inside: avoid;
+    font-size: 12px;
+  }
+  thead {
+    display: table-header-group;
+  }
+  th {
+    background: var(--c-text);
+    color: white;
+    font-weight: 700;
+    text-align: right;
+    padding: 10px 12px;
+    font-size: 12px;
+    border: 1px solid var(--c-text);
+  }
+  td {
+    padding: 8px 12px;
+    border: 1px solid var(--c-border);
+    vertical-align: middle;
+    text-align: right;
+    line-height: 1.6;
+  }
+  tbody tr:nth-child(odd) {
+    background: var(--c-bg-section);
+  }
+  tbody tr:nth-child(even) {
+    background: var(--c-bg-card);
+  }
+  tr {
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+  .table-total td {
+    background: var(--c-accent-xl);
+    font-weight: 700;
+    color: var(--c-text);
+    border-top: 2px solid var(--c-accent);
+  }
+  .table-caption {
+    font-size: 12px;
+    color: var(--c-text-muted);
+    font-style: italic;
+    margin: 8px 0 0 0;
+    text-align: right;
+  }
+
+  /* Diagrams */
+  .arch-diagram {
+    background: var(--c-bg-card);
+    border: 1px solid var(--c-border);
+    border-radius: 8px;
+    padding: 24px 18px;
+    margin: 16px 0;
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+  .arch-title {
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--c-text);
+    text-align: center;
+    margin-bottom: 16px;
+  }
+  .arch-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 12px;
+    margin-bottom: 12px;
+  }
+  .arch-block {
+    background: var(--c-bg-section);
+    border: 2px solid var(--c-accent);
+    border-radius: 6px;
+    padding: 10px 8px;
+    text-align: center;
+  }
+  .arch-block.esp {
+    background: var(--c-text);
+    color: white;
+    border-color: var(--c-text);
+  }
+  .arch-block-icon {
+    font-size: 22px;
+    margin-bottom: 4px;
+    line-height: 1;
+  }
+  .arch-block-name {
+    font-size: 11.5px;
+    font-weight: 700;
+    line-height: 1.3;
+  }
+  .arch-block-desc {
+    font-size: 10.5px;
+    opacity: 0.8;
+    margin-top: 2px;
+    line-height: 1.4;
+  }
+
+  /* Flowchart */
+  .flowchart {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    align-items: stretch;
+    margin: 16px 0;
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+  .flow-step {
+    background: var(--c-bg-card);
+    border: 1px solid var(--c-border);
+    border-right: 4px solid var(--c-accent);
+    border-radius: 4px;
+    padding: 10px 14px;
+    font-size: 12px;
+    line-height: 1.6;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .flow-num {
+    background: var(--c-accent);
+    color: white;
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 11px;
+    font-weight: 700;
+    flex-shrink: 0;
+    font-family: 'Inter', sans-serif;
+  }
+  .flow-arrow {
+    text-align: center;
+    color: var(--c-accent);
+    font-size: 16px;
+    line-height: 1;
+  }
+  .flow-step.error {
+    border-right-color: var(--c-error);
+  }
+  .flow-step.error .flow-num {
+    background: var(--c-error);
+  }
+  .flow-step.success {
+    border-right-color: var(--c-success);
+  }
+  .flow-step.success .flow-num {
+    background: var(--c-success);
+  }
+  .flow-step.decision {
+    background: var(--c-accent-xl);
+    border-right-color: var(--c-accent-d);
+  }
+
+  /* Web panel mockup */
+  .web-mockup {
+    background: var(--c-bg-card);
+    border: 2px solid var(--c-text);
+    border-radius: 8px;
+    overflow: hidden;
+    margin: 16px 0;
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+  .web-header {
+    background: var(--c-text);
+    color: white;
+    padding: 10px 14px;
+    font-size: 12px;
+    font-weight: 700;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .web-status {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 10px;
+    background: rgba(255,255,255,0.15);
+    padding: 3px 8px;
+    border-radius: 10px;
+  }
+  .web-status-dot {
+    width: 8px;
+    height: 8px;
+    background: #4ADE80;
+    border-radius: 50%;
+  }
+  .web-body {
+    padding: 12px;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+  }
+  .web-gauge {
+    background: var(--c-bg-section);
+    border-radius: 6px;
+    padding: 10px 12px;
+    text-align: center;
+    border: 1px solid var(--c-border);
+  }
+  .web-gauge-label {
+    font-size: 10px;
+    color: var(--c-text-muted);
+    margin-bottom: 4px;
+  }
+  .web-gauge-value {
+    font-size: 22px;
+    font-weight: 800;
+    color: var(--c-text);
+    font-family: 'Inter', sans-serif;
+  }
+  .web-gauge-unit {
+    font-size: 11px;
+    color: var(--c-accent-d);
+    margin-top: 2px;
+  }
+  .web-controls {
+    grid-column: 1 / -1;
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+  .web-btn {
+    background: var(--c-accent);
+    color: white;
+    padding: 6px 12px;
+    border-radius: 4px;
+    font-size: 11px;
+    font-weight: 600;
+    flex: 1 1 auto;
+    min-width: 80px;
+    text-align: center;
+  }
+  .web-btn.secondary {
+    background: var(--c-bg-card);
+    color: var(--c-text);
+    border: 1px solid var(--c-border);
+  }
+  .web-btn.danger {
+    background: var(--c-error);
+  }
+
+  /* Timeline (Gantt-like) */
+  .timeline {
+    margin: 16px 0;
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+  .timeline-row {
+    display: grid;
+    grid-template-columns: 130px 1fr;
+    gap: 10px;
+    align-items: center;
+    padding: 6px 0;
+    border-bottom: 1px solid var(--c-border-l);
+    font-size: 11.5px;
+  }
+  .timeline-label {
+    font-weight: 600;
+    color: var(--c-text);
+  }
+  .timeline-bar-wrap {
+    background: var(--c-bg-section);
+    border-radius: 4px;
+    height: 18px;
+    position: relative;
+    border: 1px solid var(--c-border-l);
+  }
+  .timeline-bar {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    background: var(--c-accent);
+    border-radius: 4px;
+    right: 0;
+  }
+  .timeline-bar.alt {
+    background: var(--c-text);
+  }
+  .timeline-bar.alt2 {
+    background: var(--c-success);
+  }
+  .timeline-bar.alt3 {
+    background: var(--c-info);
+  }
+  .timeline-bar.alt4 {
+    background: var(--c-accent-d);
+  }
+
+  .price-chart {
+    margin: 8px 0 16px 0;
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+  .price-row {
+    display: grid;
+    grid-template-columns: 168px 1fr 108px;
+    gap: 8px;
+    align-items: center;
+    padding: 5px 0;
+    font-size: 11.5px;
+  }
+  .price-label {
+    font-weight: 600;
+    color: var(--c-text);
+  }
+  .price-track {
+    background: var(--c-bg-section);
+    border-radius: 4px;
+    height: 16px;
+    border: 1px solid var(--c-border-l);
+    overflow: hidden;
+  }
+  .price-fill {
+    height: 100%;
+    background: var(--c-accent);
+    border-radius: 3px;
+  }
+  .price-fill.b { background: var(--c-text); }
+  .price-fill.c { background: var(--c-info); }
+  .price-fill.d { background: var(--c-success); }
+  .price-fill.e { background: var(--c-accent-d); }
+  .price-fill.f { background: var(--c-error); }
+  table.pin-table th:first-child,
+  table.pin-table td:first-child {
+    white-space: nowrap;
+    width: 1%;
+  }
+  .price-num {
+    font-family: 'Inter', sans-serif;
+    font-weight: 700;
+    font-size: 11px;
+    text-align: left;
+    direction: ltr;
+  }
+
+  /* Feature cards */
+  .feature-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    margin: 12px 0;
+  }
+  .feature-card {
+    background: var(--c-bg-card);
+    border: 1px solid var(--c-border);
+    border-right: 4px solid var(--c-accent);
+    border-radius: 6px;
+    padding: 12px 14px;
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+  .feature-card-title {
+    font-size: 12.5px;
+    font-weight: 700;
+    color: var(--c-text);
+    margin: 0 0 6px 0;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .feature-card-icon {
+    color: var(--c-accent);
+    font-size: 16px;
+  }
+  .feature-card-text {
+    font-size: 11.5px;
+    line-height: 1.65;
+    color: var(--c-text-muted);
+    margin: 0;
+  }
+
+  /* Stat row */
+  .stat-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 12px;
+    margin: 14px 0;
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+  .stat-card {
+    background: var(--c-bg-card);
+    border: 1px solid var(--c-border);
+    border-radius: 6px;
+    padding: 14px 16px;
+    text-align: center;
+  }
+  .stat-num {
+    font-size: 30px;
+    font-weight: 900;
+    color: var(--c-accent-d);
+    font-family: 'Inter', sans-serif;
+    line-height: 1.1;
+  }
+  .stat-label {
+    font-size: 11px;
+    color: var(--c-text-muted);
+    margin-top: 4px;
+    font-weight: 500;
+  }
+
+  /* Notes / callouts */
+  .note {
+    background: var(--c-accent-xl);
+    border-right: 4px solid var(--c-accent);
+    border-radius: 4px;
+    padding: 10px 14px;
+    margin: 10px 0;
+    font-size: 12px;
+    line-height: 1.7;
+    color: var(--c-text);
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+  .note-title {
+    font-weight: 700;
+    color: var(--c-accent-d);
+    margin-bottom: 4px;
+    font-size: 12px;
+  }
+
+  /* Ending */
+  .ending {
+    width: 794px;
+    height: 1123px;
+    background: var(--c-text);
+    color: white;
+    position: relative;
+    overflow: hidden;
+    break-before: page;
+    page-break-before: always;
+    padding: 100px 80px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+  }
+  .ending-watermark {
+    position: absolute;
+    top: 50px;
+    left: 50px;
+    font-size: 280px;
+    font-weight: 900;
+    color: rgba(245, 158, 11, 0.06);
+    font-family: 'Inter', sans-serif;
+    line-height: 0.9;
+    letter-spacing: -10px;
+  }
+  .ending-content {
+    position: relative;
+    z-index: 2;
+  }
+  .ending-tag {
+    font-size: 14px;
+    color: var(--c-accent);
+    letter-spacing: 4px;
+    margin-bottom: 20px;
+  }
+  .ending-title {
+    font-size: 48px;
+    font-weight: 900;
+    color: white;
+    line-height: 1.2;
+    margin: 0 0 30px 0;
+    max-width: 500px;
+  }
+  .ending-text {
+    font-size: 15px;
+    color: rgba(255,255,255,0.8);
+    line-height: 1.8;
+    max-width: 500px;
+    margin-bottom: 40px;
+  }
+  .ending-divider {
+    width: 80px;
+    height: 3px;
+    background: var(--c-accent);
+    margin-bottom: 40px;
+  }
+  .ending-meta {
+    display: flex;
+    gap: 30px;
+  }
+  .ending-meta-item {
+    font-size: 12px;
+    color: rgba(255,255,255,0.6);
+  }
+  .ending-meta-item strong {
+    display: block;
+    color: white;
+    font-size: 14px;
+    margin-top: 4px;
+  }
+</style>
+</head>
+<body>
+
+<!-- ============================== COVER PAGE ============================== -->
+<div class="cover">
+  <div class="cover-bg">
+    <div class="cover-grid"></div>
+    <div class="cover-watermark">SOLAR</div>
+  </div>
+
+  <div class="cover-anchor-line"></div>
+
+  <svg class="cover-sun-icon" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+    <circle cx="50" cy="50" r="20" fill="#F59E0B"/>
+    <g stroke="#F59E0B" stroke-width="3" stroke-linecap="round">
+      <line x1="50" y1="10" x2="50" y2="22"/>
+      <line x1="50" y1="78" x2="50" y2="90"/>
+      <line x1="10" y1="50" x2="22" y2="50"/>
+      <line x1="78" y1="50" x2="90" y2="50"/>
+      <line x1="22" y1="22" x2="30" y2="30"/>
+      <line x1="70" y1="70" x2="78" y2="78"/>
+      <line x1="78" y1="22" x2="70" y2="30"/>
+      <line x1="22" y1="78" x2="30" y2="70"/>
+    </g>
+  </svg>
+
+  <div class="cover-content">
+    <div class="cover-kicker">پروپوزال فنی — نسخه ۱.۳</div>
+    <h1 class="cover-title">تراکر خورشیدی<br>تک‌محوره</h1>
+    <p class="cover-subtitle">سیستم کنترل هوشمند زاویه پنل خورشیدی با ESP32، سنسور RPI1031 و باد سنج Hall</p>
+    <div class="cover-divider"></div>
+    <p class="cover-summary">
+      این سند حاوی طرح جامع اجرای یک سیستم تراکر خورشیدی تک‌محوره است که با استفاده از میکروکنترلر ESP32، زاویه پنل را بر اساس موقعیت لحظه‌ای خورشید تنظیم می‌کند. سیستم شامل تشخیص خودکار خطای بازو، حفاظت در برابر باد شدید، و کنترل کامل از طریق پنل وب روی هات‌اسپات میکروکنترلر است. هدف افزایش بازده تولید برق خورشیدی به میزان ۲۵ تا ۳۵ درصد نسبت به پنل‌های ثابت است.
+    </p>
+    <div class="cover-meta">
+      <div class="cover-meta-item">
+        <span class="cover-meta-label">تاریخ</span>
+        <span class="cover-meta-value">آبان ۱۴۰۵</span>
+      </div>
+      <div class="cover-meta-item">
+        <span class="cover-meta-label">نسخه</span>
+        <span class="cover-meta-value">۱.۳ — قطعات حدودی</span>
+      </div>
+      <div class="cover-meta-item">
+        <span class="cover-meta-label">مخاطب</span>
+        <span class="cover-meta-value">کارفرمای پروژه</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ============================== MAIN CONTENT ============================== -->
+<div class="main-content">
+
+  <!-- ===== SECTION 1: Introduction ===== -->
+  <div class="section-header">
+    <span class="section-tag">بخش ۰۱</span>
+    <h2 class="section-title">معرفی پروژه و اهداف</h2>
+    <div class="section-divider"></div>
+  </div>
+
+  <p class="body-text">
+    پنل‌های خورشیدی در حالت ثابت تنها بخشی از انرژی تابشی خورشید را در طول روز دریافت می‌کنند، زیرا زاویه تابش نسبت به سطح پنل به‌طور مداوم تغییر می‌کند. این کاهش زاویه مؤثر می‌تواند <strong>۲۰ تا ۳۰ درصد</strong> از ظرفیت اسمی پنل را در ساعاتی از روز هدر دهد. راه‌حل استاندارد صنعتی، استفاده از <span class="accent">تراکر خورشیدی</span> است؛ سازه‌ای که پنل را به‌صورت خودکار به دنبال حرکت خورشید می‌چرخاند تا زاویه تابش همواره نزدیک به حالت بهینه باقی بماند.
+  </p>
+
+  <p class="body-text">
+    پروپوزال پیش رو، یک سیستم تراکر خورشیدی <strong>تک‌محوره</strong> را توصیف می‌کند که چرخش پنل را تنها حول یک محور (عموماً محور شرقی-غربی) کنترل می‌کند. این انتخاب نسبت به سیستم‌های دومحوره، هزینه سخت‌افزار را تا ۴۰ درصد کاهش می‌دهد و در عین حال حدود ۸۰ درصد بهره‌وری حداکثری یک سیستم دومحوره را تأمین می‌کند. کنترل اصلی سیستم بر عهده میکروکنترلر <span class="accent">ESP32</span> قرار می‌گیرد که با اتصال به ماژول ساعت دقیق DS3231، موقعیت مکانی دستگاه، و الگوریتم‌های استاندارد نجومی، زاویه لحظه‌ای خورشید را محاسبه و فرمان چرخش لازم را صادر می‌کند.
+  </p>
+
+  <p class="body-text">
+    نقطه تمایز این طرح، تمرکز همزمان بر سه محور <strong>افزایش بهره‌وری</strong>، <strong>حفاظت خودکار</strong> و <strong>کنترل از راه دور</strong> است. سیستم قادر است در صورت تشخیص باد شدید، پنل را به حالت افقی (حالت ایمن) درآورد؛ در صورت عدم تغییر زاویه پس از صدور فرمان (نشانه گیربکس یا بازوی گیر کرده)، خطا را ثبت کرده و پس از سه تلاش متوالی، عملیات را متوقف و هشدار را در پنل وب نمایش دهد. تمامی تنظیمات شامل ساعت، موقعیت، حداکثر و حداقل زاویه مجاز، و کالیبراسیون زاویه‌سنج از طریق پنل وب روی هات‌اسپات ESP32 قابل انجام است.
+  </p>
+
+  <div class="stat-row">
+    <div class="stat-card">
+      <div class="stat-num">۲۵–۳۵٪</div>
+      <div class="stat-label">افزایش بازده تولید نسبت به پنل ثابت</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-num">۱۰ متر</div>
+      <div class="stat-label">برد مفید هات‌اسپات کنترل از راه دور</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-num">۳+۳</div>
+      <div class="stat-label">تلاش مجدد خطای بازو با تأخیر ۱۰ ثانیه</div>
+    </div>
+  </div>
+
+  <!-- ===== SECTION 2: Architecture ===== -->
+  <div class="section-header spaced">
+    <span class="section-tag">بخش ۰۲</span>
+    <h2 class="section-title">معماری سیستم و نمودار بلوکی</h2>
+    <div class="section-divider"></div>
+  </div>
+
+  <p class="body-text">
+    معماری سیستم حول یک میکروکنترلر مرکزی <span class="accent">ESP32</span> شکل می‌گیرد که نقش هماهنگ‌کننده بین ورودی‌های حسی (سنسورها و بادسنج)، خروجی فرمان (یک ماژول رله دو کانال)، و رابط کاربری (پنل وب) را بر عهده دارد. تغذیه بخش الکترونیک یک منبع ۵ ولت ۵ آمپر است و حفاظت برق شهر داخل خود همان منبع است. جک ۲۲۰ ولت و سازه فلزی بیرون از این فاکتورند؛ این کنترلر فقط سه حالت به جک می‌دهد: توقف، حرکت به جلو، و حرکت به عقب. نمودار زیر، ارتباط بلوکی هر ماژول با میزبان مرکزی را نشان می‌دهد.
+  </p>
+
+  <div class="arch-diagram">
+    <div class="arch-title">نمودار بلوکی تراکر خورشیدی تک‌محوره</div>
+
+    <div class="arch-grid">
+      <div class="arch-block">
+        <div class="arch-block-icon">⏱</div>
+        <div class="arch-block-name">DS3231</div>
+        <div class="arch-block-desc">ساعت دقیق با باتری پشتیبان — I2C</div>
+      </div>
+      <div class="arch-block">
+        <div class="arch-block-icon">📡</div>
+        <div class="arch-block-name">WiFi Hotspot</div>
+        <div class="arch-block-desc">هات‌اسپات داخلی ESP32</div>
+      </div>
+      <div class="arch-block">
+        <div class="arch-block-icon">🌐</div>
+        <div class="arch-block-name">پنل وب</div>
+        <div class="arch-block-desc">UI کنترل روی مرورگر موبایل</div>
+      </div>
+    </div>
+
+    <div class="arch-grid" style="margin: 8px 0;">
+      <div class="arch-block">
+        <div class="arch-block-icon">📐</div>
+        <div class="arch-block-name">RPI1031</div>
+        <div class="arch-block-desc">چهار پایه: + − S1 S2</div>
+      </div>
+      <div class="arch-block esp">
+        <div class="arch-block-icon">⚡</div>
+        <div class="arch-block-name">ESP32 — هسته مرکزی</div>
+        <div class="arch-block-desc">محاسبه خورشید + کنترل + وب‌سرور</div>
+      </div>
+      <div class="arch-block">
+        <div class="arch-block-icon">🌬</div>
+        <div class="arch-block-name">باد سنج Hall</div>
+        <div class="arch-block-desc">فنجونی + سنسور اثر هال وقفه‌ای</div>
+      </div>
+    </div>
+
+    <div class="arch-grid">
+      <div class="arch-block">
+        <div class="arch-block-icon">🔩</div>
+        <div class="arch-block-name">سه حالت حرکت</div>
+        <div class="arch-block-desc">توقف، جلو، عقب — جک ۲۲۰ ولت</div>
+      </div>
+      <div class="arch-block">
+        <div class="arch-block-icon">🔌</div>
+        <div class="arch-block-name">رله ۲ کاناله</div>
+        <div class="arch-block-desc">یک ماژول؛ هر دو قطع = توقف</div>
+      </div>
+      <div class="arch-block">
+        <div class="arch-block-icon">🔋</div>
+        <div class="arch-block-name">منبع ۵ ولت</div>
+        <div class="arch-block-desc">۵ آمپر — حفاظت داخل خود منبع</div>
+      </div>
+    </div>
+  </div>
+
+  <p class="body-text">
+    سه مسیر اصلی این است: مسیر <strong>حسی</strong> (DS3231، RPI1031، بادسنج) که داده را به ESP32 می‌رساند؛ مسیر <strong>فرمان</strong> که با یک رله دو کانال، جک ۲۲۰ ولت را جلو، عقب، یا متوقف می‌کند؛ و مسیر <strong>ارتباطی</strong> (هات‌اسپات و پنل وب). تغذیه هر دو حالت جلو و عقب از یک ماژول جریان رد می‌شود. تنظیمات و لاگ روی فلش داخلی خود میکرو می‌ماند. این مسیرها همزمان و غیرهمگام (asynchronous) کار می‌کنند تا یکی بقیه را معطل نکند.
+  </p>
+
+  <div class="note">
+    <div class="note-title">⚠ نکته طراحی</div>
+    برای جلوگیری از تداخل الکترومغناطیسی، سنسور RPI1031 مستقیماً زیر پنل و در نزدیک‌ترین نقطه به محور چرخش نصب می‌شود. سیم‌کشی بین سنسور و ESP32 با کابل شیلددار و طول کمتر از ۵۰ سانتی‌متر انجام می‌گیرد تا نویز رله‌ها بر کیفیت خوانش زاویه اثر نگذارد.
+  </div>
+
+  <!-- ===== SECTION 3: BOM ===== -->
+  <div class="section-header spaced">
+    <span class="section-tag">بخش ۰۳</span>
+    <h2 class="section-title">لیست قطعات (BOM) و برآورد هزینه</h2>
+    <div class="section-divider"></div>
+  </div>
+
+  <p class="body-text">
+    محدوده این فاکتور <strong>طراحی و ساخت سیستم تراکر</strong> است: کنترلر، سنسورهای متصل، و بادسنج. ساخت سازه و خرید جک جزو این کار نیست. جک خودش ۲۲۰ ولت است و فقط فرمان می‌گیرد. کارت حافظه و EEPROM در طرح نیست و تنظیمات روی فلش داخلی ESP32 می‌ماند. قیمت‌ها حدودی هستند و به‌خاطر نوسان بازار، عدد قطعی در فاکتور نهایی نوشته می‌شود.
+  </p>
+
+  <p class="body-text">
+    <strong>قطعات نمونه اول.</strong> عددها میانگین بازار است که رو به بالا گرد شده تا خرید با قیمت کفِ لحظه‌ای جا نماند. ماژول ESP32 در بازار تا حدود ۱٬۲۰۰٬۰۰۰ تومان دیده می‌شود و همین سقف برای نمونه گذاشته شده. طراحی جعبه و فیلامنت در جدول کار است؛ خود جعبه، گیره، پایه نگهدارنده و متعلقات نصب این‌جا آمده‌اند.
+  </p>
+
+  <table>
+    <thead>
+      <tr>
+        <th style="width: 28px;">#</th>
+        <th>قطعه</th>
+        <th>مدل پیشنهادی</th>
+        <th style="width: 52px;">تعداد</th>
+        <th style="width: 88px;">قیمت واحد (تومان)</th>
+        <th style="width: 96px;">قیمت کل (تومان)</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>۱</td>
+        <td>ماژول ESP32</td>
+        <td>ماژول ESP32-WROOM-32، فلش ۴ مگابایت</td>
+        <td style="text-align:center;">۱</td>
+        <td style="text-align:left;" dir="ltr">۱٬۲۰۰٬۰۰۰</td>
+        <td style="text-align:left;" dir="ltr">۱٬۲۰۰٬۰۰۰</td>
+      </tr>
+      <tr>
+        <td>۲</td>
+        <td>ساعت دقیق</td>
+        <td>ماژول DS3231 با رابط I2C</td>
+        <td style="text-align:center;">۱</td>
+        <td style="text-align:left;" dir="ltr">۶۵۰٬۰۰۰</td>
+        <td style="text-align:left;" dir="ltr">۶۵۰٬۰۰۰</td>
+      </tr>
+      <tr>
+        <td>۳</td>
+        <td>زاویه‌سنج</td>
+        <td>RPI-1031، فقط چهار پایه: + و − و S1 و S2</td>
+        <td style="text-align:center;">۱</td>
+        <td style="text-align:left;" dir="ltr">۳۵۰٬۰۰۰</td>
+        <td style="text-align:left;" dir="ltr">۳۵۰٬۰۰۰</td>
+      </tr>
+      <tr>
+        <td>۴</td>
+        <td>سنسور اثر هال *</td>
+        <td>A3144 به‌همراه مگنت N35</td>
+        <td style="text-align:center;">۱ ست</td>
+        <td style="text-align:left;" dir="ltr">۱۲۰٬۰۰۰</td>
+        <td style="text-align:left;" dir="ltr">۱۲۰٬۰۰۰</td>
+      </tr>
+      <tr>
+        <td>۵</td>
+        <td>بادسنج فنجانی *</td>
+        <td>ساخت محلی + یاتاقان</td>
+        <td style="text-align:center;">۱</td>
+        <td style="text-align:left;" dir="ltr">۱٬۵۰۰٬۰۰۰</td>
+        <td style="text-align:left;" dir="ltr">۱٬۵۰۰٬۰۰۰</td>
+      </tr>
+      <tr>
+        <td>۶</td>
+        <td>ماژول رله ۲ کاناله</td>
+        <td>یک عدد؛ کانال جلو و کانال عقب، بوبین ۵ ولت</td>
+        <td style="text-align:center;">۱</td>
+        <td style="text-align:left;" dir="ltr">۲۵۰٬۰۰۰</td>
+        <td style="text-align:left;" dir="ltr">۲۵۰٬۰۰۰</td>
+      </tr>
+      <tr>
+        <td>۷</td>
+        <td>منبع تغذیه</td>
+        <td>سوئیچینگ ۵ ولت، ۵ آمپر، با حفاظت داخلی</td>
+        <td style="text-align:center;">۱</td>
+        <td style="text-align:left;" dir="ltr">۵۰۰٬۰۰۰</td>
+        <td style="text-align:left;" dir="ltr">۵۰۰٬۰۰۰</td>
+      </tr>
+      <tr>
+        <td>۸</td>
+        <td>باتری پشتیبان ساعت *</td>
+        <td>CR2032 با هولدر</td>
+        <td style="text-align:center;">۱</td>
+        <td style="text-align:left;" dir="ltr">۸۰٬۰۰۰</td>
+        <td style="text-align:left;" dir="ltr">۸۰٬۰۰۰</td>
+      </tr>
+      <tr>
+        <td>۹</td>
+        <td>ماژول جریان</td>
+        <td>ACS712؛ تغذیه هر دو حالت جلو و عقب از همین یکی رد می‌شود</td>
+        <td style="text-align:center;">۱</td>
+        <td style="text-align:left;" dir="ltr">۴۰۰٬۰۰۰</td>
+        <td style="text-align:left;" dir="ltr">۴۰۰٬۰۰۰</td>
+      </tr>
+      <tr>
+        <td>۱۰</td>
+        <td>سیم و ترمینال *</td>
+        <td>سیم سنسور، فرمان رله و تغذیه برد</td>
+        <td style="text-align:center;">۱ ست</td>
+        <td style="text-align:left;" dir="ltr">۵۰۰٬۰۰۰</td>
+        <td style="text-align:left;" dir="ltr">۵۰۰٬۰۰۰</td>
+      </tr>
+      <tr>
+        <td>۱۱</td>
+        <td>برد مدار چاپی *</td>
+        <td>PCB دوطرفه نمونه اول + رگولاتور ۳٫۳ ولت روی برد</td>
+        <td style="text-align:center;">۱</td>
+        <td style="text-align:left;" dir="ltr">۱٬۱۰۰٬۰۰۰</td>
+        <td style="text-align:left;" dir="ltr">۱٬۱۰۰٬۰۰۰</td>
+      </tr>
+      <tr>
+        <td>۱۲</td>
+        <td>ملزومات مونتاژ برد *</td>
+        <td>قلع، فلاکس، هدر، اسپیسر و وارنیش</td>
+        <td style="text-align:center;">۱ ست</td>
+        <td style="text-align:left;" dir="ltr">۴۵۰٬۰۰۰</td>
+        <td style="text-align:left;" dir="ltr">۴۵۰٬۰۰۰</td>
+      </tr>
+      <tr>
+        <td>۱۳</td>
+        <td>جعبه *</td>
+        <td>بدنه جعبه نمونه برای برد و منبع</td>
+        <td style="text-align:center;">۱</td>
+        <td style="text-align:left;" dir="ltr">۳۵۰٬۰۰۰</td>
+        <td style="text-align:left;" dir="ltr">۳۵۰٬۰۰۰</td>
+      </tr>
+      <tr>
+        <td>۱۴</td>
+        <td>گیره و بست *</td>
+        <td>گیره کابل، بست کمربندی و خار برد</td>
+        <td style="text-align:center;">۱ ست</td>
+        <td style="text-align:left;" dir="ltr">۱۵۰٬۰۰۰</td>
+        <td style="text-align:left;" dir="ltr">۱۵۰٬۰۰۰</td>
+      </tr>
+      <tr>
+        <td>۱۵</td>
+        <td>پایه نگهدارنده *</td>
+        <td>پایه نصب برد، زاویه‌سنج و بادسنج</td>
+        <td style="text-align:center;">۱ ست</td>
+        <td style="text-align:left;" dir="ltr">۲۵۰٬۰۰۰</td>
+        <td style="text-align:left;" dir="ltr">۲۵۰٬۰۰۰</td>
+      </tr>
+      <tr>
+        <td>۱۶</td>
+        <td>متعلقات نصب *</td>
+        <td>گلند، پیچ، واشر و ترمینال اضافه</td>
+        <td style="text-align:center;">۱ ست</td>
+        <td style="text-align:left;" dir="ltr">۱۵۰٬۰۰۰</td>
+        <td style="text-align:left;" dir="ltr">۱۵۰٬۰۰۰</td>
+      </tr>
+      <tr class="table-total">
+        <td colspan="5" style="text-align:left;">جمع قطعات نمونه اول</td>
+        <td style="text-align:left;" dir="ltr">۸٬۰۰۰٬۰۰۰</td>
+      </tr>
+    </tbody>
+  </table>
+  <p class="table-caption">
+    قیمت‌ها حدودی هستند. به‌خاطر نوسان بازار، مبلغ قطعی هر قلم در فاکتور نهایی می‌آید. ستاره یعنی برآورد ساخت یا خرید همان قلم، نه یک قیمت ثابت ویترین.
+  </p>
+
+  <p class="body-text">
+    <strong>هزینه طراحی و ساخت سیستم از صفر.</strong> این جدول خود کار است: تحقیق و پروپوزال، طراحی مدار و جعبه نمونه، برنامه‌نویسی، تست، مونتاژ کنترلر و سنسورها، و پیاده‌سازی. ساخت سازه و طراحی جک داخل این جدول نیست. جمع این بخش <span class="accent">۶۲٬۱۰۰٬۰۰۰ تومان</span> است.
+  </p>
+
+  <table>
+    <thead>
+      <tr>
+        <th style="width: 28px;">#</th>
+        <th>بخش کار</th>
+        <th>چه کاری انجام می‌شود</th>
+        <th style="width: 42px;">ساعت</th>
+        <th style="width: 78px;">نرخ ساعتی</th>
+        <th style="width: 88px;">مبلغ (تومان)</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>۱</td>
+        <td>ایده‌پردازی و پروپوزال</td>
+        <td>تحقیق، معماری سیستم کنترل و نگارش پروپوزال</td>
+        <td style="text-align:center;">۱۶</td>
+        <td style="text-align:left;" dir="ltr">۵۰۰٬۰۰۰</td>
+        <td style="text-align:left;" dir="ltr">۸٬۰۰۰٬۰۰۰</td>
+      </tr>
+      <tr>
+        <td>۲</td>
+        <td>طراحی مدار و برد</td>
+        <td>شماتیک، رله دو کانال، جریان مشترک و PCB</td>
+        <td style="text-align:center;">۱۹</td>
+        <td style="text-align:left;" dir="ltr">۵۰۰٬۰۰۰</td>
+        <td style="text-align:left;" dir="ltr">۹٬۵۰۰٬۰۰۰</td>
+      </tr>
+      <tr>
+        <td>۳</td>
+        <td>طراحی جعبه نمونه</td>
+        <td>مدل سه‌بعدی جعبه نمونه اولیه برای برد و منبع</td>
+        <td style="text-align:center;">۵</td>
+        <td style="text-align:left;" dir="ltr">۴۰۰٬۰۰۰</td>
+        <td style="text-align:left;" dir="ltr">۲٬۰۰۰٬۰۰۰</td>
+      </tr>
+      <tr>
+        <td>۴</td>
+        <td>فیلامنت جعبه</td>
+        <td>مواد پرینت جعبه نمونه اولیه</td>
+        <td style="text-align:center;">—</td>
+        <td style="text-align:center;">—</td>
+        <td style="text-align:left;" dir="ltr">۸۰۰٬۰۰۰</td>
+      </tr>
+      <tr>
+        <td>۵</td>
+        <td>برنامه‌نویسی فرم‌ور</td>
+        <td>زاویه خورشید با دقت حدود ۱ درجه، باد، جریان و سه حالت حرکت</td>
+        <td style="text-align:center;">۲۴</td>
+        <td style="text-align:left;" dir="ltr">۵۰۰٬۰۰۰</td>
+        <td style="text-align:left;" dir="ltr">۱۲٬۰۰۰٬۰۰۰</td>
+      </tr>
+      <tr>
+        <td>۶</td>
+        <td>پنل وب و حافظه</td>
+        <td>رابط موبایل، هات‌اسپات و ذخیره روی فلش FFS</td>
+        <td style="text-align:center;">۱۳</td>
+        <td style="text-align:left;" dir="ltr">۵۰۰٬۰۰۰</td>
+        <td style="text-align:left;" dir="ltr">۶٬۵۰۰٬۰۰۰</td>
+      </tr>
+      <tr>
+        <td>۷</td>
+        <td>کد تست و شبیه‌سازی</td>
+        <td>سناریوهای آزمون و شبیه‌سازی منطق حرکت قبل از نصب</td>
+        <td style="text-align:center;">۹</td>
+        <td style="text-align:left;" dir="ltr">۵۰۰٬۰۰۰</td>
+        <td style="text-align:left;" dir="ltr">۴٬۵۰۰٬۰۰۰</td>
+      </tr>
+      <tr>
+        <td>۸</td>
+        <td>مدل کلاد</td>
+        <td>هزینه مدل کلاد برای تحقیق، طراحی و تولید متن و کد</td>
+        <td style="text-align:center;">—</td>
+        <td style="text-align:center;">—</td>
+        <td style="text-align:left;" dir="ltr">۵٬۸۰۰٬۰۰۰</td>
+      </tr>
+      <tr>
+        <td>۹</td>
+        <td>مونتاژ</td>
+        <td>لحیم برد، بستن سنسورها، بادسنج و جعبه پرینت‌شده</td>
+        <td style="text-align:center;">۱۲</td>
+        <td style="text-align:left;" dir="ltr">۳۵۰٬۰۰۰</td>
+        <td style="text-align:left;" dir="ltr">۴٬۲۰۰٬۰۰۰</td>
+      </tr>
+      <tr>
+        <td>۱۰</td>
+        <td>پیاده‌سازی و تحویل</td>
+        <td>کالیبراسیون، آزمون روی نمونه و آموزش کارفرما</td>
+        <td style="text-align:center;">۲۲</td>
+        <td style="text-align:left;" dir="ltr">۴۰۰٬۰۰۰</td>
+        <td style="text-align:left;" dir="ltr">۸٬۸۰۰٬۰۰۰</td>
+      </tr>
+      <tr class="table-total">
+        <td colspan="3" style="text-align:left;">جمع طراحی و ساخت سیستم (۱۲۰ ساعت به‌علاوه دو قلم ثابت)</td>
+        <td style="text-align:center;">۱۲۰</td>
+        <td></td>
+        <td style="text-align:left;" dir="ltr">۶۲٬۱۰۰٬۰۰۰</td>
+      </tr>
+    </tbody>
+  </table>
+  <p class="table-caption">
+    فیلامنت و مدل کلاد ساعتی نیستند. بقیه ردیف‌ها دستمزد همان کار است. قیمت‌ها حدودی‌اند و در فاکتور نهایی قطعی می‌شوند.
+  </p>
+
+  <table>
+    <thead>
+      <tr>
+        <th>جمع نمونه اول (بدون سازه و بدون جک)</th>
+        <th style="width: 120px;">مبلغ (تومان)</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>سخت‌افزار نمونه (قطعات، برد، بادسنج)</td>
+        <td style="text-align:left;" dir="ltr">۸٬۰۰۰٬۰۰۰</td>
+      </tr>
+      <tr>
+        <td>ایده‌پردازی، طراحی، برنامه‌نویسی، مونتاژ و پیاده‌سازی</td>
+        <td style="text-align:left;" dir="ltr">۶۲٬۱۰۰٬۰۰۰</td>
+      </tr>
+      <tr class="table-total">
+        <td style="text-align:left;">جمع نمونه اول</td>
+        <td style="text-align:left;" dir="ltr">۷۰٬۱۰۰٬۰۰۰</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <div class="price-chart">
+    <div class="arch-title">نمودار سهم هر بخش از جمع ۷۰٫۱ میلیون تومان</div>
+    <div class="price-row">
+      <div class="price-label">سخت‌افزار</div>
+      <div class="price-track"><div class="price-fill" style="width:11.4%;"></div></div>
+      <div class="price-num">۸ م</div>
+    </div>
+    <div class="price-row">
+      <div class="price-label">ایده‌پردازی و طراحی</div>
+      <div class="price-track"><div class="price-fill b" style="width:27.8%;"></div></div>
+      <div class="price-num">۱۹٫۵ م</div>
+    </div>
+    <div class="price-row">
+      <div class="price-label">مونتاژ</div>
+      <div class="price-track"><div class="price-fill c" style="width:7.1%;"></div></div>
+      <div class="price-num">۵٫۰ م</div>
+    </div>
+    <div class="price-row">
+      <div class="price-label">برنامه‌نویسی</div>
+      <div class="price-track"><div class="price-fill d" style="width:32.8%;"></div></div>
+      <div class="price-num">۲۳ م</div>
+    </div>
+    <div class="price-row">
+      <div class="price-label">پیاده‌سازی</div>
+      <div class="price-track"><div class="price-fill e" style="width:12.6%;"></div></div>
+      <div class="price-num">۸٫۸ م</div>
+    </div>
+    <div class="price-row">
+      <div class="price-label">مدل کلاد</div>
+      <div class="price-track"><div class="price-fill f" style="width:8.3%;"></div></div>
+      <div class="price-num">۵٫۸ م</div>
+    </div>
+  </div>
+  <p class="table-caption">
+    طول هر نوار سهم همان بخش از نمونه اول است. مونتاژ شامل فیلامنت جعبه هم هست. ایده‌پردازی و طراحی شامل پروپوزال، مدار و طراحی جعبه است. برنامه‌نویسی شامل فرم‌ور، پنل وب و کد تست است.
+  </p>
+
+  <!-- ===== SECTION 4: Wiring ===== -->
+  <div class="section-header spaced">
+    <span class="section-tag">بخش ۰۴</span>
+    <h2 class="section-title">نقشه اتصالات و تخصیص پین‌ها</h2>
+    <div class="section-divider"></div>
+  </div>
+
+  <p class="body-text">
+    تخصیص پین‌های میکروکنترلر ESP32 در جدول زیر آورده شده است. در انتخاب پین‌ها، اصل جداسازی فیزیکی بین پایه‌های ورودی حسی (با ولتاژ پایین) و خروجی فرمانی (با جریان بالاتر از طریق رله) رعایت شده تا نویز سوئیچینگ رله بر خوانش سنسورها اثر نگذارد. تمامی پین‌های ورودی دارای مقاومت pull-up داخلی یا خارجی هستند تا در صورت قطع اتصال، سیستم در حالت امن قرار گیرد.
+  </p>
+
+  <table class="pin-table">
+    <thead>
+      <tr>
+        <th>پین ESP32</th>
+        <th style="width: 130px;">ماژول متصل</th>
+        <th style="width: 110px;">سیگنال</th>
+        <th>توضیح عملکرد و جهت</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr><td><strong>GPIO 21</strong></td><td>DS3231</td><td dir="ltr">SDA</td><td>خط داده I2C — دو طرفه</td></tr>
+      <tr><td><strong>GPIO 22</strong></td><td>DS3231</td><td dir="ltr">SCL</td><td>خط کلاک I2C — از میزبان</td></tr>
+      <tr><td><strong>تغذیه</strong></td><td>RPI-1031</td><td dir="ltr">+</td><td>مثبت تغذیه ماژول</td></tr>
+      <tr><td><strong>زمین</strong></td><td>RPI-1031</td><td dir="ltr">−</td><td>منفی تغذیه ماژول</td></tr>
+      <tr><td><strong>GPIO 16</strong></td><td>RPI-1031</td><td dir="ltr">S1</td><td>سیگنال اول زاویه</td></tr>
+      <tr><td><strong>GPIO 17</strong></td><td>RPI-1031</td><td dir="ltr">S2</td><td>سیگنال دوم زاویه</td></tr>
+      <tr><td><strong>GPIO 4</strong></td><td>سنسور Hall</td><td dir="ltr">INT (پالس)</td><td>وقفه خارجی — یک پالس در هر چرخش فنجون</td></tr>
+      <tr><td><strong>GPIO 25</strong></td><td>رله کانال ۱</td><td dir="ltr">IN1</td><td>حرکت به جلو — active-low</td></tr>
+      <tr><td><strong>GPIO 26</strong></td><td>رله کانال ۲</td><td dir="ltr">IN2</td><td>حرکت به عقب — active-low</td></tr>
+      <tr><td><strong>GPIO 34</strong></td><td>تقسیم ولتاژ تغذیه</td><td dir="ltr">ADC1_CH6</td><td>ورودی آنالوگ — دیدن خط ۵ ولت</td></tr>
+      <tr><td><strong>GPIO 32</strong></td><td>ماژول جریان</td><td dir="ltr">ADC1 — ACS712</td><td>جریان مشترک جلو و عقب</td></tr>
+    </tbody>
+  </table>
+  <p class="table-caption">
+    زاویه‌سنج فقط چهار پایه دارد: مثبت، منفی، S1 و S2. مثبت و منفی به تغذیه می‌روند و دو سیگنال به GPIO 16 و GPIO 17. حالت بی‌حرکت یعنی هر دو کانال رله قطع است. در حرکت فقط یکی از دو کانال روشن می‌شود و برنامه نمی‌گذارد هر دو با هم وصل شوند. یک ماژول جریان روی تغذیه مشترک است. تنظیمات و لاگ روی فلش FFS داخل ESP32 است.
+  </p>
+
+  <div class="note">
+    <div class="note-title">⚡ فرمان حرکت</div>
+    درایو با یک ماژول رله دو کانال انجام می‌شود و جک ۲۲۰ ولت است. توقف: هر دو رله قطع. جلو: فقط کانال اول. عقب: فقط کانال دوم. منبع ۵ ولت برد، حفاظت داخلی خودش را دارد. اگر جریان از حد بگذرد یا بعد از فرمان توقف قطع نشود، هر دو رله قطع می‌شوند و خطا روی پنل می‌آید.
+  </div>
+
+  <!-- ===== SECTION 5: Software logic & flowchart ===== -->
+  <div class="section-header spaced">
+    <span class="section-tag">بخش ۰۵</span>
+    <h2 class="section-title">منطق نرم‌افزاری و فلوچارت کنترلی</h2>
+    <div class="section-divider"></div>
+  </div>
+
+  <p class="body-text">
+    فرم‌ور ESP32 به‌صورت <strong>رویدادمحور</strong> طراحی می‌شود؛ به‌این معنا که به‌جای چرخه زمانی ثابت، هر زمان اختلاف زاویه فعلی پنل و زاویه هدف از حد آستانه تعیین‌شده عبور کند، سیستم فعال شده و فرمان حرکت صادر می‌کند. این حد آستانه به‌صورت پیش‌فرض <span class="accent">۵ درجه</span> تنظیم شده و از طریق پنل وب قابل تنظیم است. دقت حدود یک درجه برای زاویه خورشید کافی است و محاسبه را سبک نگه می‌دارد. چرخه اصلی شامل ۷ گام است.
+  </p>
+
+  <div class="flowchart">
+    <div class="flow-step">
+      <div class="flow-num">۱</div>
+      <div><strong>خواندن ساعت و موقعیت:</strong> دریافت زمان از DS3231 و خواندن موقعیت ذخیره‌شده (UTM یا شهر) از فلش FFS. محاسبه زاویه لحظه‌ای خورشید با الگوریتم <span dir="ltr">SPA</span>.</div>
+    </div>
+    <div class="flow-arrow">↓</div>
+    <div class="flow-step">
+      <div class="flow-num">۲</div>
+      <div><strong>بررسی باد شدید:</strong> اگر سرعت لحظه‌ای باد &gt; حد آستانه (پیش‌فرض ۴۰ km/h)، پنل به حالت افقی منتقل می‌شود و چرخه به گام ۷ می‌رود.</div>
+    </div>
+    <div class="flow-arrow">↓</div>
+    <div class="flow-step">
+      <div class="flow-num">۳</div>
+      <div><strong>بررسی حالت شب:</strong> اگر زاویه خورشید زیر افق باشد (ارتفاع منفی)، پنل به حالت افقی منتقل می‌شود تا آماده صبحگاهی باشد.</div>
+    </div>
+    <div class="flow-arrow">↓</div>
+    <div class="flow-step">
+      <div class="flow-num">۴</div>
+      <div><strong>خواندن زاویه فعلی:</strong> خواندن زاویه پنل از RPI1031 با سیستم میانگین‌گیری متحرک (moving average) روی ۵ نمونه آخر برای کاهش نویز و نوسانات لحظه‌ای، سپس مقایسه مقدار میانگین‌شده با زاویه هدف.</div>
+    </div>
+    <div class="flow-arrow">↓</div>
+    <div class="flow-step decision">
+      <div class="flow-num">۵</div>
+      <div><strong>تصمیم حرکت:</strong> اگر اختلاف زاویه از حد آستانه (۵ درجه، قابل تنظیم در پنل وب) بیشتر باشد، فقط یک کانال رله روشن می‌شود: کانال اول حرکت به جلو، کانال دوم حرکت به عقب. حالت بی‌حرکت یعنی هر دو رله قطع. اگر اختلاف کوچک‌تر از حد آستانه است، به گام ۷.</div>
+    </div>
+    <div class="flow-arrow">↓</div>
+    <div class="flow-step error">
+      <div class="flow-num">۶</div>
+      <div><strong>تشخیص خطای حرکت:</strong> پس از ۳ ثانیه، زاویه و جریان مشترک دوباره خوانده می‌شود. اگر زاویه تقریباً تکان نخورده باشد (کمتر از ۰.۵ درجه) یا جریان از حد بگذرد، هر دو رله قطع می‌شود و پس از ۱۰ ثانیه تلاش بعدی شروع می‌شود.</div>
+    </div>
+    <div class="flow-arrow">↓</div>
+    <div class="flow-step success">
+      <div class="flow-num">۷</div>
+      <div><strong>تثبیت نهایی:</strong> با رسیدن به زاویه هدف، یا پس از سه تلاش ناموفق، هر دو رله قطع می‌مانند. در صورت شکست، خطا در پنل وب می‌آید و سیستم تا فرمان ریست کاربر متوقف است.</div>
+    </div>
+  </div>
+
+  <p class="body-text">
+    جدول زیر، توضیح هر یک از حالت‌های تصمیم‌گیری کلیدی را به همراه ورودی‌ها و خروجی مورد انتظار نشان می‌دهد. این جدول مبنای تست و اعتبارسنجی فرم‌ور است و در فاز پنجم پروژه برای تصدیق عملکرد سیستم استفاده می‌شود.
+  </p>
+
+  <div class="note">
+    <div class="note-title">🎯 الگوریتم محاسبه خورشید</div>
+    زاویه خورشید با نسخه سبک الگوریتم <span dir="ltr">SPA</span> حساب می‌شود. دقت حدود <strong>۱ درجه</strong> برای این تراکر کافی است و محاسبه روی ESP32 سبک می‌ماند. ورودی‌ها تاریخ، ساعت و موقعیت‌اند. خروجی، سمت و ارتفاع خورشید است. تبدیل UTM به عرض و طول جغرافیایی یک بار هنگام نصب انجام می‌شود.
+  </div>
+
+  <div class="note">
+    <div class="note-title">📊 سیستم میانگین‌گیری زاویه</div>
+    برای کاهش اثر نویز و نوسانات لحظه‌ای سنسور RPI1031 (به‌ویژه در اثر لرزش باد یا حرکت مکانیکی)، سیستم از روش <strong>میانگین متحرک ۵ نمونه‌ای</strong> (Moving Average) استفاده می‌کند. زاویه نهایی، میانگین ۵ خوانش متوالی آخر است و نه آخرین مقدار آنی. این روش، تصمیم‌گیری برای شروع حرکت را پایدارتر کرده و از حرکت‌های کوچک و بی‌مورد ناشی از نویز جلوگیری می‌کند.
+  </div>
+
+  <!-- ===== SECTION 6: Web panel & test scenarios ===== -->
+  <div class="section-header spaced">
+    <span class="section-tag">بخش ۰۶</span>
+    <h2 class="section-title">پنل وب و سناریوهای تست</h2>
+    <div class="section-divider"></div>
+  </div>
+
+  <p class="body-text">
+    پنل وب به‌صورت <span class="accent">وب‌سرور داخلی ESP32</span> پیاده‌سازی می‌شود که در هات‌اسپات WiFi میکروکنترلر روی آدرس <span dir="ltr">192.168.4.1</span> در دسترس است. هیچ اپلیکیشن موبایل جداگانه‌ای نیاز نیست؛ کاربر کافی است به هات‌اسپات وصل شود و در مرورگر آدرس را باز کند. رابط کاربری به‌صورت واکنش‌گرا (responsive) طراحی شده تا روی موبایل، تبلت و رایانه به‌خوبی نمایش داده شود.
+  </p>
+
+  <div class="web-mockup">
+    <div class="web-header">
+      <span>☀ تراکر خورشیدی — پنل کنترل</span>
+      <div class="web-status"><div class="web-status-dot"></div><span>آنلاین</span></div>
+    </div>
+    <div class="web-body">
+      <div class="web-gauge">
+        <div class="web-gauge-label">زاویه فعلی پنل</div>
+        <div class="web-gauge-value">۴۲°</div>
+        <div class="web-gauge-unit">هدف: ۴۳°</div>
+      </div>
+      <div class="web-gauge">
+        <div class="web-gauge-label">سرعت باد</div>
+        <div class="web-gauge-value">۱۲</div>
+        <div class="web-gauge-unit">km/h — عادی</div>
+      </div>
+      <div class="web-gauge">
+        <div class="web-gauge-label">حالت</div>
+        <div class="web-gauge-value">اتو</div>
+        <div class="web-gauge-unit">شکار خورشید</div>
+      </div>
+      <div class="web-gauge">
+        <div class="web-gauge-label">آخرین خطا</div>
+        <div class="web-gauge-value" style="color: var(--c-success);">—</div>
+        <div class="web-gauge-unit">بدون خطا</div>
+      </div>
+      <div class="web-controls">
+        <div class="web-btn">حالت اتوماتیک</div>
+        <div class="web-btn secondary">حالت دستی</div>
+        <div class="web-btn secondary">کالیبره زاویه</div>
+        <div class="web-btn secondary">تنظیم ساعت</div>
+        <div class="web-btn danger">ریست خطا</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="note">
+    <div class="note-title">📍 ثبت موقعیت نصب (UTM یا شهر)</div>
+    پنل وب دو روش برای تعیین موقعیت نصب ارائه می‌دهد: (۱) <strong>انتخاب شهر</strong> از فهرست آماده شهرهای ایران با مختصات از پیش ذخیره‌شده، و (۲) <strong>وارد کردن مستقیم UTM</strong> برای موقعیت‌های خارج از فهرست شهرها. پس از ثبت، مختصات روی فلش داخلی میکرو، در فایل‌سیستم FFS، ذخیره می‌شود و در محاسبات زاویه خورشید استفاده می‌گردد. جابجایی دستگاه از همین فرم انجام می‌شود.
+  </div>
+
+  <p class="body-text">
+    علاوه بر نمایش لحظه‌ای زاویه، سرعت باد و جریان حرکت، پنل وب امکان تنظیم پارامترهای زیر را در اختیار کاربر قرار می‌دهد: انتخاب شهر از فهرست شهرهای ایران یا وارد کردن مستقیم مختصات UTM، تنظیم ساعت و تاریخ دستی یا همگام‌سازی با مرورگر، تعیین حداقل و حداکثر زاویه مجاز پنل، تنظیم حد آستانه شروع حرکت (پیش‌فرض ۵ درجه)، کالیبراسیون صفر زاویه‌سنج RPI1031، و فعال یا غیرفعال کردن حالت اتوماتیک با امکان تعیین زاویه دستی. همه این تنظیمات و لاگ رویدادها در فایل‌سیستم فلش داخلی (FFS) می‌مانند تا بعد از خاموش و روشن شدن دستگاه از بین نروند. کارت SD و EEPROM در این طرح استفاده نمی‌شود؛ فضای فلش کوچک است، برای همین لاگ به‌صورت چرخشی نوشته می‌شود و فایل قدیمی جا را برای رویداد تازه باز می‌کند.
+  </p>
+
+  <p class="body-text">
+    سناریوهای تست زیر، شاخص کلیدی پذیرش سیستم در فاز تحویل خواهند بود. هر سناریو با یک ورودی، شرط، پاسخ انتظار و نتیجه پذیرش تعریف می‌شود. در فاز تست، هر سناریو حداقل سه بار تکرار خواهد شد تا ثبات پاسخ تأیید گردد.
+  </p>
+
+  <table>
+    <thead>
+      <tr>
+        <th style="width: 30px;">#</th>
+        <th style="width: 130px;">سناریو</th>
+        <th style="width: 160px;">شرط راه‌اندازی</th>
+        <th>پاسخ انتظار سیستم</th>
+        <th style="width: 90px;">نتیجه پذیرش</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>۱</td>
+        <td>خطای بازو (گیرکردن)</td>
+        <td>زاویه بعد از فرمان جلو یا عقب تغییر نمی‌کند</td>
+        <td>تلاش ۳ بار با فاصله ۱۰ ثانیه، سپس توقف و نمایش خطا در پنل وب</td>
+        <td>خطا ثبت + هشدار وب</td>
+      </tr>
+      <tr>
+        <td>۲</td>
+        <td>باد شدید</td>
+        <td>سرعت باد &gt; ۴۰ km/h برای بیش از ۵ ثانیه</td>
+        <td>انتقال فوری پنل به زاویه ۰ درجه (افقی)، توقف شکار خورشید</td>
+        <td>پنل در حالت افقی</td>
+      </tr>
+      <tr>
+        <td>۳</td>
+        <td>حالت شب (غروب)</td>
+        <td>ارتفاع خورشید زیر افق</td>
+        <td>پنل به حالت افقی منتقل می‌شود تا آماده صبحگاهی باشد</td>
+        <td>پنل افقی تا طلوع</td>
+      </tr>
+      <tr>
+        <td>۴</td>
+        <td>قطع برق شبکه</td>
+        <td>قطع تغذیه ۲۲۰V به منبع</td>
+        <td>ساعت با باتری CR2032 می‌ماند؛ تنظیمات از قبل روی فلش FFS است و رویداد قطع برق بعد از برگشت برق همان‌جا ثبت می‌شود</td>
+        <td>زمان حفظ شد</td>
+      </tr>
+      <tr>
+        <td>۵</td>
+        <td>خطای سنسور زاویه</td>
+        <td>قطع کابل RPI1031</td>
+        <td>اگر S1 و S2 قطع باشند یا هر دو روی یک حالت بی‌معنی بمانند، حرکت متوقف و خطا نمایش داده می‌شود</td>
+        <td>توقف ایمن</td>
+      </tr>
+      <tr>
+        <td>۶</td>
+        <td>خطای اتصال رله</td>
+        <td>جریان بعد از فرمان توقف قطع نمی‌شود، یا وسط حرکت از حد بالاتر می‌رود</td>
+        <td>ماژول جریان خطا را می‌بیند، هر دو رله قطع می‌شود و هشدار روی پنل می‌آید</td>
+        <td>خطا نمایش داده شد</td>
+      </tr>
+      <tr>
+        <td>۷</td>
+        <td>قطع WiFi هات‌اسپات</td>
+        <td>خاموش شدن WiFi ESP32</td>
+        <td>سیستم به کار خود ادامه می‌دهد؛ تنها پنل وب غیردسترس می‌شود</td>
+        <td>کارکرد بدون وقفه</td>
+      </tr>
+      <tr>
+        <td>۸</td>
+        <td>ریست خطا از پنل</td>
+        <td>فشردن دکمه ریست خطا</td>
+        <td>پاک‌سازی وضعیت خطا، تلاش مجدد چرخه کنترلی</td>
+        <td>تلاش مجدد موفق</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <!-- ===== SECTION 7: Timeline & additional features ===== -->
+  <div class="section-header spaced">
+    <span class="section-tag">بخش ۰۷</span>
+    <h2 class="section-title">زمان‌بندی پروژه و امکانات تکمیلی</h2>
+    <div class="section-divider"></div>
+  </div>
+
+  <p class="body-text">
+    اجرای پروژه به <strong>شش فاز</strong> تقسیم می‌شود که مجموعاً حدود هفت هفته کاری را در بر می‌گیرد. این برآورد بر پایه تجربه پروژه‌های مشابه و کار با یک نفر توسعه‌دهنده اصلی است؛ در صورت درگیر شدن تیم دو نفره، زمان فازهای ۲ و ۳ به نصف کاهش می‌یابد. جدول و نمودار گانت زیر، فازها و وابستگی‌های زمانی آن‌ها را به‌تفکیک نشان می‌دهد.
+  </p>
+
+  <div class="note">
+    <div class="note-title">⚡ اولویت فاز ۱: یک ماژول جریان</div>
+    یک ماژول <span dir="ltr">ACS712</span> روی تغذیه مشترک جلو و عقب قرار می‌گیرد. هر دو حالت حرکت از همین ماژول رد می‌شوند. تا وقتی خواندن جریان درست نباشد، هر دو رله قطع می‌مانند.
+  </div>
+
+  <div class="timeline">
+    <div class="timeline-row">
+      <div class="timeline-label">فاز ۱: تأمین قطعات</div>
+      <div class="timeline-bar-wrap"><div class="timeline-bar" style="right: 0; width: 14%;"></div></div>
+    </div>
+    <div class="timeline-row">
+      <div class="timeline-label">فاز ۲: مونتاژ سخت‌افزار</div>
+      <div class="timeline-bar-wrap"><div class="timeline-bar alt" style="right: 14%; width: 14%;"></div></div>
+    </div>
+    <div class="timeline-row">
+      <div class="timeline-label">فاز ۳: توسعه فرم‌ور</div>
+      <div class="timeline-bar-wrap"><div class="timeline-bar alt2" style="right: 28%; width: 28%;"></div></div>
+    </div>
+    <div class="timeline-row">
+      <div class="timeline-label">فاز ۴: ساخت پنل وب</div>
+      <div class="timeline-bar-wrap"><div class="timeline-bar alt3" style="right: 42%; width: 14%;"></div></div>
+    </div>
+    <div class="timeline-row">
+      <div class="timeline-label">فاز ۵: تست و کالیبره</div>
+      <div class="timeline-bar-wrap"><div class="timeline-bar alt4" style="right: 56%; width: 14%;"></div></div>
+    </div>
+    <div class="timeline-row">
+      <div class="timeline-label">فاز ۶: راه‌اندازی و تحویل</div>
+      <div class="timeline-bar-wrap"><div class="timeline-bar" style="right: 70%; width: 14%;"></div></div>
+    </div>
+    <div class="timeline-row" style="border-bottom: none;">
+      <div class="timeline-label" style="color: var(--c-text-muted); font-size: 10px;">هفته کاری</div>
+      <div style="display: flex; justify-content: space-between; font-size: 10px; color: var(--c-text-muted); height: 14px; align-items: center;">
+        <span>هفته ۰</span><span>هفته ۱</span><span>هفته ۲</span><span>هفته ۳</span><span>هفته ۴</span><span>هفته ۵</span><span>هفته ۶</span><span>هفته ۷</span>
+      </div>
+    </div>
+  </div>
+
+  <p class="body-text">
+    علاوه بر امکانات اصلی پوشش‌داده‌شده در فازهای بالا، امکانات تکمیلی زیر در حین طراحی ریشه‌ای گنجانده می‌شوند تا سیستم به سمت یک محصول بالغ و قابل اتکا حرکت کند. این امکانات بدون نیاز به تغییر سخت‌افزار اصلی، تنها با بهره‌گیری از قابلیت‌های موجود ESP32 و ماژول‌های انتخاب‌شده پیاده‌سازی می‌گردند.
+  </p>
+
+  <div class="feature-grid">
+    <div class="feature-card">
+      <div class="feature-card-title"><span class="feature-card-icon">🔌</span> سه حالت فرمان</div>
+      <p class="feature-card-text">فرمان با یک رله دو کانال است. توقف یعنی هر دو کانال قطع، و در حرکت فقط یک کانال روشن می‌شود. منبع ۵ ولت، حفاظت داخلی خودش را دارد.</p>
+    </div>
+    <div class="feature-card">
+      <div class="feature-card-title"><span class="feature-card-icon">📊</span> یک سنسور جریان</div>
+      <p class="feature-card-text">یک ACS712 روی تغذیه مشترک. برق حالت جلو و حالت عقب هر دو از همین ماژول عبور می‌کند. اگر جریان بالا بماند یا بعد از توقف قطع نشود، هر دو رله قطع می‌شوند و پنل وب خطا نشان می‌دهد.</p>
+    </div>
+    <div class="feature-card">
+      <div class="feature-card-title"><span class="feature-card-icon">💾</span> لاگ روی فلش FFS</div>
+      <p class="feature-card-text">خطا، شروع و پایان حرکت، و تغییر حالت با تاریخ و ساعت روی فلش داخلی ESP32 و فایل‌سیستم FFS ثبت می‌شود. فایل کوچک و چرخشی است تا جا کم نیاورد. از پنل وب قابل خواندن است. کارت SD و EEPROM حذف شده‌اند.</p>
+    </div>
+    <div class="feature-card">
+      <div class="feature-card-title"><span class="feature-card-icon">🔋</span> باتری پشتیبان</div>
+      <p class="feature-card-text">باتری CR2032 ساعت DS3231 را تا چند سال نگه می‌دارد. تنظیمات و آخرین لاگ روی فلش FFS می‌مانند. با قطع برق شهر، ساعت و پیکربندی از بین نمی‌روند.</p>
+    </div>
+    <div class="feature-card">
+      <div class="feature-card-title"><span class="feature-card-icon">🏠</span> اتصال WiFi خانگی</div>
+      <p class="feature-card-text">به‌جز هات‌اسپات، ESP32 می‌تواند به WiFi خانگی هم وصل شود. در این حالت، پنل وب از هر جای شبکه خانگی و حتی اینترنت (با پورت‌فوروارد) در دسترس خواهد بود.</p>
+    </div>
+    <div class="feature-card">
+      <div class="feature-card-title"><span class="feature-card-icon">🔔</span> نوتیفیکیشن تلگرم</div>
+      <p class="feature-card-text">در صورت اتصال به WiFi خانگی، هشدار خطاها (با توضیح نوع خطا و زمان) به یک ربات تلگرم اختصاصی ارسال می‌شود. کاربر حتی زمانی که نزدیک دستگاه نیست از خطاها مطلع می‌گردد.</p>
+    </div>
+  </div>
+
+  <div class="note">
+    <div class="note-title">🚀 توسعه آینده</div>
+    پس از تکمیل نسخه کنونی، سه مسیر توسعه آینده پیشنهاد می‌شود: (۱) ارتقاء به سیستم <strong>دومحوره</strong> با اضافه کردن یک موتور دوم برای چرخش شمالی-جنوبی، (۲) اتصال به <strong>پلتفرم ابری IoT</strong> برای جمع‌آوری داده‌های چند تراکر در یک داشبورد، و (۳) استفاده از <strong>یادگیری ماشین سبک</strong> روی ESP32 برای پیش‌بینی بهینه زاویه بر مبنای الگوی تابش روزهای گذشته.
+  </div>
+
+</div>
+
+<!-- ============================== ENDING PAGE ============================== -->
+<div class="ending">
+  <div class="ending-watermark">END</div>
+
+  <div class="ending-content">
+    <div class="ending-tag">پایان پروپوزال</div>
+    <h1 class="ending-title">آماده آغاز همکاری</h1>
+    <p class="ending-text">
+      این پروپوزال، طراحی و ساخت سیستم کنترل تراکر است: برد، سنسورها و بادسنج. سازه و جک در این فاکتور نیستند. هزینه طراحی و ساخت ۶۲٬۱۰۰٬۰۰۰ تومان است و قطعات نمونه ۸٬۰۰۰٬۰۰۰ تومان. جمع نمونه اول ۷۰٬۱۰۰٬۰۰۰ تومان می‌شود. قیمت‌ها حدودی‌اند و در فاکتور نهایی قطعی می‌شوند.
+    </p>
+    <div class="ending-divider"></div>
+    <div class="ending-meta">
+      <div class="ending-meta-item">
+        نسخه سند<strong>۱.۳ — آبان ۱۴۰۵</strong>
+      </div>
+      <div class="ending-meta-item">
+        مدت پروژه<strong>۷ هفته کاری</strong>
+      </div>
+      <div class="ending-meta-item">
+        طراحی و ساخت<strong>۶۲٬۱۰۰٬۰۰۰ تومان</strong>
+      </div>
+    </div>
+  </div>
+</div>
+
+</body>
+</html>

@@ -1,0 +1,3 @@
+# RODO: local state (and, once a board is bound, card files: they live on the board)
+rodo/*/.rodo/
+rodo/*/inbox/
