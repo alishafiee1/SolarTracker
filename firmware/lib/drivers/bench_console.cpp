@@ -5,6 +5,7 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include "esp_platform.h"
 #include "relays_gpio.h"
 #include "sun_position.h"
 #include "tracking.h"
@@ -76,6 +77,49 @@ void handle(const char* cmd, const BenchStatus& s) {
                       s.motion->direction() == hal::Dir::West ? "west" : "east",
                       static_cast<unsigned long>(s.motion->safetyWaitMs(s.uptimeMs)), static_cast<int>(s.motion->fault()),
                       digitalRead(kPinRelayPower), digitalRead(kPinRelayDirection));
+    } else if (strcmp(cmd, "settings") == 0) {
+        Serial.printf("I settings: city=%s lat=%.3f lon=%.3f tz=%d thr=%.1f min=%.0f max=%.0f stow=%.0f/%.0f factor=%.2f valid=%d\n", s.cfg->cityId,
+                      s.cfg->latDeg, s.cfg->lonDeg, s.cfg->tzOffsetMin, s.cfg->moveThresholdDeg, s.cfg->minDeg, s.cfg->maxDeg,
+                      s.cfg->windStowKmh, s.cfg->windReturnKmh, s.cfg->anemometerFactor, settings::isValid(*s.cfg));
+    } else if (strncmp(cmd, "set thr ", 8) == 0) {
+        settings::Settings next = *s.cfg;
+        next.moveThresholdDeg = static_cast<float>(atof(cmd + 8));
+        const char* bad = nullptr;
+        if (s.store->save(next, &bad)) {
+            *s.cfg = next;
+            Serial.printf("I set: saved thr=%.1f\n", s.cfg->moveThresholdDeg);
+        } else {
+            Serial.printf("E set: rejected, invalid field %s\n", bad ? bad : "?");
+        }
+    } else if (strcmp(cmd, "set reset") == 0) {
+        *s.cfg = settings::Settings();
+        Serial.printf("I set: defaults %s\n", s.store->save(*s.cfg) ? "saved" : "not saved");
+    } else if (strncmp(cmd, "clock set ", 10) == 0) {
+        const bool ok = s.clock->setUtc(atoll(cmd + 10));
+        s.log->append(hal::EventType::ClockSet, ok ? "bench" : "bench failed");
+        Serial.printf("%c clock: set %s\n", ok ? 'I' : 'E', ok ? "ok" : "failed");
+    } else if (strcmp(cmd, "clock") == 0) {
+        Serial.printf("I clock: present=%d lost_power=%d utc=%lld\n", s.clock->present(), s.clock->lostPower(),
+                      static_cast<long long>(s.clock->utc()));
+    } else if (strncmp(cmd, "loggen ", 7) == 0) {
+        const int n = atoi(cmd + 7);
+        const uint32_t t0 = millis();
+        for (int i = 0; i < n; ++i) {
+            char d[48];
+            snprintf(d, sizeof(d), "test event %d with some padding text", i);
+            s.log->append(hal::EventType::StateChange, d);
+            if ((i & 31) == 0) feedWatchdog();
+        }
+        s.log->flush();
+        Serial.printf("I loggen: %d events in %lu ms, active file %d is %u bytes\n", n, static_cast<unsigned long>(millis() - t0),
+                      s.log->activeFileIndex(), static_cast<unsigned>(s.log->activeFileBytes()));
+    } else if (strncmp(cmd, "log", 3) == 0) {
+        static char out[1800];
+        const int n = cmd[3] == ' ' ? atoi(cmd + 4) : 10;
+        const size_t len = s.log->readLatest(out, sizeof(out), static_cast<size_t>(n > 0 ? n : 10));
+        Serial.printf("I log: %u bytes, active file %d (%u bytes)\n", static_cast<unsigned>(len), s.log->activeFileIndex(),
+                      static_cast<unsigned>(s.log->activeFileBytes()));
+        Serial.print(out);
     } else if (strcmp(cmd, "pins") == 0) {
         printPins();
     } else if (strcmp(cmd, "hang") == 0) {

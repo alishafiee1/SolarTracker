@@ -5,8 +5,11 @@
 #include <stdint.h>
 
 #include "angle_provider.h"
+#include "ds3231_clock.h"
+#include "littlefs_event_log.h"
 #include "motion_controller.h"
 #include "mpu6050_accel.h"
+#include "settings.h"
 
 namespace drivers {
 
@@ -19,6 +22,10 @@ struct BenchStatus {
     Mpu6050Accel* accel;
     angle::AngleProvider* angle;
     motion::MotionController* motion;
+    settings::Settings* cfg;
+    settings::SettingsStore* store;
+    Ds3231Clock* clock;
+    LittleFsEventLog* log;
 };
 
 // Event log that prints every event on the serial port (bench image only).
@@ -34,6 +41,10 @@ hal::IEventLog* benchEventLog();
 //   move e|w  ask the MotionController to move east / west (all interlocks apply)
 //   stop      ask the MotionController to stop
 //   motion    controller state, safety wait, fault and relay pin levels
+//   settings  a few stored settings
+//   set thr V  change the move threshold (degrees) and save it; `set reset` restores the defaults
+//   clock     DS3231 state; `clock set <utc epoch>` sets it
+//   log [n]   the newest n (default 10) event lines; `loggen n` writes n test events (rotation test)
 //   pins      relay pin levels (1 = inactive/high, 0 = active/low)
 //   hang      stop feeding the watchdog; the chip must reset with reason "watchdog"
 //   reboot    software reset (reason "software")

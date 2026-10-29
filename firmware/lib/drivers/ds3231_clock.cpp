@@ -1,0 +1,77 @@
+#include "ds3231_clock.h"
+
+#include <Arduino.h>
+#include <Wire.h>
+
+#include "rtc_time.h"
+
+namespace drivers {
+
+namespace {
+constexpr uint8_t kRegSeconds = 0x00;
+constexpr uint8_t kRegStatus = 0x0F;
+constexpr uint8_t kOscillatorStopped = 0x80;
+}  // namespace
+
+bool Ds3231Clock::readRegs(uint8_t reg, uint8_t* buf, size_t len) const {
+    // A missing chip is retried once a second: every failed try logs an I2C error and costs time.
+    if (failedAtMs_ != 0 && millis() - failedAtMs_ < 1000) return false;
+    Wire.beginTransmission(kAddress);
+    Wire.write(reg);
+    if (Wire.endTransmission(false) != 0 || Wire.requestFrom(static_cast<int>(kAddress), static_cast<int>(len)) != static_cast<int>(len)) {
+        failedAtMs_ = millis() | 1;  // never 0, which means "no failure yet"
+        return false;
+    }
+    failedAtMs_ = 0;
+    for (size_t i = 0; i < len; ++i) buf[i] = static_cast<uint8_t>(Wire.read());
+    return true;
+}
+
+bool Ds3231Clock::present() const {
+    uint8_t status;
+    return readRegs(kRegStatus, &status, 1);
+}
+
+bool Ds3231Clock::lostPower() const {
+    uint8_t status;
+    if (!readRegs(kRegStatus, &status, 1)) return true;
+    if (status & kOscillatorStopped) return true;
+    return utc() == 0;  // unreadable or implausible date
+}
+
+int64_t Ds3231Clock::utc() const {
+    uint8_t r[7];
+    if (!readRegs(kRegSeconds, r, sizeof(r))) return 0;
+    rtc::DateTime dt;
+    dt.second = rtc::fromBcd(r[0] & 0x7F);
+    dt.minute = rtc::fromBcd(r[1] & 0x7F);
+    dt.hour = rtc::fromBcd(r[2] & 0x3F);  // 24 h mode
+    dt.day = rtc::fromBcd(r[4] & 0x3F);
+    dt.month = rtc::fromBcd(r[5] & 0x1F);
+    dt.year = 2000 + rtc::fromBcd(r[6]);
+    return rtc::isPlausible(dt) ? rtc::toEpoch(dt) : 0;
+}
+
+bool Ds3231Clock::setUtc(int64_t epochSec) {
+    const rtc::DateTime dt = rtc::fromEpoch(epochSec);
+    if (!rtc::isPlausible(dt)) return false;
+    Wire.beginTransmission(kAddress);
+    Wire.write(kRegSeconds);
+    Wire.write(rtc::toBcd(dt.second));
+    Wire.write(rtc::toBcd(dt.minute));
+    Wire.write(rtc::toBcd(dt.hour));
+    Wire.write(rtc::toBcd(1));  // weekday is not used
+    Wire.write(rtc::toBcd(dt.day));
+    Wire.write(rtc::toBcd(dt.month));
+    Wire.write(rtc::toBcd(dt.year - 2000));
+    if (Wire.endTransmission() != 0) return false;
+    // Clear the oscillator-stop flag: the time is valid again.
+    uint8_t status;
+    if (!readRegs(kRegStatus, &status, 1)) return false;
+    Wire.beginTransmission(kAddress);
+    Wire.write(kRegStatus);
+    Wire.write(static_cast<uint8_t>(status & ~kOscillatorStopped));
+    return Wire.endTransmission() == 0;
+}
+
+}  // namespace drivers

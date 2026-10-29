@@ -57,5 +57,11 @@ None here; texts used by 008: «تنظیمات ذخیره شد», «مقدار �
 
 ## Decisions
 
+- The default AP and settings passwords are not in the source. `apPassword` defaults to empty and the hash fields to zero; provisioning (cycle 008) supplies them from outside the repository. Because the proposal says every device ships with the same default that is handed to the client, and secrets must not be committed.
+- Settings migration copies an older, shorter blob field by field and leaves appended fields at their defaults; a newer layout or a bad CRC resets to defaults with a `SettingsReset` event. Because guessing the meaning of a newer layout could move the panel wrongly.
+- Settings are validated as a whole before saving, so a change that is only valid together with another one (for example min and max angle) must be saved together. Because `minDeg < maxDeg` and `windReturnKmh < windStowKmh` couple fields.
+- The log partition is mounted by its label `littlefs` (`LittleFS.begin(true, "/littlefs", 10, "littlefs")`), because the library default label is `spiffs` and the mount silently failed. Found on the board.
+- A missing DS3231 or MPU6050 is retried once a second, because every failed I2C attempt logs an error and costs up to 20 ms.
+- The supply watch is disabled while the pin reads under 1 V (divider not fitted) and assumes a 2:1 divider until the PCB defines the real ratio. Because a floating ADC pin would otherwise produce false `SupplyLow` events.
 - Two 64 KB rotating files. Because the 512 KB LittleFS partition must also hold nothing else, and ~1500 events cover weeks of normal operation. (default, not asked)
 - Province-capital list only. Because coordinates can always be pasted for any other place. (default, not asked)
