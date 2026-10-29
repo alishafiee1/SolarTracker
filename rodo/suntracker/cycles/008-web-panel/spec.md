@@ -58,6 +58,12 @@ Exact texts include: «اتصال برقرار است», «اتصال قطع ش�
 
 ## Decisions
 
+- The HTTP layer is thin: `WebApi::handle(Request) -> Response` holds routing, login, validation and the mapping onto the control logic and is tested on the host; `lib/web/panel_server.cpp` only converts HTTP to that and serves the embedded gzip files. Because most of the risk is in the logic, and the network layer cannot run on the host.
+- ESPAsyncWebServer (esphome fork) with one catch-all handler. A mutex shared with the control loop makes the API see state only between ticks; the control tick is therefore delayed by at most one handler (flash writes of settings or the log can take a few tens of ms). Accepted.
+- Default passwords come from the untracked `firmware/src/secrets.h` (template: `secrets.example.h`); without it public development placeholders are used. The hotspot password and the panel password are separate, as the proposal says. Because the real shared default must not be committed.
+- The hotspot password can be changed with `POST /api/settings {apPassword}`; it takes effect after the next restart and is never returned by any API or written to the event log.
+- The panel has no server-side language switch: Persian, right-to-left, system fonts (no web font), numbers shown with Persian digits by the browser. Because the 150 KB limit and no internet for fonts.
+- Unknown GET paths redirect to `/` so phones' captive-portal checks open the panel.
 - One shared default password for all devices, changeable from the panel (no forced change). Because the user chose it (answer of 2026-10-29); the panel warns while the default is in use.
 - Vanilla JS without a framework. Because the panel must be small enough to embed and work offline. (default, not asked)
 - Polling every 1 s instead of WebSocket. Because it is simpler and robust with phones that sleep; traffic is tiny. (default, not asked)

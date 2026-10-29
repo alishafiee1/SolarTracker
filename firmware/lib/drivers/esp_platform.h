@@ -10,6 +10,12 @@ public:
     uint32_t nowMs() const override;
 };
 
+// Hardware random bytes (session tokens, password salts).
+class EspRandom : public hal::IRandom {
+public:
+    void bytes(uint8_t* out, size_t len) override;
+};
+
 core::ResetReason readResetReason();
 
 // R5: task watchdog on the loop task. The loop must call feedWatchdog() at

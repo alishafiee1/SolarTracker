@@ -36,3 +36,6 @@ rodo/**/*.rodo.md
 
 # Device secrets (default passwords): copy firmware/src/secrets.example.h to firmware/src/secrets.h
 firmware/src/secrets.h
+
+# Generated from firmware/web/* by scripts/embed_web.py at every build
+firmware/lib/web/panel_files.h

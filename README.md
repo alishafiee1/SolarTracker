@@ -38,6 +38,10 @@ Firmware layout: `src/main.cpp` (wiring only), `lib/core` (pure logic), `lib/hal
 | `hardware/` | *(planned)* Schematic, PCB (KiCad) and BOM |
 | `enclosure/` | *(planned)* Enclosure models (STEP / STL) |
 
+## Web panel
+
+The device opens its own Wi-Fi hotspot `SunTracker-XXXX` (WPA2, same default password for every device, changeable in the panel). Connect a phone and open `http://192.168.4.1/`. The panel (Persian, right to left) needs no internet. Default passwords come from `firmware/src/secrets.h`, which is not in git: copy `firmware/src/secrets.example.h` and set the values given to the client (without it, public development placeholders are used).
+
 ## Working with RODO
 
 This repo is planned with RODO. Agents and contributors start with [`AGENTS.md`](AGENTS.md) and [`rodo/suntracker/MAP.md`](rodo/suntracker/MAP.md).

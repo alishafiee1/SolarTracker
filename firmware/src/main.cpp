@@ -13,13 +13,26 @@
 #include "motion_controller.h"
 #include "mpu6050_accel.h"
 #include "nvs_settings_store.h"
+#include "panel_server.h"
 #include "relays_gpio.h"
 #include "settings.h"
 #include "supply_watch.h"
 #include "tick_scheduler.h"
+#include "web_api.h"
 #include "wind_monitor.h"
 #ifdef BENCH_CONSOLE
 #include "bench_console.h"
+#endif
+
+// Default passwords come from an untracked secrets.h (see secrets.example.h); the placeholders are public.
+#if __has_include("secrets.h")
+#include "secrets.h"
+#endif
+#ifndef DEFAULT_AP_PASSWORD
+#define DEFAULT_AP_PASSWORD "suntracker-ap-dev"
+#endif
+#ifndef DEFAULT_PANEL_PASSWORD
+#define DEFAULT_PANEL_PASSWORD "suntracker-dev"
 #endif
 
 #ifndef FW_VERSION
@@ -38,6 +51,7 @@ constexpr float kSupplyDividerRatio = 2.0f;
 constexpr float kSupplyPinPresentV = 1.0f;
 
 drivers::EspTime espTime;
+drivers::EspRandom espRandom;
 drivers::RelaysGpio relays;
 drivers::Mpu6050Accel accel;
 drivers::Ds3231Clock rtcClock;
@@ -51,6 +65,9 @@ motion::MotionController* motionCtl = nullptr;  // created in setup(), after the
 control::ControlStateMachine* controller = nullptr;
 drivers::Anemometer anemometer;
 wind::WindMonitor windMonitor;
+webapi::Auth auth(espRandom);
+webapi::WebApi* webApi = nullptr;
+web::PanelServer* panel = nullptr;
 int64_t cachedUtc = 0;       // the DS3231 is read once a second, in between the time is extrapolated
 uint32_t cachedUtcAtMs = 0;
 bool cachedClockValid = false;
@@ -68,6 +85,8 @@ motion::Timing timingFrom(const settings::Settings& s) {
 }
 
 float supplyVolts() { return analogReadMilliVolts(kPinSupply) / 1000.0f * kSupplyDividerRatio; }
+
+int64_t utcNow() { return cachedClockValid ? cachedUtc + (espTime.nowMs() - cachedUtcAtMs) / 1000 : 0; }
 
 }  // namespace
 
@@ -89,12 +108,29 @@ void setup() {
 
     if (!eventLog.begin()) Serial.println("E event log: flash not usable, events are not stored");
     settingsStore.load(cfg, &eventLog);  // defaults + an event if nothing valid is stored
+    angleProvider.loadFrom(nvs);         // the calibration, if one was saved
     eventLog.append(hal::EventType::PowerUp, core::resetReasonName(resetReason));  // R7
 
     motionCtl = new motion::MotionController(relays, timingFrom(cfg), espTime.nowMs());  // R9: starts settling
     motionCtl->setEventLog(&eventLog);
     controller = new control::ControlStateMachine(*motionCtl, cfg, &eventLog);
     anemometer.begin();
+
+    webapi::Deps deps(*controller, cfg, settingsStore, nvs, angleProvider, rtcClock, eventLog, windMonitor, auth);
+    deps.fwVersion = FW_VERSION;
+    deps.defaultPassword = DEFAULT_PANEL_PASSWORD;
+    deps.clockValid = [] { return cachedClockValid; };
+    deps.utcNow = utcNow;
+    deps.readLog = [](char* buf, size_t len, size_t n) { return eventLog.readLatest(buf, len, n); };
+    deps.onSettingsChanged = [] { motionCtl->setTiming(timingFrom(cfg)); };
+    webApi = new webapi::WebApi(deps);
+    panel = new web::PanelServer(*webApi);
+    const char* apPassword = strlen(cfg.apPassword) >= 8 ? cfg.apPassword : DEFAULT_AP_PASSWORD;
+    if (panel->begin(apPassword)) {
+        Serial.printf("I hotspot %s up, panel at http://192.168.4.1/\n", panel->ssid());
+    } else {
+        Serial.println("E hotspot failed to start; the controller keeps working without the panel");  // R8
+    }
 
     controlTick = core::TickScheduler(espTime.nowMs(), core::kControlPeriodMs);
     lastSupplyMs = espTime.nowMs();
@@ -103,6 +139,7 @@ void setup() {
 void loop() {
     drivers::feedWatchdog();
     const uint32_t now = espTime.nowMs();
+    panel->lock();  // the web handlers run in another task; they see the control state only between ticks
     if (controlTick.due(now)) {
         angleProvider.sample();
         if (now - cachedUtcAtMs >= 1000 || cachedUtcAtMs == 0) {
@@ -115,7 +152,7 @@ void loop() {
         in.angleOk = angleProvider.ok();
         in.calibrated = angleProvider.calibrated();
         in.clockValid = cachedClockValid;
-        in.utcEpoch = cachedUtc + (now - cachedUtcAtMs) / 1000;
+        in.utcEpoch = utcNow();
         uint32_t pulses[16];
         for (size_t n; (n = anemometer.drain(pulses, 16)) > 0;)
             for (size_t i = 0; i < n; ++i) windMonitor.feed(pulses[i]);
@@ -146,6 +183,7 @@ void loop() {
         }
     }
     eventLog.service();
+    panel->unlock();
 #ifdef BENCH_CONSOLE
     drivers::benchConsolePoll({FW_VERSION, core::resetReasonName(resetReason), now, controlLoop.ticks(),
                                controlLoop.lastTickMs(), &accel, &angleProvider, motionCtl, &cfg, &settingsStore, &rtcClock, controller,

@@ -227,6 +227,12 @@ Response WebApi::postSettings(const Request& req) {
         next.tzOffsetMin = static_cast<int16_t>(in["tzOffsetMin"].as<int>());
         changed += std::string(changed.empty() ? "" : " ") + "tzOffsetMin";
     }
+    if (in["apPassword"].is<const char*>()) {  // takes effect after the next restart; never sent back by GET
+        const char* pw = in["apPassword"].as<const char*>();
+        if (strlen(pw) < 8 || strlen(pw) >= sizeof(next.apPassword)) return error(400, "invalid", "رمز هات‌اسپات باید بین ۸ تا ۳۲ نویسه باشد", "apPassword");
+        snprintf(next.apPassword, sizeof(next.apPassword), "%s", pw);
+        changed += std::string(changed.empty() ? "" : " ") + "apPassword";
+    }
     Response err;
     if (!saveCfg(next, err)) return err;
     d_.log.append(hal::EventType::SettingsChange, changed.c_str());

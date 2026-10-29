@@ -254,6 +254,19 @@ static void settings_can_be_read_and_changed_with_validation() {
     TEST_ASSERT_EQUAL_INT(400, r.call(true, "/api/settings", "not json", c).status);
 }
 
+static void hotspot_password_can_be_changed_but_is_never_sent_back() {
+    Rig r;
+    const std::string c = r.login();
+    TEST_ASSERT_EQUAL_INT(400, r.call(true, "/api/settings", "{\"apPassword\":\"short\"}", c).status);
+    TEST_ASSERT_EQUAL_STRING("", r.cfg.apPassword);
+    const Response ok = r.call(true, "/api/settings", "{\"apPassword\":\"my-hotspot-pass\"}", c);
+    TEST_ASSERT_EQUAL_INT(200, ok.status);
+    TEST_ASSERT_EQUAL_STRING("my-hotspot-pass", r.cfg.apPassword);
+    TEST_ASSERT_TRUE(ok.body.find("my-hotspot-pass") == std::string::npos);
+    TEST_ASSERT_TRUE(r.call(false, "/api/settings", "", c).body.find("apPassword") == std::string::npos);
+    TEST_ASSERT_TRUE(r.log.events().back().second.find("my-hotspot-pass") == std::string::npos);  // not in the event log either
+}
+
 static void location_by_city_or_pasted_coordinates() {
     Rig r;
     const std::string c = r.login();
@@ -374,6 +387,7 @@ int main() {
     RUN_TEST(sessions_expire_after_30_idle_minutes_and_are_limited_to_four);
     RUN_TEST(password_change_needs_the_old_one_and_a_strong_new_one);
     RUN_TEST(settings_can_be_read_and_changed_with_validation);
+    RUN_TEST(hotspot_password_can_be_changed_but_is_never_sent_back);
     RUN_TEST(location_by_city_or_pasted_coordinates);
     RUN_TEST(clock_set_from_the_phone);
     RUN_TEST(manual_commands_and_their_refusals);

@@ -1,0 +1,140 @@
+<!doctype html>
+<html lang="fa" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>تراکر خورشیدی</title>
+<link rel="stylesheet" href="/style.css">
+</head>
+<body>
+<header>
+  <h1>☀ تراکر خورشیدی</h1>
+  <span id="conn" class="pill off">قطع</span>
+</header>
+
+<div id="loginBox" class="card hidden">
+  <h2>ورود</h2>
+  <p>برای حرکت دستی و تغییر تنظیمات رمز لازم است.</p>
+  <input id="loginPass" type="password" autocomplete="current-password" placeholder="رمز">
+  <button id="loginBtn" class="primary">ورود</button>
+  <p id="loginMsg" class="msg"></p>
+</div>
+
+<nav id="tabs">
+  <button data-tab="dash" class="on">وضعیت</button>
+  <button data-tab="manual">دستی</button>
+  <button data-tab="settings">تنظیمات</button>
+  <button data-tab="location">موقعیت</button>
+  <button data-tab="clock">ساعت</button>
+  <button data-tab="calib">کالیبراسیون</button>
+  <button data-tab="log">لاگ</button>
+  <button data-tab="account">رمز</button>
+</nav>
+
+<main>
+<section id="dash">
+  <div class="grid">
+    <div class="tile"><span>زاویه فعلی</span><b id="angle">—</b><small id="target"></small></div>
+    <div class="tile"><span>سرعت باد</span><b id="wind">—</b><small>km/h</small></div>
+    <div class="tile"><span>حالت</span><b id="mode">—</b><small id="state"></small></div>
+    <div class="tile"><span>آخرین خطا</span><b id="fault">—</b><small id="faultText"></small></div>
+  </div>
+  <p id="statusText" class="big"></p>
+  <p id="warnDefault" class="warn hidden">رمز پیش‌فرض را عوض کنید (برگه «رمز»).</p>
+  <p id="warnClock" class="warn hidden">ساعت تنظیم نشده است؛ ردیابی خودکار تا تنظیم ساعت کار نمی‌کند.</p>
+  <p id="warnCal" class="warn hidden">کالیبراسیون لازم است (برگه «کالیبراسیون»).</p>
+  <button id="resetFault" class="danger hidden">ریست خطا</button>
+  <p class="small">نسخه <span id="fw"></span> · زمان دستگاه <span id="devTime">—</span></p>
+</section>
+
+<section id="manual" class="hidden">
+  <div class="card">
+    <h2>حالت</h2>
+    <div class="row">
+      <button id="modeAuto">اتوماتیک</button>
+      <button id="modeManual">دستی</button>
+    </div>
+    <p class="small">حرکت دستی فقط در حالت دستی کار می‌کند. دکمه را نگه دارید؛ با رها کردن پنل می‌ایستد.</p>
+  </div>
+  <div class="card">
+    <h2>حرکت دستی</h2>
+    <div class="row">
+      <button id="moveEast" class="move">◀ شرق</button>
+      <button id="moveStop" class="move stop">توقف</button>
+      <button id="moveWest" class="move">غرب ▶</button>
+    </div>
+    <p id="manualMsg" class="msg"></p>
+  </div>
+</section>
+
+<section id="settings" class="hidden">
+  <div class="card">
+    <h2>تنظیمات</h2>
+    <form id="settingsForm"></form>
+    <button id="saveSettings" class="primary">ذخیره</button>
+    <p id="settingsMsg" class="msg"></p>
+  </div>
+</section>
+
+<section id="location" class="hidden">
+  <div class="card">
+    <h2>موقعیت نصب</h2>
+    <p>مختصات فعلی: <b id="locNow">—</b></p>
+    <label>شهر
+      <select id="citySel"></select>
+    </label>
+    <button id="saveCity" class="primary">ثبت شهر</button>
+    <label>یا مختصات از نقشه (مثل «30.283, 57.083»)
+      <input id="coordText" dir="ltr" placeholder="30.283, 57.083">
+    </label>
+    <button id="saveCoord" class="primary">ثبت مختصات</button>
+    <p id="locMsg" class="msg"></p>
+  </div>
+</section>
+
+<section id="clock" class="hidden">
+  <div class="card">
+    <h2>ساعت و تاریخ</h2>
+    <p>ساعت دستگاه: <b id="clockNow">—</b></p>
+    <button id="syncPhone" class="primary">همگام‌سازی با ساعت گوشی</button>
+    <label>یا دستی (وقت محلی)
+      <input id="clockManual" type="datetime-local" step="1" dir="ltr">
+    </label>
+    <button id="saveClock">ثبت</button>
+    <p id="clockMsg" class="msg"></p>
+  </div>
+</section>
+
+<section id="calib" class="hidden">
+  <div class="card">
+    <h2>کالیبراسیون زاویه‌سنج</h2>
+    <ol>
+      <li>پنل را در حالت افقی بگذارید و ۵ ثانیه ثابت نگه دارید.<br><button id="calH">ثبت حالت افقی</button></li>
+      <li>پنل را چند درجه (۵ تا ۲۰) به سمت شرق ببرید و ۵ ثانیه ثابت نگه دارید.<br><button id="calE">ثبت حالت شرق</button></li>
+      <li><button id="calSave" class="primary">ذخیره کالیبراسیون</button></li>
+    </ol>
+    <p id="calMsg" class="msg"></p>
+  </div>
+</section>
+
+<section id="log" class="hidden">
+  <div class="card">
+    <h2>لاگ رویدادها</h2>
+    <button id="logReload">بازخوانی</button>
+    <table><thead><tr><th>زمان</th><th>نوع</th><th>جزئیات</th></tr></thead><tbody id="logRows"></tbody></table>
+  </div>
+</section>
+
+<section id="account" class="hidden">
+  <div class="card">
+    <h2>تغییر رمز</h2>
+    <label>رمز فعلی <input id="pwOld" type="password" autocomplete="current-password"></label>
+    <label>رمز جدید (دست‌کم ۸ نویسه) <input id="pwNew" type="password" autocomplete="new-password"></label>
+    <button id="pwSave" class="primary">تغییر رمز</button>
+    <p id="pwMsg" class="msg"></p>
+  </div>
+</section>
+</main>
+<script src="/app.js"></script>
+</body>
+</html>

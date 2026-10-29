@@ -8,6 +8,8 @@ namespace drivers {
 
 uint32_t EspTime::nowMs() const { return millis(); }
 
+void EspRandom::bytes(uint8_t* out, size_t len) { esp_fill_random(out, len); }
+
 core::ResetReason readResetReason() {
     switch (esp_reset_reason()) {
         case ESP_RST_POWERON: return core::ResetReason::PowerOn;
