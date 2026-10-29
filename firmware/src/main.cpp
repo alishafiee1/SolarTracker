@@ -1,10 +1,11 @@
-﻿// SunTracker firmware entry point: wiring only, logic lives in lib/core.
+// SunTracker firmware entry point: wiring only, logic lives in lib/core.
 #include <Arduino.h>
 #include <Wire.h>
 
 #include "angle_provider.h"
 #include "boot_info.h"
 #include "control_loop.h"
+#include "control_state_machine.h"
 #include "ds3231_clock.h"
 #include "esp_platform.h"
 #include "littlefs_event_log.h"
@@ -45,6 +46,10 @@ settings::Settings cfg;
 settings::SupplyWatch supplyWatch;
 angle::AngleProvider angleProvider(accel);
 motion::MotionController* motionCtl = nullptr;  // created in setup(), after the relays are forced off
+control::ControlStateMachine* controller = nullptr;
+int64_t cachedUtc = 0;       // the DS3231 is read once a second, in between the time is extrapolated
+uint32_t cachedUtcAtMs = 0;
+bool cachedClockValid = false;
 core::ControlLoop controlLoop;
 core::TickScheduler controlTick(0, core::kControlPeriodMs);
 core::ResetReason resetReason = core::ResetReason::Unknown;
@@ -84,6 +89,7 @@ void setup() {
 
     motionCtl = new motion::MotionController(relays, timingFrom(cfg), espTime.nowMs());  // R9: starts settling
     motionCtl->setEventLog(&eventLog);
+    controller = new control::ControlStateMachine(*motionCtl, cfg, &eventLog);
 
     controlTick = core::TickScheduler(espTime.nowMs(), core::kControlPeriodMs);
     lastSupplyMs = espTime.nowMs();
@@ -94,7 +100,24 @@ void loop() {
     const uint32_t now = espTime.nowMs();
     if (controlTick.due(now)) {
         angleProvider.sample();
-        motionCtl->tick(now, angleProvider.angleDeg(), 0.0f);
+        if (now - cachedUtcAtMs >= 1000 || cachedUtcAtMs == 0) {
+            cachedClockValid = !rtcClock.lostPower();
+            cachedUtc = cachedClockValid ? rtcClock.utc() : 0;
+            cachedUtcAtMs = now;
+        }
+        control::Inputs in;
+        in.angleDeg = angleProvider.angleDeg();
+        in.angleOk = angleProvider.ok();
+        in.calibrated = angleProvider.calibrated();
+        in.clockValid = cachedClockValid;
+        in.utcEpoch = cachedUtc + (now - cachedUtcAtMs) / 1000;
+        // windStow comes with cycle 006; currentA with the optional current module.
+#ifdef BENCH_CONSOLE
+        if (drivers::benchDirectMotion()) {
+            motionCtl->tick(now, in.angleDeg, 0.0f);  // relay bench tests drive the motion layer directly
+        } else
+#endif
+        controller->tick(now, in);  // also ticks the MotionController
         controlLoop.tick(now);
     }
     if (now - lastSupplyMs >= 1000) {  // R8
@@ -109,7 +132,7 @@ void loop() {
     eventLog.service();
 #ifdef BENCH_CONSOLE
     drivers::benchConsolePoll({FW_VERSION, core::resetReasonName(resetReason), now, controlLoop.ticks(),
-                               controlLoop.lastTickMs(), &accel, &angleProvider, motionCtl, &cfg, &settingsStore, &rtcClock,
+                               controlLoop.lastTickMs(), &accel, &angleProvider, motionCtl, &cfg, &settingsStore, &rtcClock, controller,
                                &eventLog});
 #endif
     delay(1);

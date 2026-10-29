@@ -59,5 +59,11 @@ Status texts (shown in 008): «ردیابی خورشید», «شب — حالت 
 
 ## Decisions
 
+- Manual moves work without an angle calibration (no angle limits are enforced then). Because the installer has to move the panel by hand to do the two calibration steps.
+- Automatic modes, wind stow and night stow never move without a calibration or (for sun targets) a valid clock; the status says why. Because moving on a guessed angle is worse than standing still.
+- A stall in manual mode, or during the single stow attempt after a fault, is not retried: manual latches `Stall` at once and the stow attempt is marked failed. Because a person or the wind is waiting and a silent retry loop hides the problem.
+- Wind and night stow use the normal 5 degree start threshold, so a panel within 5 degrees of horizontal is considered stowed. Because the same hysteresis avoids pointless moves in the middle of the night.
+- The state machine ticks the MotionController itself (decide, then move) so the order is fixed in one place. The `resetLoop` input (3 watchdog resets in 10 minutes) exists but is not wired yet: it needs a reset counter in RTC memory with wall-clock time.
+- The operating mode (auto/manual) is kept in the state machine; persisting it is the web panel's job (cycle 008, via `Settings::mode`).
 - Stop tolerance 1° (move starts at 5°). Because the proposal says "move until the target"; 1° gives hysteresis without hunting. (default, not asked)
 - Dead-man keep-alive for manual moves (3 s). Because a phone that loses the hotspot mid-move must not leave the actuator running until the 120 s limit. (default, not asked)

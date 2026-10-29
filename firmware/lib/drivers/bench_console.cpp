@@ -22,6 +22,8 @@ public:
 };
 SerialEventLog serialEventLog;
 
+bool directMotion = false;
+
 char lineBuf[32];
 size_t lineLen = 0;
 
@@ -66,9 +68,11 @@ void handle(const char* cmd, const BenchStatus& s) {
         Serial.printf("I cal: capturing=%d result=%s calibrated=%d\n", s.angle->capturing(),
                       names[static_cast<int>(s.angle->captureResult())], s.angle->calibrated());
     } else if (strcmp(cmd, "move e") == 0 || strcmp(cmd, "move w") == 0) {
+        directMotion = true;
         s.motion->request(motion::Cmd::move(cmd[5] == 'e' ? hal::Dir::East : hal::Dir::West));
         Serial.printf("I motion: requested move %s\n",cmd[5] == 'e' ? "east" : "west");
     } else if (strcmp(cmd, "stop") == 0) {
+        directMotion = true;
         s.motion->request(motion::Cmd::stop());
         Serial.println("I motion: requested stop");
     } else if (strcmp(cmd, "motion") == 0) {
@@ -120,6 +124,21 @@ void handle(const char* cmd, const BenchStatus& s) {
         Serial.printf("I log: %u bytes, active file %d (%u bytes)\n", static_cast<unsigned>(len), s.log->activeFileIndex(),
                       static_cast<unsigned>(s.log->activeFileBytes()));
         Serial.print(out);
+    } else if (strncmp(cmd, "ctl", 3) == 0) {
+        directMotion = false;
+        const char* arg = cmd[3] == ' ' ? cmd + 4 : "";
+        control::CommandResult res = control::CommandResult::Ok;
+        if (strcmp(arg, "auto") == 0) res = s.ctl->command(control::Command::ModeAuto, s.uptimeMs);
+        else if (strcmp(arg, "manual") == 0) res = s.ctl->command(control::Command::ModeManual, s.uptimeMs);
+        else if (strcmp(arg, "e") == 0) res = s.ctl->command(control::Command::ManualEast, s.uptimeMs);
+        else if (strcmp(arg, "w") == 0) res = s.ctl->command(control::Command::ManualWest, s.uptimeMs);
+        else if (strcmp(arg, "stop") == 0) res = s.ctl->command(control::Command::ManualStop, s.uptimeMs);
+        else if (strcmp(arg, "ka") == 0) res = s.ctl->command(control::Command::KeepAlive, s.uptimeMs);
+        else if (strcmp(arg, "reset") == 0) res = s.ctl->command(control::Command::ResetFault, s.uptimeMs);
+        const control::Status st = s.ctl->status(s.uptimeMs);
+        Serial.printf("I ctl: state=%s fault=%s target=%.1f angle=%.1f moving=%d text=%d wait_s=%lu result=%d\n", control::stateName(st.state),
+                      control::faultName(st.fault), st.targetDeg, st.angleDeg, st.moving, static_cast<int>(st.text),
+                      static_cast<unsigned long>(st.waitS), static_cast<int>(res));
     } else if (strcmp(cmd, "pins") == 0) {
         printPins();
     } else if (strcmp(cmd, "hang") == 0) {
@@ -139,6 +158,8 @@ void handle(const char* cmd, const BenchStatus& s) {
 }
 
 }  // namespace
+
+bool benchDirectMotion() { return directMotion; }
 
 hal::IEventLog* benchEventLog() { return &serialEventLog; }
 

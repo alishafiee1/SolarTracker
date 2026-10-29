@@ -5,6 +5,7 @@
 #include <stdint.h>
 
 #include "angle_provider.h"
+#include "control_state_machine.h"
 #include "ds3231_clock.h"
 #include "littlefs_event_log.h"
 #include "motion_controller.h"
@@ -25,8 +26,13 @@ struct BenchStatus {
     settings::Settings* cfg;
     settings::SettingsStore* store;
     Ds3231Clock* clock;
+    control::ControlStateMachine* ctl;
     LittleFsEventLog* log;
 };
+
+// True after `move`/`stop`: the console then drives the MotionController directly and the state
+// machine is not ticked (relay bench tests). Any `ctl ...` command gives control back.
+bool benchDirectMotion();
 
 // Event log that prints every event on the serial port (bench image only).
 hal::IEventLog* benchEventLog();
@@ -45,6 +51,8 @@ hal::IEventLog* benchEventLog();
 //   set thr V  change the move threshold (degrees) and save it; `set reset` restores the defaults
 //   clock     DS3231 state; `clock set <utc epoch>` sets it
 //   log [n]   the newest n (default 10) event lines; `loggen n` writes n test events (rotation test)
+//   ctl       state machine: state, fault, target, angle, status text
+//   ctl auto|manual|e|w|stop|ka|reset   mode and manual commands (e/w need manual mode and a keep-alive every 3 s)
 //   pins      relay pin levels (1 = inactive/high, 0 = active/low)
 //   hang      stop feeding the watchdog; the chip must reset with reason "watchdog"
 //   reboot    software reset (reason "software")
