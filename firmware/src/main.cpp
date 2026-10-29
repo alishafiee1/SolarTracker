@@ -6,6 +6,7 @@
 #include "boot_info.h"
 #include "control_loop.h"
 #include "esp_platform.h"
+#include "motion_controller.h"
 #include "mpu6050_accel.h"
 #include "relays_gpio.h"
 #include "tick_scheduler.h"
@@ -27,6 +28,7 @@ drivers::EspTime espTime;
 drivers::RelaysGpio relays;
 drivers::Mpu6050Accel accel;
 angle::AngleProvider angleProvider(accel);
+motion::MotionController* motionCtl = nullptr;  // created in setup(), after the relays are forced off
 core::ControlLoop controlLoop;
 core::TickScheduler controlTick(0, core::kControlPeriodMs);
 core::ResetReason resetReason = core::ResetReason::Unknown;
@@ -49,6 +51,11 @@ void setup() {
     Wire.setTimeOut(20);  // ms; a missing sensor must not stall the control tick
     accel.begin();
 
+    motionCtl = new motion::MotionController(relays, motion::Timing(), espTime.nowMs());  // R9: starts settling
+#ifdef BENCH_CONSOLE
+    motionCtl->setEventLog(drivers::benchEventLog());
+#endif
+
     controlTick = core::TickScheduler(espTime.nowMs(), core::kControlPeriodMs);
 }
 
@@ -57,11 +64,12 @@ void loop() {
     const uint32_t now = espTime.nowMs();
     if (controlTick.due(now)) {
         angleProvider.sample();
+        motionCtl->tick(now, angleProvider.angleDeg(), 0.0f);
         controlLoop.tick(now);
     }
 #ifdef BENCH_CONSOLE
     drivers::benchConsolePoll({FW_VERSION, core::resetReasonName(resetReason), now, controlLoop.ticks(),
-                               controlLoop.lastTickMs(), &accel, &angleProvider});
+                               controlLoop.lastTickMs(), &accel, &angleProvider, motionCtl});
 #endif
     delay(1);
 }

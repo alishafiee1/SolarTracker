@@ -13,6 +13,14 @@ namespace drivers {
 
 namespace {
 
+class SerialEventLog : public hal::IEventLog {
+public:
+    void append(hal::EventType type, const char* detail) override {
+        Serial.printf("I event: type=%d %s\n", static_cast<int>(type), detail);
+    }
+};
+SerialEventLog serialEventLog;
+
 char lineBuf[32];
 size_t lineLen = 0;
 
@@ -56,6 +64,18 @@ void handle(const char* cmd, const BenchStatus& s) {
                                             "bad-gravity", "sensor-fault", "not-captured"};
         Serial.printf("I cal: capturing=%d result=%s calibrated=%d\n", s.angle->capturing(),
                       names[static_cast<int>(s.angle->captureResult())], s.angle->calibrated());
+    } else if (strcmp(cmd, "move e") == 0 || strcmp(cmd, "move w") == 0) {
+        s.motion->request(motion::Cmd::move(cmd[5] == 'e' ? hal::Dir::East : hal::Dir::West));
+        Serial.printf("I motion: requested move %s\n",cmd[5] == 'e' ? "east" : "west");
+    } else if (strcmp(cmd, "stop") == 0) {
+        s.motion->request(motion::Cmd::stop());
+        Serial.println("I motion: requested stop");
+    } else if (strcmp(cmd, "motion") == 0) {
+        static const char* const states[] = {"idle", "selecting", "running", "settling"};
+        Serial.printf("I motion: state=%s dir=%s wait_ms=%lu fault=%d CH1=%d CH2=%d\n",states[static_cast<int>(s.motion->state())],
+                      s.motion->direction() == hal::Dir::West ? "west" : "east",
+                      static_cast<unsigned long>(s.motion->safetyWaitMs(s.uptimeMs)), static_cast<int>(s.motion->fault()),
+                      digitalRead(kPinRelayPower), digitalRead(kPinRelayDirection));
     } else if (strcmp(cmd, "pins") == 0) {
         printPins();
     } else if (strcmp(cmd, "hang") == 0) {
@@ -75,6 +95,8 @@ void handle(const char* cmd, const BenchStatus& s) {
 }
 
 }  // namespace
+
+hal::IEventLog* benchEventLog() { return &serialEventLog; }
 
 void benchConsolePoll(const BenchStatus& status) {
     while (Serial.available() > 0) {

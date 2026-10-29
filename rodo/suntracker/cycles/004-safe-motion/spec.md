@@ -65,6 +65,9 @@ None (state is shown by 008).
 
 ## Decisions
 
+- A reversal always takes at least the 10 s gap (R5), because the gap counts between any two moves, so the 3 s settle and the steady-angle rule are only the binding ones when the gap is shortened. Consequence for wind: a stow request that needs the opposite direction waits up to 10 s after the stop. The proposal requires the delays in wind mode too; revisit only if the client wants an exception.
+- `InterlockViolation` blocks every move until `clearFault()`; `MoveTimeout` does not block (the state machine decides, cycle 005 R6). Because a broken interlock means the software is wrong, a timeout only means the arm did not arrive. (default, not asked)
+- Stop while `Selecting` returns to `Idle` without a settle. Because CH1 never came on, nothing moved. (default, not asked)
 - One owner for the relays (`MotionController`). Because the interlocks must hold in every mode. (MEMORY.md)
 - Without the current sensor (module 009 removed), R4 uses only settle time + stable angle. Because the base system must be safe without optional modules. (default, not asked)
 - "Latest request wins" for held requests. Because a queued old command (e.g. east after the user pressed west) would surprise the user. (default, not asked)

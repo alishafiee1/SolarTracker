@@ -5,6 +5,7 @@
 #include <stdint.h>
 
 #include "angle_provider.h"
+#include "motion_controller.h"
 #include "mpu6050_accel.h"
 
 namespace drivers {
@@ -17,7 +18,11 @@ struct BenchStatus {
     uint32_t lastTickMs;
     Mpu6050Accel* accel;
     angle::AngleProvider* angle;
+    motion::MotionController* motion;
 };
+
+// Event log that prints every event on the serial port (bench image only).
+hal::IEventLog* benchEventLog();
 
 // Call once per loop pass. Commands (one per line):
 //   status    one-line state: version, reset reason, uptime, tick count, relay pin levels
@@ -26,6 +31,9 @@ struct BenchStatus {
 //   cal h     start the horizontal calibration capture (panel horizontal, keep still for 5 s)
 //   cal e     start the east calibration capture (panel turned a few degrees east)
 //   cal       calibration state and last capture result
+//   move e|w  ask the MotionController to move east / west (all interlocks apply)
+//   stop      ask the MotionController to stop
+//   motion    controller state, safety wait, fault and relay pin levels
 //   pins      relay pin levels (1 = inactive/high, 0 = active/low)
 //   hang      stop feeding the watchdog; the chip must reset with reason "watchdog"
 //   reboot    software reset (reason "software")
