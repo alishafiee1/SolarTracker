@@ -1,8 +1,8 @@
 ---
 schemaVersion: 2
-title: "حفاظت جریان (اختیاری)"
+title: "حفاظت جریان"
 status: todo
-priority: low
+priority: medium
 workflow: standard
 members: []
 scope:
@@ -10,7 +10,7 @@ scope:
   forbidden: ["firmware/lib/core/motion/motion_controller.cpp", "hardware/", ".agents/"]
 ---
 
-ماژول اختیاری ب۲ + ج۲. با ترانس جریان، گیرکردن (جریان بالا)، رسیدن به لیمیت (جریان صفر) و چسبیدن رله (جریان بعد از توقف) از هم تشخیص داده می‌شوند.
+ماژول ب۲ + ج۲ (کارفرما همه ماژول‌ها را خواسته است). با ترانس جریان، گیرکردن (جریان بالا)، رسیدن به لیمیت (جریان صفر) و چسبیدن رله (جریان بعد از توقف) از هم تشخیص داده می‌شوند.
 
 ## Progress notes
 

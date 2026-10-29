@@ -18,7 +18,7 @@ Versioned settings in NVS with validation, a UTC real-time clock with loss detec
 
 ## 3. Data
 
-Fields (defaults): latDeg 30.283, lonDeg 57.083, cityId kerman, tzOffsetMin 210, minDeg −45, maxDeg 45, moveThresholdDeg 5, stopSettleMs 3000, minMoveGapMs 10000, maxMoveMs 120000, stallCheckMs 5000, windStowKmh 40, windStowDelayS 5, windReturnKmh 30, windReturnMin 15, anemometerFactor 2.4, preDawnMinutes 0, mode Auto, angleCal (none), apPassword (set at production), settingsPasswordHash + salt, supplyLowV 4.5. Optional-module fields are added by their cycles.
+Fields (defaults): latDeg 30.283, lonDeg 57.083, cityId kerman, tzOffsetMin 210, minDeg −45, maxDeg 45, moveThresholdDeg 5, stopSettleMs 3000, minMoveGapMs 10000, maxMoveMs 120000, stallCheckMs 5000, windStowKmh 40, windStowDelayS 5, windReturnKmh 30, windReturnMin 15, anemometerFactor 6.8, preDawnMinutes 0, mode Auto, angleCal (none), apPassword (shared default, changeable), settingsPasswordHash + salt, supplyLowV 4.5. Optional-module fields are added by their cycles.
 
 ## 4. API / logic
 

@@ -1,4 +1,4 @@
-# 010 — Offline update from the web (optional module C4): technical spec
+# 010 — Offline update from the web (module C4, requested by the client): technical spec
 
 ## 1. Summary
 
@@ -49,8 +49,8 @@ Texts: «در حال ارسال: n٪», «فایل نامعتبر است», «ن
 ## Open Questions
 
 - Does the Arduino-ESP32 bootloader in the chosen platform version have app rollback enabled? — default if no answer: use the NVS `pendingVerify` + boot-counter approach in R4, which works without bootloader support.
-- Did the client keep this optional module? — default if no answer: implement after the base cycles.
 
 ## Decisions
 
+- Client wants all optional modules (answer of 2026-10-29). Because the user confirmed the full scope.
 - Self-test before confirming the image. Because a bad image that boots but breaks control must still roll back. (default, not asked)

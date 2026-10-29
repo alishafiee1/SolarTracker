@@ -6,12 +6,12 @@ Count anemometer pulses, convert to km/h, and raise/clear a `windStow` flag with
 
 ## 2. Rules
 
-- **R1** ISR on GPIO 4 (falling edge) increments a volatile counter; pulses closer than 2 ms to the previous one are ignored (debounce). The ISR does nothing else.
-- **R2** Every 1 s: frequency = pulses / s; speed km/h = frequency × `anemometerFactor` (setting, default 2.4 km/h per Hz, to be confirmed with the chosen anemometer). The control logic uses the average of the last 3 s.
+- **R1** Sensor: one Hall sensor; the rotor magnet passes it once per revolution (1 pulse per revolution). ISR on GPIO 4 (falling edge) stores the `micros()` timestamp of each pulse in a small ring buffer (16 entries); pulses closer than 5 ms to the previous one are ignored (debounce; 5 ms = 200 rev/s, far above any real wind). The ISR does nothing else.
+- **R2** With only ~6 pulses/s at 40 km/h, counting pulses per second is too coarse, so speed is computed from pulse periods: every 1 s, rotation frequency f = (pulses in the last 3 s − 1) / (time between the first and last of them); no pulse for 3 s → 0 km/h. Speed km/h = f × `anemometerFactor`. Default factor 6.8 km/h per Hz: rotor diameter 20 cm → cup-centre circumference 0.628 m, × cup factor ≈ 3 → 1.88 m/s per Hz. The factor is calibrated on site against a handheld anemometer (R6 range).
 - **R3** `windStow` becomes true when speed > `windStowKmh` (default 40) continuously for > `windStowDelayS` (default 5 s).
 - **R4** `windStow` becomes false only when speed < `windReturnKmh` (default 30) continuously for `windReturnMin` (default 15 min). Any sample ≥ `windReturnKmh` restarts that timer.
 - **R5** `windStow` is independent of the operating mode (auto/manual); 005 gives it priority over manual.
-- **R6** Validation: `windReturnKmh` < `windStowKmh`; 10 ≤ stow ≤ 100 km/h; factor 0.1–10.
+- **R6** Validation: `windReturnKmh` < `windStowKmh`; 10 ≤ stow ≤ 100 km/h; factor 1–20 km/h per Hz.
 - **R7** Wind stow start and end produce events with the peak speed.
 
 ## 3. Data
@@ -20,7 +20,7 @@ Settings: `anemometerFactor`, `windStowKmh`, `windStowDelayS`, `windReturnKmh`, 
 
 ## 4. API / logic
 
-`class WindMonitor { void onSecond(uint32_t pulses); float speedKmh() const; bool stow() const; }` (pure core) and `Anemometer : IWindPulse` driver.
+`class WindMonitor { void onSecond(const PulseWindow& pulses); float speedKmh() const; bool stow() const; }` (pure core) and `Anemometer : IWindPulse` driver.
 
 ## 5. Screens
 
@@ -35,7 +35,8 @@ Status in 008: «باد: n km/h — عادی» / «باد شدید — حالت 
 
 ## 7. Edge cases
 
-- Noise spikes on a long cable → debounce (R1) + 3 s average.
+- Noise spikes on a long cable → debounce (R1) + 3 s window.
+- Very light wind: rotor may stop between pulses → reported as 0 km/h after 3 s; harmless (far below thresholds).
 - Wind exactly at 40 km/h → not stow (strictly greater).
 - Reboot during wind stow → starts with `windStow` false but speed is re-measured within 5 s; acceptable.
 
@@ -51,8 +52,10 @@ Status in 008: «باد: n km/h — عادی» / «باد شدید — حالت 
 
 ## Open Questions
 
-- Which anemometer is bought (local build or ready pulse anemometer)? — default if no answer: factor 2.4 km/h per Hz, calibrated on site against a handheld anemometer.
+- none
 
 ## Decisions
 
+- Anemometer: locally built cup rotor, 20 cm diameter, one Hall pulse per revolution; default factor 6.8 km/h per Hz, calibrated on site. Because that is the hardware the user chose (answer of 2026-10-29).
+- Speed from pulse periods, not pulse counts. Because one pulse per revolution gives only ~6 pulses/s at the 40 km/h threshold.
 - Decisions on raw 3 s average, not gust peaks. Because the proposal thresholds are sustained-wind thresholds with explicit delays. (default, not asked)

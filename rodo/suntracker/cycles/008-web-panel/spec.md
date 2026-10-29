@@ -6,10 +6,10 @@ Wi-Fi access point, async web server, embedded Persian RTL single-page panel and
 
 ## 2. Rules
 
-- **R1** AP SSID `SunTracker-XXXX` (last 4 hex digits of the MAC), WPA2, per-device password (≥ 8 chars, set at production, changeable in settings). IP 192.168.4.1, max 4 clients. The AP channel is fixed (default 6).
+- **R1** AP SSID `SunTracker-XXXX` (last 4 hex digits of the MAC), WPA2 password ≥ 8 chars: the same default on every device, changeable in Settings. IP 192.168.4.1, max 4 clients. The AP channel is fixed (default 6).
 - **R2** ESPAsyncWebServer on port 80. The panel (HTML/CSS/JS, no external CDN, Vazirmatn font subset or system font) is built from `firmware/web/`, gzipped and embedded as byte arrays by `scripts/embed_web.py` at build time. Total ≤ 150 KB gzipped. RTL, Persian digits in the UI.
 - **R3** `GET /api/status` (no login) returns JSON: `angleDeg, targetDeg, windKmh, currentA|null, mode, state, stateText, fault|null, waitingS, clockValid, calibrated, utc, tzOffsetMin, fwVersion`. The panel polls it every 1 s.
-- **R4** Settings password (separate from the AP password) protects every endpoint that changes something. `POST /api/login {password}` → session cookie (random 128-bit token, HttpOnly, SameSite=Strict, 30 min idle timeout, max 4 sessions). Stored as salted SHA-256. After 5 wrong attempts in 1 min, logins are refused for 1 min. Default password printed on the device label; first login forces a change.
+- **R4** Settings password (separate from the AP password) protects every endpoint that changes something. `POST /api/login {password}` → session cookie (random 128-bit token, HttpOnly, SameSite=Strict, 30 min idle timeout, max 4 sessions). Stored as salted SHA-256. After 5 wrong attempts in 1 min, logins are refused for 1 min. Every device ships with the same default settings password (kept out of the repo and given to the client at delivery); it can be changed in Settings, and the panel shows «رمز پیش‌فرض را عوض کنید» until it is changed.
 - **R5** Pages: Dashboard (R3 values), Manual (East / Stop / West, shows safety wait), Settings (fields from 007 with ranges), Location (city list or "lat, lon" paste), Clock (sync from phone: sends `Date.now()`, or manual date/time), Calibration wizard (step 1 horizontal, step 2 east, shows result or the reason it was rejected), Log (latest 100 events, local time), Fault reset.
 - **R6** Endpoints (login required): `POST /api/mode {auto|manual}`, `POST /api/manual {east|west|stop}`, `POST /api/manual/keepalive` (every 1 s while a button is active; 005 R4), `GET/POST /api/settings`, `POST /api/location`, `POST /api/clock {utc}`, `POST /api/calibrate/{horizontal|east|save|cancel}`, `POST /api/fault/reset`, `GET /api/log?n=100`, `POST /api/password`. Errors return `{error, field?}` with the Persian message.
 - **R7** Handlers never call core objects directly: they push `Command`s into a queue consumed by `ControlLoop` and read the latest `Status` snapshot (copied under a short critical section). No handler blocks longer than 20 ms.
@@ -17,7 +17,7 @@ Wi-Fi access point, async web server, embedded Persian RTL single-page panel and
 
 ## 3. Data
 
-Uses `Settings` (007) and `Status`. Adds `apPassword`, `settingsPasswordHash`, `settingsPasswordSalt`, `mustChangePassword`.
+Uses `Settings` (007) and `Status`. Adds `apPassword`, `settingsPasswordHash`, `settingsPasswordSalt`, `passwordIsDefault`.
 
 ## 4. API / logic
 
@@ -54,9 +54,10 @@ Exact texts include: «اتصال برقرار است», «اتصال قطع ش�
 
 ## Open Questions
 
-- Should the default settings password be unique per device (on the label) or one shared default? — default if no answer: unique per device, printed on the label, change forced at first login.
+- none
 
 ## Decisions
 
+- One shared default password for all devices, changeable from the panel (no forced change). Because the user chose it (answer of 2026-10-29); the panel warns while the default is in use.
 - Vanilla JS without a framework. Because the panel must be small enough to embed and work offline. (default, not asked)
 - Polling every 1 s instead of WebSocket. Because it is simpler and robust with phones that sleep; traffic is tiny. (default, not asked)

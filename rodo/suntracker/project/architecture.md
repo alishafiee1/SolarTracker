@@ -17,7 +17,7 @@
 
 ## Runtime structure
 
-- One cooperative main loop with a fixed 100 ms control tick (`ControlLoop::tick(nowMs)`), plus the async web server task and the anemometer ISR (it only counts pulses).
+- One cooperative main loop with a fixed 100 ms control tick (`ControlLoop::tick(nowMs)`), plus the async web server task and the anemometer ISR (it only stores pulse timestamps).
 - Control priority (highest wins): `Fault > Wind > Manual > Night > Auto`.
 - `MotionController` is the only code that touches the relays. Everyone else asks it for `stop()` or `move(direction)`. It enforces every timing interlock.
 - Boot order: relays OFF (inputs pulled up, active-low) → watchdog on → load settings → sensors → control loop → Wi-Fi AP → web server.
@@ -27,7 +27,7 @@
 | GPIO | Use |
 |---|---|
 | 21 / 22 | I2C SDA / SCL — DS3231 @0x68, MPU6050 @0x69 (AD0 high) |
-| 4 | Anemometer Hall pulse (interrupt, one pulse per cup rotation) |
+| 4 | Anemometer Hall pulse (interrupt, one pulse per rotor revolution; 20 cm cup rotor) |
 | 25 | Relay CH1 — actuator power ON/OFF, active-low |
 | 26 | Relay CH2 — direction east/west, active-low |
 | 34 | ADC1_CH6 — 5 V supply divider |
@@ -35,7 +35,7 @@
 
 ## دادهٔ اصلی
 
-- `Settings` (NVS, versioned struct with defaults and range checks): location (lat, lon, city id; default Kerman), timezone offset (default +03:30), min/max angle (−45/+45°), move threshold (5°), wind stow/return thresholds (40/30 km/h), stow delay (5 s), return delay (15 min), anemometer factor, stall check time (5 s), max move time (120 s), stop settle time (3 s), minimum gap between moves (10 s), angle calibration (two gravity vectors), operating mode (auto/manual), AP password, settings password (stored as a hash).
+- `Settings` (NVS, versioned struct with defaults and range checks): location (lat, lon, city id; default Kerman), timezone offset (default +03:30), min/max angle (−45/+45°), move threshold (5°), wind stow/return thresholds (40/30 km/h), stow delay (5 s), return delay (15 min), anemometer factor, stall check time (5 s), max move time (120 s), stop settle time (3 s), minimum gap between moves (10 s), angle calibration (two gravity vectors), operating mode (auto/manual), AP password and settings password (same default on every device, both changeable; the settings password stored as a hash).
 - `Event` (LittleFS rotating log): UTC timestamp, type (fault, move start/end, mode change, power restored, wind stow/return, settings change, update), short detail.
 - `Status` (RAM, served at `/api/status`): current and target angle, wind speed, current RMS, mode, state, last fault.
 - Time: the DS3231 always holds UTC; local time = UTC + stored offset.

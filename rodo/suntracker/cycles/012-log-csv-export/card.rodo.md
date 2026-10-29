@@ -1,8 +1,8 @@
 ---
 schemaVersion: 2
-title: "خروجی CSV لاگ (اختیاری)"
+title: "خروجی CSV لاگ"
 status: todo
-priority: low
+priority: medium
 workflow: standard
 members: []
 scope:
@@ -10,7 +10,7 @@ scope:
   forbidden: ["firmware/lib/core/", "hardware/", ".agents/"]
 ---
 
-ماژول اختیاری ج۶. لاگ رویدادهای دستگاه از پنل وب به‌صورت یک فایل CSV دانلود می‌شود که در اکسل درست باز می‌شود.
+ماژول ج۶ (کارفرما همه ماژول‌ها را خواسته است). لاگ رویدادهای دستگاه از پنل وب به‌صورت یک فایل CSV دانلود می‌شود که در اکسل درست باز می‌شود.
 
 ## Progress notes
 

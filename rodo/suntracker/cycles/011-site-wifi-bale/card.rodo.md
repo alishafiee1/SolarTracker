@@ -1,8 +1,8 @@
 ---
 schemaVersion: 2
-title: "WiFi محل و اعلان بله (اختیاری)"
+title: "WiFi محل و اعلان بله"
 status: todo
-priority: low
+priority: medium
 workflow: standard
 members: []
 scope:
@@ -10,7 +10,7 @@ scope:
   forbidden: ["firmware/lib/core/motion/", "hardware/", ".agents/"]
 ---
 
-ماژول اختیاری ج۵. دستگاه علاوه بر هات‌اسپات به WiFi محل وصل می‌شود، ساعت را از اینترنت همگام می‌کند و خطاها را به ربات بله می‌فرستد. قطع WiFi روی کار تراکر اثری ندارد.
+ماژول ج۵ (کارفرما همه ماژول‌ها را خواسته است). دستگاه علاوه بر هات‌اسپات به WiFi محل وصل می‌شود، ساعت را از اینترنت همگام می‌کند و خطاها را به ربات بله می‌فرستد. قطع WiFi روی کار تراکر اثری ندارد.
 
 ## Progress notes
 

@@ -1,4 +1,4 @@
-# 012 — Log CSV export (optional module C6): technical spec
+# 012 — Log CSV export (module C6, requested by the client): technical spec
 
 ## 1. Summary
 
@@ -46,8 +46,8 @@ Button «دانلود CSV» on the Log page.
 
 ## Open Questions
 
-- Did the client keep this optional module? — default if no answer: implement after the base cycles.
 
 ## Decisions
 
+- Client wants all optional modules (answer of 2026-10-29). Because the user confirmed the full scope.
 - Login required for the download. Because the log reveals the operating pattern of the site. (default, not asked)

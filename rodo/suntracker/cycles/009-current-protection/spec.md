@@ -1,4 +1,4 @@
-# 009 — Current protection (optional module B2 + C2): technical spec
+# 009 — Current protection (module B2 + C2, requested by the client): technical spec
 
 ## 1. Summary
 
@@ -11,7 +11,7 @@ Read SCT-013 on GPIO 32, compute RMS, and use it to detect stall, limit reached,
 - **R3** Limit vs wire break: while `Running`, current < `zeroCurrentA` (0.2 A) for 1 s after the first 500 ms → if the angle is within 5° of the end in the moving direction (`maxDeg`/`minDeg` ± mechanical margin) → `LimitReached` (event, no fault, stop); else → `Fault::WireBreak`.
 - **R4** Relay stuck: current > 0.3 A for > 1 s while CH1 is commanded off → `Fault::RelayStuck`, event, alert on the panel (cannot be fixed by software).
 - **R5** Overcurrent: current > `maxCurrentA` (default 5 A) for > 300 ms while running → emergency stop + `Fault::Overcurrent`.
-- **R6** With the module present, 004 R4 uses the current condition; `currentPresent` is a setting (false when the module is not installed), and every rule here is skipped when false.
+- **R6** With the module present, 004 R4 uses the current condition; `currentPresent` is a setting (default true; false only if the sensor is not fitted), and every rule here is skipped when false.
 
 ## 3. Data
 
@@ -49,8 +49,8 @@ Dashboard shows «جریان جک: n A». Fault texts: «رله چسبیده —
 
 ## Open Questions
 
-- Did the client keep this optional module? — default if no answer: implement after the base cycles; skip if the client removes it.
 
 ## Decisions
 
+- Client wants all optional modules (answer of 2026-10-29). Because the user confirmed the full scope.
 - Optional module behind a `currentPresent` setting. Because the base system must work and stay safe without it. (MEMORY.md)

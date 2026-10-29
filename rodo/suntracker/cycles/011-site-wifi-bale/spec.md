@@ -1,8 +1,8 @@
-# 011 — Site Wi-Fi and Bale notifications (optional module C5): technical spec
+# 011 — Site Wi-Fi and Bale notifications (module C5, requested by the client): technical spec
 
 ## 1. Summary
 
-AP+STA Wi-Fi, NTP time sync and fault notifications through a Bale bot, all optional and never blocking control.
+AP+STA Wi-Fi, NTP time sync and fault notifications through a Bale bot, never blocking control.
 
 ## 2. Rules
 
@@ -48,9 +48,9 @@ Network page: SSID field, password field (write-only), connection state; notific
 
 ## Open Questions
 
-- Did the client keep this optional module? — default if no answer: implement last.
 - Confirm the Bale Bot API base URL at implementation time. — default: `https://tapi.bale.ai/bot<token>/`.
 
 ## Decisions
 
+- Client wants all optional modules (answer of 2026-10-29). Because the user confirmed the full scope.
 - Keep the AP always on in AP+STA mode. Because the proposal promises the hotspot stays available when site Wi-Fi fails.
