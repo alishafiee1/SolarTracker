@@ -27,6 +27,9 @@ const char* faultName(FaultCode f) {
         case FaultCode::AngleSensor: return "angle-sensor";
         case FaultCode::Interlock: return "interlock";
         case FaultCode::ResetLoop: return "reset-loop";
+        case FaultCode::WireBreak: return "wire-break";
+        case FaultCode::RelayStuck: return "relay-stuck";
+        case FaultCode::Overcurrent: return "overcurrent";
     }
     return "?";
 }
@@ -49,9 +52,20 @@ void ControlStateMachine::latch(FaultCode code, uint32_t nowMs, const char* why)
     if (fault_ != FaultCode::None) return;
     fault_ = code;
     if (log_) log_->append(hal::EventType::Fault, why ? why : faultName(code));
-    if (code == FaultCode::AngleSensor || code == FaultCode::Interlock || code == FaultCode::ResetLoop) {
+    if (code == FaultCode::AngleSensor || code == FaultCode::Interlock || code == FaultCode::ResetLoop || code == FaultCode::WireBreak ||
+        code == FaultCode::RelayStuck || code == FaultCode::Overcurrent) {
         motion_.emergencyStop(nowMs, faultName(code));  // nothing safe to do with a blind or broken system
     }
+}
+
+// True while the panel still sits at the end where the jack's limit switch cut the power and `dir` pushes towards it.
+bool ControlStateMachine::blockedByLimit(hal::Dir dir, float angleDeg) {
+    if (!limitActive_) return false;
+    if (dir != limitDir_ || fabsf(angleDeg - limitAngle_) > 2.0f) {
+        limitActive_ = false;  // moved away or asked for the other way: the block ends
+        return false;
+    }
+    return true;
 }
 
 void ControlStateMachine::stopMoving() {
@@ -145,7 +159,7 @@ void ControlStateMachine::driveTo(float target, const Inputs& in) {
         if (reached) motion_.request(motion::Cmd::stop());  // R2: ends within 1 degree or when passed
         return;
     }
-    if (fabsf(err) > cfg_.moveThresholdDeg) {
+    if (fabsf(err) > cfg_.moveThresholdDeg && !blockedByLimit(err > 0 ? hal::Dir::West : hal::Dir::East, in.angleDeg)) {
         motion_.request(motion::Cmd::move(err > 0 ? hal::Dir::West : hal::Dir::East));  // R2
     } else if (motion_.hasPending()) {
         motion_.request(motion::Cmd::stop());  // the need went away while the safety delay was running
@@ -162,6 +176,7 @@ void ControlStateMachine::runManual(uint32_t nowMs, const Inputs& in) {
             manualActive_ = false;
         }
     }
+    if (manualActive_ && blockedByLimit(manualDir_, in.angleDeg)) manualActive_ = false;  // the jack is at its end
     if (manualActive_) {
         motion_.request(motion::Cmd::move(manualDir_));
     } else {
@@ -179,6 +194,9 @@ void ControlStateMachine::watchStall(uint32_t nowMs, const Inputs& in) {
     }
     wasRunning_ = running;
     if (!running || !in.calibrated || nowMs - stallRefMs_ < cfg_.stallCheckMs) return;
+    // With the current module a jam means high current; no current at all is the end of the stroke or a broken wire,
+    // which the current supervisor has already decided (module 009 R2/R3).
+    if (cfg_.currentPresent && in.currentA < cfg_.zeroCurrentA) return;
 
     const float progress = stallDir_ == hal::Dir::West ? in.angleDeg - stallRefAngle_ : stallRefAngle_ - in.angleDeg;
     if (progress >= kStallProgressDeg) {
@@ -206,6 +224,26 @@ void ControlStateMachine::tick(uint32_t nowMs, const Inputs& in) {
     if (in.resetLoop) latch(FaultCode::ResetLoop, nowMs, "repeated watchdog resets");
     if (motion_.fault() == motion::Fault::MoveTimeout) latch(FaultCode::MoveTimeout, nowMs, "move timeout");
     if (motion_.fault() == motion::Fault::InterlockViolation) latch(FaultCode::Interlock, nowMs, "interlock violation");
+
+    // Optional current module: limit of the stroke, broken wire, stuck relay, overcurrent.
+    {
+        const current::Config cc{cfg_.currentPresent, cfg_.stallCurrentA, cfg_.maxCurrentA, cfg_.zeroCurrentA};
+        switch (currentSup_.update(nowMs, cc, in.currentA, motion_.running(), motion_.direction() == hal::Dir::East, in.angleDeg, cfg_.minDeg, cfg_.maxDeg)) {
+            case current::Event::LimitReached:
+                motion_.request(motion::Cmd::stop());  // the jack's own limit switch cut the power: not a fault
+                stallAttempts_ = 0;
+                limitActive_ = true;
+                limitDir_ = motion_.direction();
+                limitAngle_ = in.angleDeg;
+                manualActive_ = false;
+                if (log_) log_->append(hal::EventType::StateChange, "end of stroke: limit reached");
+                break;
+            case current::Event::WireBreak: latch(FaultCode::WireBreak, nowMs, "wire break: no current while powered"); break;
+            case current::Event::RelayStuck: latch(FaultCode::RelayStuck, nowMs, "relay stuck: current after the stop command"); break;
+            case current::Event::Overcurrent: latch(FaultCode::Overcurrent, nowMs, "overcurrent"); break;
+            case current::Event::None: break;
+        }
+    }
 
     changeState(decide(in));
     if (!in.windStow || fault_ == FaultCode::None) stowFailed_ = false;  // a new wind episode gets a new attempt
@@ -249,6 +287,9 @@ Status ControlStateMachine::status(uint32_t nowMs) const {
                      : fault_ == FaultCode::MoveTimeout  ? StatusText::FaultMoveTimeout
                      : fault_ == FaultCode::AngleSensor  ? StatusText::FaultAngleSensor
                      : fault_ == FaultCode::Interlock    ? StatusText::FaultInterlock
+                     : fault_ == FaultCode::WireBreak    ? StatusText::FaultWireBreak
+                     : fault_ == FaultCode::RelayStuck   ? StatusText::FaultRelayStuck
+                     : fault_ == FaultCode::Overcurrent  ? StatusText::FaultOvercurrent
                                                          : StatusText::FaultResetLoop;
             break;
         case ActiveState::Wind: s.text = StatusText::WindStow; break;

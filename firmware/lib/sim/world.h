@@ -41,6 +41,11 @@ struct ActuatorModel {
     double coastS = 0.3;       // time constant of the run-out after power is cut
     double limitDeg = 50.0;    // internal limit switches
     bool jammed = false;       // the relays switch but the arm does not move
+    bool wireBroken = false;   // the actuator cable is cut: no motion, no current
+    bool relayStuck = false;   // CH1 contacts welded: the supply stays connected after the stop command
+    double runCurrentA = 3.0;  // two actuators in parallel, about 1.5 A each
+    double jamCurrentA = 6.0;  // blocked arm
+    double inrushA = 4.0;      // extra current in the first 300 ms
     double angleDeg = 0.0;     // true panel angle, positive towards west
     double velocity = 0.0;
 };
@@ -62,6 +67,7 @@ public:
     double accelNoiseDeg = 0.3;                                   // R1: sigma of the angle noise
     std::function<double(uint32_t ms)> windKmh = [](uint32_t) { return 0.0; };
     bool sensorUnplugged = false;
+    double currentNoiseA = 0.05;
     bool clockValid = true;
 
     // ---- access ----
@@ -76,6 +82,12 @@ public:
     control::ControlStateMachine& ctl() { return *ctl_; }
     motion::MotionController& motion() { return *motion_; }
     int64_t utc() const { return utc_; }
+    double actuatorCurrentA() const { return currentA_; }
+    // Fit the current transformer: from now on the controller uses the current (module 009).
+    void enableCurrentModule() {
+        cfg_.currentPresent = true;
+        motion_->setTiming(timingFrom(cfg_));
+    }
     void setUtc(int64_t t) { utc_ = t; }
     uint32_t elapsedMs() const { return time_.nowMs(); }
     int powerOns() const { return powerOns_; }
@@ -119,15 +131,22 @@ public:
         time_.advance(kStepMs);
         utc_ += (stepCount_++ % 10 == 9) ? 1 : 0;  // 10 steps of 100 ms = 1 s
 
-        // actuator
-        const bool powered = relays_.power();
-        const double want = (powered && !act.jammed) ? (relays_.direction() == hal::Dir::West ? act.speedDegPerS : -act.speedDegPerS) : 0.0;
-        act.velocity = powered ? want : act.velocity * exp(-dt / act.coastS);
+        // actuator: the supply reaches it through CH1, or through welded contacts
+        const bool commanded = relays_.power();
+        const bool supplied = (commanded || act.relayStuck) && !act.wireBroken;
+        const bool west = relays_.direction() == hal::Dir::West;
+        const bool atLimit = (west && act.angleDeg >= act.limitDeg) || (!west && act.angleDeg <= -act.limitDeg);  // the jack's own limit switch cuts its power
+        const bool driven = supplied && !atLimit;
+        const double want = (driven && !act.jammed) ? (west ? act.speedDegPerS : -act.speedDegPerS) : 0.0;
+        act.velocity = driven ? want : act.velocity * exp(-dt / act.coastS);
         act.angleDeg += act.velocity * dt;
         if (act.angleDeg > act.limitDeg) act.angleDeg = act.limitDeg;
         if (act.angleDeg < -act.limitDeg) act.angleDeg = -act.limitDeg;
-        if (powered && !wasPowered_) ++powerOns_;
-        wasPowered_ = powered;
+        if (driven && !wasDriven_) drivenSinceMs_ = time_.nowMs();
+        wasDriven_ = driven;
+        currentA_ = driven ? (act.jammed ? act.jamCurrentA : act.runCurrentA) + (time_.nowMs() - drivenSinceMs_ < 300 ? act.inrushA : 0.0) : 0.0;
+        if (commanded && !wasPowered_) ++powerOns_;
+        wasPowered_ = commanded;
 
         sampleSensor();
 
@@ -154,6 +173,7 @@ public:
         in.utcEpoch = utc_;
         in.clockValid = clockValid;
         in.windStow = wind_->stow();
+        in.currentA = static_cast<float>(currentA_ > 0.0 ? currentA_ + rng_.gauss() * currentNoiseA : fabs(rng_.gauss() * currentNoiseA));
         ctl_->tick(time_.nowMs(), in);
     }
 
@@ -200,6 +220,8 @@ private:
         t.stopSettleMs = s.stopSettleMs;
         t.minMoveGapMs = s.minMoveGapMs;
         t.maxMoveMs = s.maxMoveMs;
+        t.currentPresent = s.currentPresent;
+        t.zeroCurrentA = s.zeroCurrentA;
         return t;
     }
 
@@ -221,6 +243,9 @@ private:
     double nextPulseUs_ = 0.0;
     uint32_t stepCount_ = 0;
     bool wasPowered_ = false;
+    bool wasDriven_ = false;
+    uint32_t drivenSinceMs_ = 0;
+    double currentA_ = 0.0;
     int powerOns_ = 0;
     int bootCount_ = 0;
     float lastTarget_ = 0.0f;

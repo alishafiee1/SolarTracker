@@ -60,6 +60,8 @@ const FloatField kFloats[] = {
     {"maxDeg", &settings::Settings::maxDeg}, {"moveThresholdDeg", &settings::Settings::moveThresholdDeg},
     {"windStowKmh", &settings::Settings::windStowKmh}, {"windReturnKmh", &settings::Settings::windReturnKmh},
     {"anemometerFactor", &settings::Settings::anemometerFactor}, {"supplyLowV", &settings::Settings::supplyLowV},
+    {"currentFactor", &settings::Settings::currentFactor}, {"stallCurrentA", &settings::Settings::stallCurrentA},
+    {"maxCurrentA", &settings::Settings::maxCurrentA}, {"zeroCurrentA", &settings::Settings::zeroCurrentA},
 };
 const UintField kUints[] = {
     {"stallCheckMs", &settings::Settings::stallCheckMs}, {"preDawnMinutes", &settings::Settings::preDawnMinutes},
@@ -89,6 +91,9 @@ std::string statusTextFa(control::StatusText t, uint32_t waitS) {
         }
         case T::ClockNotSet: return "ساعت تنظیم نشده";
         case T::NeedCalibration: return "کالیبراسیون لازم است";
+        case T::FaultWireBreak: return "خطا: قطع سیم جک";
+        case T::FaultRelayStuck: return "خطا: رله چسبیده — برق جک را دستی قطع کنید";
+        case T::FaultOvercurrent: return "خطا: اضافه جریان";
     }
     return "";
 }
@@ -194,6 +199,7 @@ Response WebApi::getSettings() {
     d["cityId"] = d_.cfg.cityId;
     d["tzOffsetMin"] = d_.cfg.tzOffsetMin;
     d["mode"] = modeName(d_.cfg.mode);
+    d["currentPresent"] = d_.cfg.currentPresent;
     return json(200, d);
 }
 
@@ -226,6 +232,10 @@ Response WebApi::postSettings(const Request& req) {
     if (in["tzOffsetMin"].is<int>()) {
         next.tzOffsetMin = static_cast<int16_t>(in["tzOffsetMin"].as<int>());
         changed += std::string(changed.empty() ? "" : " ") + "tzOffsetMin";
+    }
+    if (in["currentPresent"].is<bool>()) {
+        next.currentPresent = in["currentPresent"].as<bool>();
+        changed += std::string(changed.empty() ? "" : " ") + "currentPresent";
     }
     if (in["apPassword"].is<const char*>()) {  // takes effect after the next restart; never sent back by GET
         const char* pw = in["apPassword"].as<const char*>();

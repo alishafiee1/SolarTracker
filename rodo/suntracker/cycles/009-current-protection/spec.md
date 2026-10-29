@@ -52,5 +52,10 @@ Dashboard shows «جریان جک: n A». Fault texts: «رله چسبیده —
 
 ## Decisions
 
+- `currentPresent` defaults to **false**, not true as first planned. Because the board under development has no current transformer, and with the module on a missing sensor reads 0 A while powered, which is a wire break. The panel setting «ماژول جریان نصب است» turns it on at delivery (it is part of the delivery checklist).
+- The first 300 ms after switching on are not judged (inrush), and a jam is judged by the overcurrent limit first: a jam that draws more than `maxCurrentA` (5 A) is stopped at once as `Overcurrent`; a jam between `stallCurrentA` (4.5 A) and 5 A takes the normal three tries and becomes `Stall`. Because real jam currents are not known yet; both thresholds are settings.
+- No current at all (below `zeroCurrentA` for 1 s) is `LimitReached` only within 5 degrees of the configured min or max angle; elsewhere it is `WireBreak`. A jack whose limit switch is set well inside the software range is therefore reported as a wire break, which is the right hint: set the range to the mechanics. After a limit the controller does not push the same way again until the panel has left that end by 2 degrees.
+- A stuck relay cannot be fixed by software: CH1 is commanded off, the fault is latched and the panel says to cut the supply by hand.
+- Sampling runs in its own low-priority task on core 0 (200 ms of ADC reads every 500 ms), so the control tick never waits for it (measured: 9.98 ticks per second with the task running).
 - Client wants all optional modules (answer of 2026-10-29). Because the user confirmed the full scope.
 - Optional module behind a `currentPresent` setting. Because the base system must work and stay safe without it. (MEMORY.md)

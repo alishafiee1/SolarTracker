@@ -369,7 +369,7 @@ static void unknown_paths_are_404() {
 }
 
 static void persian_status_texts_exist_for_every_id() {
-    for (int i = 0; i <= static_cast<int>(control::StatusText::NeedCalibration); ++i) {
+    for (int i = 0; i <= static_cast<int>(control::StatusText::FaultOvercurrent); ++i) {
         const std::string t = webapi::statusTextFa(static_cast<control::StatusText>(i), 7);
         TEST_ASSERT_TRUE(t.size() > 4);
     }

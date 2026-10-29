@@ -9,6 +9,7 @@
 #include "control_state_machine.h"
 #include "ds3231_clock.h"
 #include "littlefs_event_log.h"
+#include "sct013_current.h"
 #include "motion_controller.h"
 #include "mpu6050_accel.h"
 #include "settings.h"
@@ -32,6 +33,7 @@ struct BenchStatus {
     LittleFsEventLog* log;
     wind::WindMonitor* wind;
     Anemometer* anemometer;
+    Sct013Current* current;
 };
 
 // True after `move`/`stop`: the console then drives the MotionController directly and the state
@@ -58,6 +60,7 @@ hal::IEventLog* benchEventLog();
 //   ctl       state machine: state, fault, target, angle, status text
 //   ctl auto|manual|e|w|stop|ka|reset   mode and manual commands (e/w need manual mode and a keep-alive every 3 s)
 //   wind      wind speed, stow state, pulses seen; `windgen <hz>` makes the real pin generate pulses (0 stops)
+//   current   SCT-013 reading (volts rms at the pin and amps with the factor); `current on` fits the module for this boot
 //   pins      relay pin levels (1 = inactive/high, 0 = active/low)
 //   hang      stop feeding the watchdog; the chip must reset with reason "watchdog"
 //   reboot    software reset (reason "software")

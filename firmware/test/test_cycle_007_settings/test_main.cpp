@@ -1,6 +1,7 @@
 // Cycle 007 — settings, clock maths, event format, cities, supply watch
 // (rodo/suntracker/cycles/007-settings-clock-log)
 #include <fakes.h>
+#include <stddef.h>
 #include <string.h>
 #include <unity.h>
 
@@ -161,14 +162,15 @@ static void older_shorter_layout_is_migrated_with_new_fields_at_default() {
     Settings s;
     s.moveThresholdDeg = 6.5f;
     s.passwordIsDefault = false;
+    s.currentPresent = true;
+    s.currentFactor = 9.0f;
     store.save(s);
 
-    // Rewrite the blob as if an older firmware (without the last 17 bytes of fields) had written it.
+    // Rewrite the blob as the firmware before cycle 009 wrote it: the payload ends before the current-module fields.
     uint8_t buf[512];
     const size_t n = blobs.size("settings");
     blobs.load("settings", buf, n);
-    const size_t cut = 17;
-    const uint16_t newPayload = static_cast<uint16_t>(n - 12 - cut);
+    const uint16_t newPayload = static_cast<uint16_t>(offsetof(Settings, currentPresent));
     memcpy(buf + 6, &newPayload, 2);
     const uint32_t crc = settings::crc32(buf + 12, newPayload);
     memcpy(buf + 8, &crc, 4);
@@ -178,7 +180,9 @@ static void older_shorter_layout_is_migrated_with_new_fields_at_default() {
     Settings out;
     TEST_ASSERT_EQUAL(static_cast<int>(LoadResult::Migrated), static_cast<int>(store.load(out, &log)));
     TEST_ASSERT_EQUAL_FLOAT(6.5f, out.moveThresholdDeg);  // kept
-    TEST_ASSERT_TRUE(out.passwordIsDefault);              // the cut field is back at its default
+    TEST_ASSERT_FALSE(out.passwordIsDefault);             // fields before the cut are kept
+    TEST_ASSERT_FALSE(out.currentPresent);                // fields added later are back at their defaults
+    TEST_ASSERT_EQUAL_FLOAT(5.0f, out.currentFactor);
     TEST_ASSERT_TRUE(log.events()[0].first == hal::EventType::SettingsMigrated);
 }
 

@@ -47,6 +47,13 @@ struct Settings {
     uint8_t settingsPasswordHash[32] = {};
     uint8_t settingsPasswordSalt[16] = {};
     bool passwordIsDefault = true;
+
+    // Optional current module (cycle 009). Appended after the first layout: older blobs get these defaults.
+    bool currentPresent = false;   // set when the current transformer is fitted
+    float currentFactor = 5.0f;    // amps per volt (rms) at the ADC; SCT-013-005 gives 1 V at 5 A; calibrate with a clamp meter
+    float stallCurrentA = 4.5f;
+    float maxCurrentA = 5.0f;
+    float zeroCurrentA = 0.2f;
 };
 
 // Names of invalid fields (R1). Returns how many were written (at most `max`).

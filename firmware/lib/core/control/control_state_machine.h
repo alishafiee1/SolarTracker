@@ -6,6 +6,7 @@
 #include <hal.h>
 #include <stdint.h>
 
+#include "current_supervisor.h"
 #include "motion_controller.h"
 #include "settings.h"
 
@@ -20,6 +21,9 @@ enum class FaultCode : uint8_t {
     AngleSensor,   // accelerometer fault (003 R5)
     Interlock,     // direction interlock violated (004 R8)
     ResetLoop,     // repeated watchdog resets
+    WireBreak,     // module 009: no current in the middle of the stroke
+    RelayStuck,    // module 009: current keeps flowing after a stop
+    Overcurrent,   // module 009: current above the limit
 };
 
 // Reasons shown to the user (the web panel maps each to its Persian text).
@@ -36,6 +40,9 @@ enum class StatusText : uint8_t {
     WaitingSafety,
     ClockNotSet,
     NeedCalibration,
+    FaultWireBreak,
+    FaultRelayStuck,
+    FaultOvercurrent,
 };
 
 enum class Command : uint8_t { ModeAuto, ModeManual, ManualEast, ManualWest, ManualStop, KeepAlive, ResetFault };
@@ -89,6 +96,7 @@ private:
     void runManual(uint32_t nowMs, const Inputs& in);
     void watchStall(uint32_t nowMs, const Inputs& in);
     void stopMoving();
+    bool blockedByLimit(hal::Dir dir, float angleDeg);
 
     motion::MotionController& motion_;
     const settings::Settings& cfg_;
@@ -115,6 +123,11 @@ private:
     uint32_t stallRefMs_ = 0;
     hal::Dir stallDir_ = hal::Dir::East;
     uint8_t stallAttempts_ = 0;
+    // The jack's own limit switch stopped it (module 009): do not push the same way again until the panel has left that end.
+    bool limitActive_ = false;
+    hal::Dir limitDir_ = hal::Dir::East;
+    float limitAngle_ = 0.0f;
+    current::CurrentSupervisor currentSup_;
     bool stowFailed_ = false;
 };
 

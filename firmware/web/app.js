@@ -99,6 +99,8 @@ const FIELDS = [
   ["windStowKmh", "آستانه باد شدید (km/h)"], ["windStowDelayS", "تأخیر ورود به حالت باد (ثانیه)"],
   ["windReturnKmh", "آستانه بازگشت از باد (km/h)"], ["windReturnMin", "مدت آرامش برای بازگشت (دقیقه)"],
   ["anemometerFactor", "ضریب بادسنج (km/h به ازای هر دور در ثانیه)"], ["supplyLowV", "هشدار ولتاژ تغذیه (ولت)"],
+  ["currentPresent", "ماژول جریان نصب است (۱ = بله، ۰ = خیر)"], ["currentFactor", "ضریب ترانس جریان (آمپر به ازای هر ولت)"],
+  ["stallCurrentA", "جریان گیرکردن (آمپر)"], ["maxCurrentA", "حداکثر جریان مجاز (آمپر)"], ["zeroCurrentA", "جریان «صفر» (آمپر)"],
 ];
 let settingsData = {};
 async function loadSettings() {
@@ -106,7 +108,7 @@ async function loadSettings() {
   if (!r.ok) return;
   settingsData = r.data;
   $("settingsForm").innerHTML = FIELDS.map(([k, label]) =>
-    `<div class="field" id="f_${k}"><label for="i_${k}">${label}</label><input id="i_${k}" inputmode="decimal" value="${settingsData[k]}"></div>`).join("");
+    `<div class="field" id="f_${k}"><label for="i_${k}">${label}</label><input id="i_${k}" inputmode="decimal" value="${typeof settingsData[k] === "boolean" ? (settingsData[k] ? 1 : 0) : settingsData[k]}"></div>`).join("");
   $("locNow").textContent = `${settingsData.latDeg.toFixed(3)}, ${settingsData.lonDeg.toFixed(3)} (${settingsData.cityId})`;
   $("citySel").value = cities.some((c) => c.id === settingsData.cityId) ? settingsData.cityId : "";
 }
@@ -114,6 +116,7 @@ $("saveSettings").onclick = async () => {
   const body = {};
   for (const [k] of FIELDS) {
     const v = $("i_" + k).value.trim().replace(/[٠-٩]/g, (d) => d.charCodeAt(0) - 1632).replace(/[۰-۹]/g, (d) => d.charCodeAt(0) - 1776);
+    if (k === "currentPresent") { if (v !== "" && (v === "1") !== settingsData[k]) body[k] = v === "1"; continue; }
     if (v !== "" && Number(v) !== settingsData[k]) body[k] = Number(v);
   }
   document.querySelectorAll(".field.bad").forEach((e) => e.classList.remove("bad"));

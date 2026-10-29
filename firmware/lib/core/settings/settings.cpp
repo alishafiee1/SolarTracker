@@ -62,6 +62,10 @@ size_t validate(const Settings& s, const char** invalid, size_t max) {
     if (s.mode != Mode::Auto && s.mode != Mode::Manual) bad("mode");
     if (!inRange(s.supplyLowV, 3.0f, 6.0f)) bad("supplyLowV");
     if (memchr(s.apPassword, '\0', sizeof(s.apPassword)) == nullptr) bad("apPassword");
+    if (!inRange(s.currentFactor, 0.1f, 50.0f)) bad("currentFactor");
+    if (!inRange(s.stallCurrentA, 0.5f, 20.0f)) bad("stallCurrentA");
+    if (!inRange(s.maxCurrentA, 1.0f, 30.0f) || !(s.stallCurrentA < s.maxCurrentA)) bad("maxCurrentA");
+    if (!inRange(s.zeroCurrentA, 0.05f, 1.0f)) bad("zeroCurrentA");
     return n < max ? n : max;
 }
 

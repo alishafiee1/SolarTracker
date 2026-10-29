@@ -149,6 +149,10 @@ void handle(const char* cmd, const BenchStatus& s) {
         Serial.printf("I wind: speed=%.1f stow=%d return_in_s=%lu pulses=%lu factor=%.2f\n", s.wind->speedKmh(), s.wind->stow(),
                       static_cast<unsigned long>(s.wind->returnRemainingS(s.uptimeMs, wc)), static_cast<unsigned long>(s.anemometer->total()),
                       s.cfg->anemometerFactor);
+    } else if (strncmp(cmd, "current", 7) == 0) {
+        if (strcmp(cmd, "current on") == 0) s.current->begin(s.cfg->currentFactor);
+        Serial.printf("I current: started=%d rms_v=%.4f amps=%.3f factor=%.2f module_present_setting=%d\n", s.current->present(),
+                      s.current->rmsVolts(), s.current->rmsAmps(), s.cfg->currentFactor, s.cfg->currentPresent);
     } else if (strcmp(cmd, "pins") == 0) {
         printPins();
     } else if (strcmp(cmd, "hang") == 0) {

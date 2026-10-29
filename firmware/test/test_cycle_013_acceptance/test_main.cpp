@@ -131,9 +131,47 @@ static void scenario_05_angle_sensor_fault() {
     }
 }
 
-// 6 and 7 need the optional current module (cycle 009) ------------------------
-static void scenario_06_relay_fault() { TEST_IGNORE_MESSAGE("needs module 009 (current protection): stuck relay is only visible as current"); }
-static void scenario_07_end_of_stroke() { TEST_IGNORE_MESSAGE("needs module 009 (current protection): limit versus stall is told apart by the current"); }
+// 6 ---------------------------------------------------------------------------- welded relay contacts (module 009)
+static void scenario_06_relay_fault() {
+    for (uint32_t seed : kSeeds) {
+        World w(seed, utc(2027, 6, 21, 5, 0), settings::Mode::Manual);
+        w.enableCurrentModule();
+        w.calibrate();
+        w.placePanel(0.0);
+        w.run(4000);
+        w.ctl().command(Command::ManualWest, w.time().nowMs());
+        for (int i = 0; i < 5; ++i) {
+            w.run(1000);
+            w.ctl().command(Command::KeepAlive, w.time().nowMs());
+        }
+        w.act.relayStuck = true;
+        w.ctl().command(Command::ManualStop, w.time().nowMs());
+        w.run(5000);
+        TEST_ASSERT_EQUAL(static_cast<int>(FaultCode::RelayStuck), static_cast<int>(w.ctl().fault()));
+        TEST_ASSERT_FALSE(w.relays().power());          // CH1 is commanded off ...
+        TEST_ASSERT_TRUE(w.actuatorCurrentA() > 1.0);   // ... but the actuator is still powered: a person must cut the supply
+    }
+}
+
+// 7 ---------------------------------------------------------------------------- end of the stroke (module 009)
+static void scenario_07_end_of_stroke() {
+    for (uint32_t seed : kSeeds) {
+        World w(seed, utc(2027, 6, 21, 5, 0), settings::Mode::Manual);
+        w.enableCurrentModule();
+        w.act.limitDeg = 44.0;  // the jack's limit switch cuts its power just inside the software limit
+        w.calibrate();
+        w.placePanel(30.0);
+        w.run(4000);
+        w.ctl().command(Command::ManualWest, w.time().nowMs());
+        for (int i = 0; i < 40; ++i) {
+            w.run(1000);
+            w.ctl().command(Command::KeepAlive, w.time().nowMs());
+        }
+        TEST_ASSERT_TRUE(w.act.angleDeg >= 43.9);
+        TEST_ASSERT_EQUAL(static_cast<int>(FaultCode::None), static_cast<int>(w.ctl().fault()));  // no false fault
+        TEST_ASSERT_FALSE(w.relays().power());
+    }
+}
 
 // 8 ---------------------------------------------------------------------------- hotspot off
 static void scenario_08_wifi_off_does_not_matter() {

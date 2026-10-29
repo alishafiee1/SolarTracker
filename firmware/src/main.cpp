@@ -15,6 +15,7 @@
 #include "nvs_settings_store.h"
 #include "panel_server.h"
 #include "relays_gpio.h"
+#include "sct013_current.h"
 #include "settings.h"
 #include "supply_watch.h"
 #include "tick_scheduler.h"
@@ -64,6 +65,7 @@ angle::AngleProvider angleProvider(accel);
 motion::MotionController* motionCtl = nullptr;  // created in setup(), after the relays are forced off
 control::ControlStateMachine* controller = nullptr;
 drivers::Anemometer anemometer;
+drivers::Sct013Current currentSensor;
 wind::WindMonitor windMonitor;
 webapi::Auth auth(espRandom);
 webapi::WebApi* webApi = nullptr;
@@ -81,6 +83,8 @@ motion::Timing timingFrom(const settings::Settings& s) {
     t.stopSettleMs = s.stopSettleMs;
     t.minMoveGapMs = s.minMoveGapMs;
     t.maxMoveMs = s.maxMoveMs;
+    t.currentPresent = s.currentPresent;
+    t.zeroCurrentA = s.zeroCurrentA;
     return t;
 }
 
@@ -115,6 +119,7 @@ void setup() {
     motionCtl->setEventLog(&eventLog);
     controller = new control::ControlStateMachine(*motionCtl, cfg, &eventLog);
     anemometer.begin();
+    if (cfg.currentPresent) currentSensor.begin(cfg.currentFactor);  // module 009
 
     webapi::Deps deps(*controller, cfg, settingsStore, nvs, angleProvider, rtcClock, eventLog, windMonitor, auth);
     deps.fwVersion = FW_VERSION;
@@ -122,7 +127,10 @@ void setup() {
     deps.clockValid = [] { return cachedClockValid; };
     deps.utcNow = utcNow;
     deps.readLog = [](char* buf, size_t len, size_t n) { return eventLog.readLatest(buf, len, n); };
-    deps.onSettingsChanged = [] { motionCtl->setTiming(timingFrom(cfg)); };
+    deps.onSettingsChanged = [] {
+        motionCtl->setTiming(timingFrom(cfg));
+        if (cfg.currentPresent) currentSensor.begin(cfg.currentFactor);
+    };
     webApi = new webapi::WebApi(deps);
     panel = new web::PanelServer(*webApi);
     const char* apPassword = strlen(cfg.apPassword) >= 8 ? cfg.apPassword : DEFAULT_AP_PASSWORD;
@@ -164,10 +172,10 @@ void loop() {
             eventLog.append(hal::EventType::StateChange, detail);
         }
         in.windStow = windMonitor.stow();
-        // currentA comes with the optional current module (cycle 009).
+        in.currentA = cfg.currentPresent ? currentSensor.rmsAmps() : 0.0f;  // optional module 009
 #ifdef BENCH_CONSOLE
         if (drivers::benchDirectMotion()) {
-            motionCtl->tick(now, in.angleDeg, 0.0f);  // relay bench tests drive the motion layer directly
+            motionCtl->tick(now, in.angleDeg, in.currentA);  // relay bench tests drive the motion layer directly
         } else
 #endif
         controller->tick(now, in);  // also ticks the MotionController
@@ -187,7 +195,7 @@ void loop() {
 #ifdef BENCH_CONSOLE
     drivers::benchConsolePoll({FW_VERSION, core::resetReasonName(resetReason), now, controlLoop.ticks(),
                                controlLoop.lastTickMs(), &accel, &angleProvider, motionCtl, &cfg, &settingsStore, &rtcClock, controller,
-                               &eventLog, &windMonitor, &anemometer});
+                               &eventLog, &windMonitor, &anemometer, &currentSensor});
 #endif
     delay(1);
 }
