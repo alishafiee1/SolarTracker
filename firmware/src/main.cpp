@@ -6,6 +6,9 @@
 #include "esp_platform.h"
 #include "relays_gpio.h"
 #include "tick_scheduler.h"
+#ifdef BENCH_CONSOLE
+#include "bench_console.h"
+#endif
 
 #ifndef FW_VERSION
 #define FW_VERSION "0.0.0-dev"
@@ -44,5 +47,9 @@ void loop() {
     if (controlTick.due(now)) {
         controlLoop.tick(now);
     }
+#ifdef BENCH_CONSOLE
+    drivers::benchConsolePoll({FW_VERSION, core::resetReasonName(resetReason), now, controlLoop.ticks(),
+                               controlLoop.lastTickMs()});
+#endif
     delay(1);
 }
