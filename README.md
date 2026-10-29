@@ -6,7 +6,7 @@ An ESP32-based controller for a single-axis solar tracker. It computes the sun p
 
 ## Status
 
-Planning. The technical proposal is in [`docs/solar_tracker_proposal.html`](docs/solar_tracker_proposal.html). No firmware or hardware files yet.
+Planning. The technical proposal is in [`docs/solar_tracker_proposal.html`](docs/solar_tracker_proposal.html). The software plan is 13 RODO cycles in [`rodo/suntracker/MAP.md`](rodo/suntracker/MAP.md). No firmware or hardware files yet.
 
 ## Scope
 

@@ -4,3 +4,10 @@ run `rodo sync`, then `rodo resume`. At the end of every session run `rodo sync`
 RODO projects: see `rodo/*/project.json`. Never write secrets into rodo files. Never create boards.
 Never run `git pull`, `git fetch`, `git merge` or `git rebase`. If the repo is behind, tell the user once.
 <!-- rodo:end -->
+
+## Graphify (code map)
+
+Graphify is installed on this machine. Build or refresh the map with `graphify update .`
+(writes `graphify-out/`, not committed). Use `graphify query "<question>"` to find code and
+`graphify affected "<symbol>"` when filling a card's `## Documentation Impact`.
+Run `graphify update .` again after code changes.

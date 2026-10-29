@@ -2,6 +2,9 @@
 rodo/*/.rodo/
 rodo/*/inbox/
 
+# Graphify code map (rebuilt locally with `graphify update .`)
+graphify-out/
+
 # PlatformIO / build output
 .pio/
 firmware/.pio/
