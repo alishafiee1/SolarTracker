@@ -78,6 +78,8 @@ public:
     virtual ~ISettingsStore() = default;
     virtual bool load(const char* key, void* buf, size_t len) = 0;
     virtual bool save(const char* key, const void* buf, size_t len) = 0;
+    // Stored length of a key, 0 if missing (lets callers read blobs written by an older layout).
+    virtual size_t size(const char* key) = 0;
 };
 
 enum class EventType : uint8_t {
@@ -89,6 +91,10 @@ enum class EventType : uint8_t {
     MoveEnd,
     ClockSet,
     SettingsChange,
+    SettingsReset,
+    SettingsMigrated,
+    SupplyLow,
+    LogReset,
 };
 
 class IEventLog {

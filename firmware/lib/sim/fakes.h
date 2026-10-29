@@ -140,6 +140,10 @@ public:
         std::copy(it->second.begin(), it->second.end(), static_cast<uint8_t*>(buf));
         return true;
     }
+    size_t size(const char* key) override {
+        auto it = blobs_.find(key);
+        return it == blobs_.end() ? 0 : it->second.size();
+    }
     bool save(const char* key, const void* buf, size_t len) override {
         const auto* bytes = static_cast<const uint8_t*>(buf);
         blobs_[key] = std::vector<uint8_t>(bytes, bytes + len);
