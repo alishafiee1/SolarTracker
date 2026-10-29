@@ -7,6 +7,7 @@
 #include <functional>
 
 #include "littlefs_event_log.h"
+#include "ota_update.h"
 #include "web_api.h"
 
 namespace web {
@@ -30,6 +31,14 @@ public:
     // CSV download of the event log (module 012). Set before begin(); both are optional.
     void setLogCsv(drivers::LittleFsEventLog* log, std::function<int()> tzOffsetMin, std::function<int64_t()> utcNow);
     drivers::LittleFsEventLog* csvLog() const { return csvLog_; }
+
+    // Offline update (module 010): the upload endpoint needs the updater and an event log. Optional.
+    void setOta(drivers::OtaUpdate* ota, hal::IEventLog* log) {
+        ota_ = ota;
+        otaLog_ = log;
+    }
+    drivers::OtaUpdate* ota() const { return ota_; }
+    hal::IEventLog* otaLog() const { return otaLog_; }
     int tzOffsetMin() const { return tz_ ? tz_() : 0; }
     int64_t utcNow() const { return utc_ ? utc_() : 0; }
     uint32_t requestsServed() const { return served_; }
@@ -42,6 +51,8 @@ private:
     void* mutex_ = nullptr;
     uint32_t served_ = 0;
     drivers::LittleFsEventLog* csvLog_ = nullptr;
+    drivers::OtaUpdate* ota_ = nullptr;
+    hal::IEventLog* otaLog_ = nullptr;
     std::function<int()> tz_;
     std::function<int64_t()> utc_;
 };

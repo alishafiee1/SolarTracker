@@ -35,3 +35,7 @@ Expect: no power in the first 3 s after boot, CH2 first and CH1 about 200 ms lat
 ## One-day log check
 
 After scenario 11, download the log from the panel (CSV when module 012 is installed) and check: no `Fault` lines, a `MoveStart`/`MoveEnd` pair per move, and the number of moves is plausible (about 20–30 per sunny day).
+
+## Update and rollback test on the board (module 010)
+
+With a board on USB: build one image with `SUNTRACKER_VERSION=OLD-rollback-target` and write it to the second slot (`esptool.py --chip esp32 --port COMx write_flash 0x190000 old_image.bin`), build another with `SUNTRACKER_VERSION=NEW-under-test` and upload it normally, then run `python firmware/tools/bench_check_010.py COMx`. Expect: three counted starts on probation, the fourth start runs the old image, and an image that runs 60 s confirms itself. The HTTP upload (scenario 10) is done from a phone: send the good `.bin`, then a damaged file; the damaged one must be refused with «فایل نامعتبر است».

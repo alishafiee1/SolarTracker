@@ -29,6 +29,7 @@
   <button data-tab="calib">کالیبراسیون</button>
   <button data-tab="log">لاگ</button>
   <button data-tab="account">رمز</button>
+  <button data-tab="update">به‌روزرسانی</button>
 </nav>
 
 <main>
@@ -123,6 +124,17 @@
     <button id="logReload">بازخوانی</button>
     <a href="/api/log.csv" download><button type="button" id="logCsv">دانلود CSV</button></a>
     <table><thead><tr><th>زمان</th><th>نوع</th><th>جزئیات</th></tr></thead><tbody id="logRows"></tbody></table>
+  </div>
+</section>
+
+<section id="update" class="hidden">
+  <div class="card">
+    <h2>به‌روزرسانی نرم‌افزار</h2>
+    <p>فایل نرم‌افزار جدید (<code dir="ltr">.bin</code>) را از گوشی انتخاب کنید. در حین به‌روزرسانی برق جک قطع است و دستگاه بعد از نصب خودش دوباره راه‌اندازی می‌شود. اگر نسخه جدید درست کار نکند، به نسخه قبلی برمی‌گردد.</p>
+    <input id="fwFile" type="file" accept=".bin">
+    <button id="fwSend" class="primary">ارسال و نصب</button>
+    <progress id="fwBar" value="0" max="100" class="hidden" style="width:100%"></progress>
+    <p id="fwMsg" class="msg"></p>
   </div>
 </section>
 

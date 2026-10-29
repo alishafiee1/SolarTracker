@@ -52,5 +52,10 @@ Texts: «در حال ارسال: n٪», «فایل نامعتبر است», «ن
 
 ## Decisions
 
+- Rollback does not use the bootloader's app-rollback feature (the Arduino bootloader of this platform version has it off). The firmware counts boots in NVS (`pending`, `tries`): a new image may start three times on probation and is confirmed after 60 s of uptime with the control loop and the hotspot running; the fourth start switches the boot partition to the other slot and restarts. Tested on the board with two images in the two slots.
+- The image check has three layers: the ESP-IDF verifies the header, the size and the appended SHA-256 when the write ends (`Update.end`), the upload must contain the project text `SUNTRACKER-FW` (an image of another project is refused), and the file may not exceed the slot or take more than 3 minutes.
+- A rollback is logged as a `Fault` event, because only faults are written to flash at once; a normal event would sit in the 10 s buffer and be lost by the restart. Installing and confirming are `StateChange` events.
+- While a firmware image is written the control tick does not run and the actuator is stopped; wind protection pauses with it for at most the 3 minute upload limit.
+- The self-test treats a missing MPU6050 or DS3231 as healthy: the board is meant to start (and be updated) before those parts are fitted. Only the control loop running and the hotspot being up are required.
 - Client wants all optional modules (answer of 2026-10-29). Because the user confirmed the full scope.
 - Self-test before confirming the image. Because a bad image that boots but breaks control must still roll back. (default, not asked)

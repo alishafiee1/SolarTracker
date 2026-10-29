@@ -183,6 +183,26 @@ async function loadLog() {
 }
 $("logReload").onclick = loadLog;
 
+// ---- firmware update ----
+$("fwSend").onclick = () => {
+  const f = $("fwFile").files[0];
+  if (!f) { say($("fwMsg"), "ابتدا فایل را انتخاب کنید", "err"); return; }
+  const xhr = new XMLHttpRequest();
+  const form = new FormData();
+  form.append("firmware", f, f.name);
+  xhr.open("POST", "/api/update");
+  $("fwBar").classList.remove("hidden");
+  xhr.upload.onprogress = (e) => { if (e.lengthComputable) { $("fwBar").value = (e.loaded / e.total) * 100; say($("fwMsg"), "در حال ارسال: " + fa((e.loaded / e.total) * 100, 0) + "٪"); } };
+  xhr.onload = () => {
+    let d = {};
+    try { d = JSON.parse(xhr.responseText); } catch (e) { /* no body */ }
+    if (xhr.status === 200) say($("fwMsg"), d.message || "نصب شد", "ok");
+    else say($("fwMsg"), d.message || "ارسال ناموفق بود", "err");
+  };
+  xhr.onerror = () => say($("fwMsg"), "ارتباط قطع شد", "err");
+  xhr.send(form);
+};
+
 // ---- password ----
 $("pwSave").onclick = async () => {
   const r = await api("POST", "/api/password", { old: $("pwOld").value, new: $("pwNew").value });

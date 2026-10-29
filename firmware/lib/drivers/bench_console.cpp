@@ -167,6 +167,12 @@ void handle(const char* cmd, const BenchStatus& s) {
             feedWatchdog();
         }
         Serial.printf("\nI csv end: total_bytes=%u\n", static_cast<unsigned>(total));
+    } else if (strncmp(cmd, "ota", 3) == 0) {
+        if (strcmp(cmd, "ota arm") == 0) OtaUpdate::armProbation();
+        bool pending;
+        uint8_t tries;
+        OtaUpdate::probationState(pending, tries);
+        Serial.printf("I ota: probation=%d boots_on_probation=%u version=%s\n", pending, tries, s.version);
     } else if (strncmp(cmd, "current", 7) == 0) {
         if (strcmp(cmd, "current on") == 0) s.current->begin(s.cfg->currentFactor);
         Serial.printf("I current: started=%d rms_v=%.4f amps=%.3f factor=%.2f module_present_setting=%d\n", s.current->present(),

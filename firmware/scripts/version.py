@@ -5,6 +5,10 @@ Import("env")  # noqa: F821 (provided by PlatformIO)
 
 
 def firmware_version():
+    import os
+
+    if os.environ.get("SUNTRACKER_VERSION"):  # lets a test build carry a recognisable version
+        return os.environ["SUNTRACKER_VERSION"]
     try:
         out = subprocess.check_output(
             ["git", "describe", "--tags", "--always", "--dirty"],

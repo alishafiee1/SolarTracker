@@ -75,6 +75,37 @@ void sendCsv(AsyncWebServerRequest* r) {
     r->send(out);
 }
 
+// Module 010: firmware upload. The login is checked on the first chunk; the chunks go straight to the updater.
+bool updateAllowed = false;
+
+void onUpdateUpload(AsyncWebServerRequest* r, const String& filename, size_t index, uint8_t* data, size_t len, bool final) {
+    (void)filename;
+    if (!self->ota()) return;
+    if (index == 0) {
+        webapi::Request req;
+        if (r->hasHeader("Cookie")) req.cookie = r->header("Cookie").c_str();
+        req.nowMs = millis();
+        self->lock();
+        updateAllowed = self->api().isLoggedIn(req);
+        self->unlock();
+    }
+    if (!updateAllowed) return;
+    self->ota()->handleChunk(data, len, index, final, millis(), self->otaLog());
+}
+
+void onUpdateDone(AsyncWebServerRequest* r) {
+    if (!self->ota()) {
+        r->send(404, "application/json", "{\"error\":\"no-update\"}");
+    } else if (!updateAllowed) {
+        r->send(401, "application/json", "{\"error\":\"login-required\",\"message\":\"ابتدا وارد شوید\"}");
+    } else if (self->ota()->succeeded()) {
+        r->send(200, "application/json", "{\"ok\":true,\"restarting\":true,\"message\":\"نصب شد؛ دستگاه دوباره راه‌اندازی می‌شود\"}");
+    } else {
+        String body = String("{\"error\":\"invalid-file\",\"message\":\"") + self->ota()->errorText() + "\"}";
+        r->send(400, "application/json", body);
+    }
+}
+
 void onRequest(AsyncWebServerRequest* r) {
     const String url = r->url();
     if (url == "/api/log.csv") {
@@ -140,6 +171,7 @@ bool PanelServer::begin(const char* apPassword) {
     if (!WiFi.softAP(ssid_, apPassword, 6, 0, 4)) return false;
     WiFi.softAPConfig(IPAddress(192, 168, 4, 1), IPAddress(192, 168, 4, 1), IPAddress(255, 255, 255, 0));
 
+    server.on("/api/update", HTTP_POST, onUpdateDone, onUpdateUpload);
     server.onRequestBody(onBody);
     server.onNotFound(onRequest);
     server.begin();

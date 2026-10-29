@@ -13,6 +13,7 @@
 #include "motion_controller.h"
 #include "mpu6050_accel.h"
 #include "nvs_settings_store.h"
+#include "ota_update.h"
 #include "panel_server.h"
 #include "relays_gpio.h"
 #include "sct013_current.h"
@@ -65,6 +66,8 @@ angle::AngleProvider angleProvider(accel);
 motion::MotionController* motionCtl = nullptr;  // created in setup(), after the relays are forced off
 control::ControlStateMachine* controller = nullptr;
 drivers::Anemometer anemometer;
+drivers::OtaUpdate otaUpdate;
+bool panelStarted = false;
 drivers::Sct013Current currentSensor;
 wind::WindMonitor windMonitor;
 webapi::Auth auth(espRandom);
@@ -113,6 +116,7 @@ void setup() {
     if (!eventLog.begin()) Serial.println("E event log: flash not usable, events are not stored");
     settingsStore.load(cfg, &eventLog);  // defaults + an event if nothing valid is stored
     angleProvider.loadFrom(nvs);         // the calibration, if one was saved
+    otaUpdate.bootCheck(&eventLog);      // probation after an update; rolls back and restarts if the new image keeps failing
     eventLog.append(hal::EventType::PowerUp, core::resetReasonName(resetReason));  // R7
 
     motionCtl = new motion::MotionController(relays, timingFrom(cfg), espTime.nowMs());  // R9: starts settling
@@ -135,7 +139,9 @@ void setup() {
     panel = new web::PanelServer(*webApi);
     panel->setLogCsv(&eventLog, [] { return static_cast<int>(cfg.tzOffsetMin); }, utcNow);
     const char* apPassword = strlen(cfg.apPassword) >= 8 ? cfg.apPassword : DEFAULT_AP_PASSWORD;
+    panel->setOta(&otaUpdate, &eventLog);
     if (panel->begin(apPassword)) {
+        panelStarted = true;
         Serial.printf("I hotspot %s up, panel at http://192.168.4.1/\n", panel->ssid());
     } else {
         Serial.println("E hotspot failed to start; the controller keeps working without the panel");  // R8
@@ -149,7 +155,11 @@ void loop() {
     drivers::feedWatchdog();
     const uint32_t now = espTime.nowMs();
     panel->lock();  // the web handlers run in another task; they see the control state only between ticks
-    if (controlTick.due(now)) {
+    const bool tickDue = controlTick.due(now);
+    if (tickDue && otaUpdate.updating()) {
+        // While a firmware image is written the actuator stays off and nothing new is started (module 010 R2).
+        if (motionCtl->running()) motionCtl->emergencyStop(now, "firmware update");
+    } else if (tickDue) {
         angleProvider.sample();
         if (now - cachedUtcAtMs >= 1000 || cachedUtcAtMs == 0) {
             cachedClockValid = !rtcClock.lostPower();
@@ -192,6 +202,11 @@ void loop() {
         }
     }
     eventLog.service();
+    otaUpdate.confirmIfHealthy(now, panelStarted && controlLoop.ticks() > 100, &eventLog);
+    if (otaUpdate.restartDue(now)) {
+        eventLog.flush();
+        ESP.restart();
+    }
     panel->unlock();
 #ifdef BENCH_CONSOLE
     drivers::benchConsolePoll({FW_VERSION, core::resetReasonName(resetReason), now, controlLoop.ticks(),

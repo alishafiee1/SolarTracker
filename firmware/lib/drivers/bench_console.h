@@ -11,6 +11,7 @@
 #include "littlefs_event_log.h"
 #include "sct013_current.h"
 #include "motion_controller.h"
+#include "ota_update.h"
 #include "mpu6050_accel.h"
 #include "settings.h"
 #include "wind_monitor.h"
@@ -61,6 +62,7 @@ hal::IEventLog* benchEventLog();
 //   ctl auto|manual|e|w|stop|ka|reset   mode and manual commands (e/w need manual mode and a keep-alive every 3 s)
 //   wind      wind speed, stow state, pulses seen; `windgen <hz>` makes the real pin generate pulses (0 stops)
 //   current   SCT-013 reading (volts rms at the pin and amps with the factor); `current on` fits the module for this boot
+//   ota arm   put the running image on probation (like after an update); `ota` shows the probation state
 //   pins      relay pin levels (1 = inactive/high, 0 = active/low)
 //   hang      stop feeding the watchdog; the chip must reset with reason "watchdog"
 //   reboot    software reset (reason "software")
