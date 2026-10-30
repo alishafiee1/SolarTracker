@@ -31,7 +31,8 @@ void sendFile(AsyncWebServerRequest* r, const PanelFile& f) {
 }
 
 // Captive portals: phones probe a few well-known URLs; a redirect to the panel makes them open it.
-void redirectHome(AsyncWebServerRequest* r) { r->redirect("http://192.168.4.1/"); }
+// A relative redirect works through the hotspot (192.168.4.1) and through the site Wi-Fi address alike.
+void redirectHome(AsyncWebServerRequest* r) { r->redirect("/"); }
 
 void onBody(AsyncWebServerRequest* r, uint8_t* data, size_t len, size_t index, size_t total) {
     if (total > 4096) return;  // the largest real request is a few hundred bytes

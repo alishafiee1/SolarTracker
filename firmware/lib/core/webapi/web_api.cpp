@@ -296,7 +296,7 @@ Response WebApi::postClock(const Request& req) {
     const int64_t utc = in["utc"].as<int64_t>();
     if (utc < kMinUtc || utc >= kMaxUtc) return error(400, "bad-time", "زمان نامعتبر است", "utc");
     const int64_t before = d_.utcNow();
-    if (!d_.clock.setUtc(utc)) return error(500, "clock-failed", "تنظیم ساعت ناموفق بود");
+    if (!d_.clock.setUtc(utc)) return error(500, "clock-failed", "ساعت دستگاه پاسخ نمی‌دهد؛ ماژول DS3231 را بررسی کنید");
     char detail[64];
     snprintf(detail, sizeof(detail), "%lld -> %lld", static_cast<long long>(before), static_cast<long long>(utc));
     d_.log.append(hal::EventType::ClockSet, detail);

@@ -46,7 +46,7 @@ def main():
         time.sleep(0.1)
         ser.rts = False
         time.sleep(3.5)
-        ask(ser, "set reset", r"set:")
+        ask(ser, "set thr 5", r"set:")  # only the threshold: never wipe the stored passwords of a board in use
 
         w, line = wind(ser)
         check("calm: no pulses, speed 0, no stow", w is not None and w[0] == 0.0 and w[1] == 0 and w[3] == 0, line or "")

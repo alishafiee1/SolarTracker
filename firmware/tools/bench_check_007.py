@@ -53,9 +53,9 @@ def log_size(ser):
 def main():
     with serial.Serial(sys.argv[1], 115200, timeout=0.3) as ser:
         reset(ser)
-        ask(ser, "set reset", r"set:")
+        ask(ser, "set thr 5", r"set:")  # only the threshold: never wipe the stored passwords of a board in use
         line = ask(ser, "settings", r"I settings:")
-        check("defaults after reset", line is not None and "thr=5.0" in line and "city=kerman" in line and "valid=1" in line, line or "")
+        check("defaults after reset", line is not None and "thr=5.0" in line and "valid=1" in line, line or "")
 
         line = ask(ser, "set thr 7.5", r"set:")
         check("R1 a valid change is saved", line is not None and "saved thr=7.5" in line, line or "")
@@ -93,7 +93,7 @@ def main():
         out = ask(ser, "log 30", collect=True, timeout=6.0)  # the bench console prints at most 1800 bytes
         check("R6 30 lines can be read back across the rotation", out.count("test event") >= 28, "%d lines" % out.count("test event"))
 
-        ask(ser, "set reset", r"set:")
+        ask(ser, "set thr 5", r"set:")  # only the threshold: never wipe the stored passwords of a board in use
     print("ALL PASS" if all(results) else "SOME FAILED")
     sys.exit(0 if all(results) else 1)
 
