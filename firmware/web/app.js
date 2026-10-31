@@ -1,6 +1,12 @@
 "use strict";
 const $ = (id) => document.getElementById(id);
 const fa = (n, d = 1) => Number(n).toLocaleString("fa-IR", { maximumFractionDigits: d, minimumFractionDigits: d });
+// Digits: every number the user sees (also inside input boxes) is Persian; typed Persian, Arabic or Latin digits are all accepted.
+const toFa = (s) => String(s).replace(/[0-9]/g, (d) => "۰۱۲۳۴۵۶۷۸۹"[d]).replace(/\./g, "٫");
+const toLat = (s) => String(s).replace(/[٠-٩]/g, (d) => d.charCodeAt(0) - 1632).replace(/[۰-۹]/g, (d) => d.charCodeAt(0) - 1776).replace(/[٫]/g, ".").replace(/[،؛]/g, ",");
+// A number with its unit as one left-to-right piece, so the sign and the degree mark do not jump around in right-to-left text.
+const ltr = (txt) => `<bdi dir="ltr">${txt}</bdi>`;
+const degTxt = (n, d = 1) => ltr(fa(n, d) + "°");
 
 // ---- help texts: one per field. min/max/def must match the validation in the firmware (a host test compares them) ----
 const HELP = /*HELP-BEGIN*/{
@@ -88,26 +94,27 @@ async function api(method, path, body) {
   return { ok: r.ok, status: r.status, data };
 }
 
-// ---- tabs ----
-const TABS = [["dash", "وضعیت", "وضعیت"], ["manual", "دستی", "کنترل"], ["calib", "کالیبراسیون", "کنترل"], ["settings", "تنظیمات", "تنظیمات"],
-  ["location", "موقعیت", "تنظیمات"], ["clock", "ساعت", "تنظیمات"], ["network", "شبکه", "تنظیمات"], ["log", "لاگ", "ابزار"], ["update", "به‌روزرسانی", "ابزار"], ["account", "رمز", "ابزار"]];
-function buildTabs() {
-  let html = "", last = "";
-  for (const [id, label, group] of TABS) {
-    if (group !== last) { html += `<span class="grp">${group}</span>`; last = group; }
-    html += `<button data-tab="${id}"${id === "dash" ? ' class="on"' : ""}>${label}</button>`;
-  }
+// ---- tabs: four sections, the pages of the open section show in a second row ----
+const NAV = [["وضعیت", [["dash", "وضعیت"]]], ["کنترل", [["manual", "دستی"], ["calib", "کالیبراسیون"]]],
+  ["تنظیمات", [["settings", "پارامترها"], ["location", "موقعیت"], ["clock", "ساعت"], ["network", "شبکه"]]],
+  ["ابزار", [["log", "لاگ"], ["update", "به‌روزرسانی"], ["account", "رمز"]]]];
+function buildTabs(active) {
+  const grp = NAV.findIndex(([, pages]) => pages.some(([id]) => id === active));
+  let html = '<div class="navMain">' + NAV.map(([title, pages], i) => `<button data-tab="${pages[0][0]}"${i === grp ? ' class="on"' : ""}>${title}</button>`).join("") + "</div>";
+  const pages = NAV[grp < 0 ? 0 : grp][1];
+  if (pages.length > 1) html += '<div class="navSub">' + pages.map(([id, label]) => `<button data-tab="${id}"${id === active ? ' class="on"' : ""}>${label}</button>`).join("") + "</div>";
   $("tabs").innerHTML = html;
 }
 function showTab(name) {
   if (name !== "dash" && !loggedIn) name = "dash";
   document.querySelectorAll("main section").forEach((s) => s.classList.toggle("hidden", s.id !== name));
-  document.querySelectorAll("#tabs button").forEach((b) => b.classList.toggle("on", b.dataset.tab === name));
+  buildTabs(name);
   if (name === "log") loadLog();
   if (name === "network") loadNetwork();
+  if (name === "clock") fillClock();
 }
 $("tabs").onclick = (e) => { const t = e.target.dataset && e.target.dataset.tab; if (t) showTab(t); };
-buildTabs();
+buildTabs("dash");
 
 // ---- login ----
 function setLoggedIn(v) {
@@ -134,10 +141,10 @@ function buildGauge() {
   const [x1, y1] = pt(limits.min, 118), [x2, y2] = pt(limits.max, 118);
   const lab = (a, txt) => { const [x, y] = pt(a, 138); return `<text x="${x}" y="${y}" text-anchor="middle" font-size="12" fill="var(--mute)">${txt}</text>`; };
   $("gauge").innerHTML =
-    `<rect x="0" y="0" width="320" height="190" rx="12" fill="var(--sky)"/>` +
+    `<rect x="0" y="0" width="320" height="200" rx="12" fill="var(--sky)"/>` +
     `<path d="M${x1} ${y1} A118 118 0 0 1 ${x2} ${y2}" fill="none" stroke="var(--line)" stroke-width="10" stroke-linecap="round"/>` +
-    lab(limits.min, fa(limits.min, 0) + "°") + lab(0, "۰°") + lab(limits.max, "+" + fa(limits.max, 0) + "°") +
-    `<text x="14" y="176" font-size="13" fill="var(--mute)">شرق ◀</text><text x="306" y="176" font-size="13" text-anchor="end" fill="var(--mute)">▶ غرب</text>` +
+    lab(limits.min, fa(limits.min, 0) + "°") + lab(0, "‎۰°") + lab(limits.max, "+" + fa(limits.max, 0) + "°") +
+    `<text x="22" y="190" font-size="14" text-anchor="start" fill="var(--mute)">◀ شرق</text><text x="298" y="190" font-size="14" text-anchor="end" fill="var(--mute)">غرب ▶</text>` +
     `<line x1="160" y1="150" x2="160" y2="40" stroke="var(--line)" stroke-dasharray="4 4"/>` +
     `<circle id="gTarget" r="7" fill="var(--accent)" stroke="var(--card)" stroke-width="2"/>` +
     `<g id="gPanel"><rect x="70" y="140" width="180" height="10" rx="3" fill="var(--panel)"/><line x1="160" y1="140" x2="160" y2="95" stroke="var(--accent)" stroke-width="3"/><polygon points="160,86 154,98 166,98" fill="var(--accent)"/></g>` +
@@ -155,16 +162,18 @@ buildGauge();
 
 // ---- status (every second) ----
 function deviceDate(utc, tz) { return new Date((utc + tz * 60) * 1000).toISOString().replace("T", " ").slice(0, 19); }
+// Persian digits with "-" or a plain space between them are reordered by the bidi algorithm (the date shows reversed): use "/" and a left-to-right mark.
+function showDate(utc, tz) { return toFa(deviceDate(utc, tz).replace(/-/g, "/").replace(" ", " ‎")); }
 async function poll() {
   try {
     const r = await api("GET", "/api/status");
     if (!r.ok) throw new Error("status");
     status = r.data;
     $("conn").textContent = "متصل"; $("conn").className = "pill";
-    $("angle").textContent = fa(status.angleDeg) + "°";
-    $("target").textContent = status.state === "Manual" ? "حالت دستی" : "هدف: " + fa(status.targetDeg) + "°";
-    $("wind").textContent = fa(status.windKmh, 0);
-    $("windNote").textContent = status.windStow ? "حالت ایمن" : "km/h";
+    $("angle").innerHTML = degTxt(status.angleDeg);
+    $("target").innerHTML = status.state === "Manual" ? "حالت دستی" : "هدف: " + degTxt(status.targetDeg);
+    $("wind").innerHTML = ltr(fa(status.windKmh, 1));
+    $("windNote").textContent = status.windStow ? "حالت ایمن باد" : "کیلومتر بر ساعت";
     $("mode").textContent = status.mode === "manual" ? "دستی" : "اتو";
     $("state").textContent = status.state;
     $("stateName").textContent = status.moving ? "در حال حرکت" : "ایستاده";
@@ -176,12 +185,14 @@ async function poll() {
     $("statusBadge").textContent = status.fault ? "خطا" : badge === "amber" ? "توجه" : "سالم";
     $("statusBadge").className = "badge " + badge;
     $("fw").textContent = status.fwVersion;
-    $("devTime").textContent = status.clockValid ? deviceDate(status.utc, status.tzOffsetMin) : "تنظیم نشده";
-    $("clockNow").textContent = $("devTime").textContent;
-    $("staState").textContent = status.staConnected ? "متصل " + status.staIp : "—";
+    $("devTime").textContent = status.clockValid ? showDate(status.utc, status.tzOffsetMin) : "تنظیم نشده";
+    $("clockNow").textContent = status.clockValid ? showDate(status.utc, status.tzOffsetMin) : "تنظیم نشده";
+    $("staState").innerHTML = status.staConnected ? "متصل " + ltr(status.staIp) : "—";
     $("warnDefault").classList.toggle("hidden", !status.passwordIsDefault);
     $("warnClock").classList.toggle("hidden", status.clockValid);
     $("warnCal").classList.toggle("hidden", status.calibrated);
+    $("faultBar").classList.toggle("hidden", !status.fault);
+    $("faultBarText").textContent = status.fault ? status.text : "";
     $("resetFault").classList.toggle("hidden", !status.fault || !loggedIn);
     moveGauge(status.angleDeg, status.targetDeg);
   } catch (e) {
@@ -225,26 +236,26 @@ const GROUPS = [
   ["دستگاه", [["supplyLowV", "هشدار ولتاژ تغذیه"], ["apPassword", "رمز هات‌اسپات (پس از ریستارت)"]]],
 ];
 const ALL_KEYS = GROUPS.flatMap((g) => g[1].map((f) => f[0]));
-function shown(k) { const v = settingsData[k]; return typeof v === "boolean" ? (v ? "1" : "0") : v === undefined ? "" : String(v); }
+function shown(k) { const v = settingsData[k]; return toFa(typeof v === "boolean" ? (v ? "1" : "0") : v === undefined ? "" : String(v)); }
 function renderSettings() {
   $("settingsForm").innerHTML = GROUPS.map(([title, fields], gi) =>
     `<details class="card group"${gi < 2 ? " open" : ""}><summary>${title}</summary>` + fields.map(([k, label]) => {
       const unit = HELP[k] && HELP[k].unit && k !== "currentPresent" ? ` <span class="small">(${HELP[k].unit})</span>` : "";
       const type = k === "apPassword" ? "password" : "text";
-      return `<div class="field" id="f_${k}"><label for="i_${k}">${label}${unit}</label><input id="i_${k}" type="${type}" inputmode="${k === "apPassword" ? "text" : "decimal"}" autocomplete="off" value="${k === "apPassword" ? "" : shown(k)}"${k === "apPassword" ? ' placeholder="بدون تغییر"' : ""}><button class="help" type="button" data-help="${k}" aria-label="راهنما">؟</button></div><p class="helptext hidden" id="h_${k}"></p>`;
+      return `<div class="field" id="f_${k}"><label for="i_${k}">${label}${unit}</label><button class="help" type="button" data-help="${k}" aria-label="راهنما">؟</button><input id="i_${k}" type="${type}" inputmode="${k === "apPassword" ? "text" : "decimal"}" autocomplete="off" value="${k === "apPassword" ? "" : shown(k)}"${k === "apPassword" ? ' placeholder="بدون تغییر"' : ""}></div><p class="helptext hidden" id="h_${k}"></p>`;
     }).join("") + `</details>`).join("");
   bindHelp($("settingsForm"));
   for (const k of ALL_KEYS) $("i_" + k).oninput = markDirty;
   markDirty();
 }
-function toNum(v) { return Number(v.trim().replace(/[٠-٩]/g, (d) => d.charCodeAt(0) - 1632).replace(/[۰-۹]/g, (d) => d.charCodeAt(0) - 1776).replace("٫", ".")); }
+function toNum(v) { return Number(toLat(v.trim())); }
 function changes() {
   const body = {};
   for (const k of ALL_KEYS) {
     const v = $("i_" + k).value.trim();
     if (k === "apPassword") { if (v) body[k] = v; continue; }
-    if (v === "" || v === shown(k)) continue;
-    if (k === "currentPresent") body[k] = v === "1"; else body[k] = toNum(v);
+    if (v === "" || toLat(v) === toLat(shown(k))) continue;
+    if (k === "currentPresent") body[k] = toLat(v) === "1"; else body[k] = toNum(v);
   }
   return body;
 }
@@ -263,7 +274,7 @@ async function loadSettings() {
   limits = { min: settingsData.minDeg, max: settingsData.maxDeg };
   buildGauge();
   renderSettings();
-  $("locNow").textContent = `${settingsData.latDeg.toFixed(3)}, ${settingsData.lonDeg.toFixed(3)} (${settingsData.cityId})`;
+  $("locNow").innerHTML = ltr(toFa(`${settingsData.latDeg.toFixed(3)}, ${settingsData.lonDeg.toFixed(3)}`)) + (settingsData.cityId ? ` (${(cities.find((c) => c.id === settingsData.cityId) || {}).name || settingsData.cityId})` : "");
   $("citySel").value = cities.some((c) => c.id === settingsData.cityId) ? settingsData.cityId : "";
 }
 $("saveSettings").onclick = async () => {
@@ -285,13 +296,19 @@ async function loadCities() {
   cities = r.data.cities;
   $("citySel").innerHTML = '<option value="">—</option>' + cities.map((c) => `<option value="${c.id}">${c.name}</option>`).join("");
 }
-$("saveCity").onclick = async () => {
-  if (!$("citySel").value) return;
-  const r = await api("POST", "/api/location", { city: $("citySel").value });
-  toast(r.ok ? "موقعیت ذخیره شد" : errText(r), r.ok ? "ok" : "err"); if (r.ok) loadSettings();
-};
-$("saveCoord").onclick = async () => {
-  const r = await api("POST", "/api/location", { text: $("coordText").value });
+let locByCity = true;
+function setLocTab(city) {
+  locByCity = city;
+  $("locCityTab").classList.toggle("on", city); $("locCoordTab").classList.toggle("on", !city);
+  $("locCity").classList.toggle("hidden", !city); $("locCoord").classList.toggle("hidden", city);
+}
+$("locCityTab").onclick = () => setLocTab(true);
+$("locCoordTab").onclick = () => setLocTab(false);
+$("saveLoc").onclick = async () => {
+  let body;
+  if (locByCity) { if (!$("citySel").value) { toast("یک شهر انتخاب کنید", "err"); return; } body = { city: $("citySel").value }; }
+  else body = { text: toLat($("coordText").value) };
+  const r = await api("POST", "/api/location", body);
   toast(r.ok ? "موقعیت ذخیره شد" : errText(r), r.ok ? "ok" : "err"); if (r.ok) loadSettings();
 };
 
@@ -300,11 +317,16 @@ $("syncPhone").onclick = async () => {
   const r = await api("POST", "/api/clock", { utc: Math.floor(Date.now() / 1000) });
   toast(r.ok ? "ساعت با گوشی همگام شد" : errText(r), r.ok ? "ok" : "err"); poll();
 };
+function fillClock() {
+  if (!status || !status.clockValid || $("clockDate").value || $("clockTime").value) return;
+  const t = deviceDate(status.utc, status.tzOffsetMin).split(" ");
+  $("clockDate").value = toFa(t[0].replace(/-/g, "/")); $("clockTime").value = toFa(t[1]);
+}
 $("saveClock").onclick = async () => {
-  const v = $("clockManual").value;
-  if (!v || !status) return;
-  const p = v.match(/(\d+)-(\d+)-(\d+)T(\d+):(\d+):?(\d*)/);
-  const local = Date.UTC(+p[1], +p[2] - 1, +p[3], +p[4], +p[5], +(p[6] || 0)) / 1000;
+  const d = toLat($("clockDate").value).trim().match(/^(\d{4})[-\/.](\d{1,2})[-\/.](\d{1,2})$/);
+  const t = toLat($("clockTime").value).trim().match(/^(\d{1,2}):(\d{2})(?::(\d{2}))?$/);
+  if (!d || !t || !status) { toast("تاریخ را مثل ۲۰۲۷-۰۶-۲۱ و ساعت را مثل ۱۴:۳۰:۰۰ بنویسید", "err"); return; }
+  const local = Date.UTC(+d[1], +d[2] - 1, +d[3], +t[1], +t[2], +(t[3] || 0)) / 1000;
   const r = await api("POST", "/api/clock", { utc: local - status.tzOffsetMin * 60 });
   toast(r.ok ? "ساعت ثبت شد" : errText(r), r.ok ? "ok" : "err"); poll();
 };
@@ -329,11 +351,20 @@ $("calSave").onclick = async () => { const r = await api("POST", "/api/calibrate
 // ---- log ----
 let logEvents = [], logFilter = "all", logInfo = null;
 const MOVES = ["MoveStart", "MoveEnd"], FAULTS = ["Fault", "FaultReset"];
+const TYPE_FA = { PowerUp: "روشن شدن", StateChange: "تغییر وضعیت", Fault: "خطا", FaultReset: "ریست خطا", MoveStart: "شروع حرکت", MoveEnd: "پایان حرکت", ClockSet: "تنظیم ساعت",
+  SettingsChange: "تغییر تنظیمات", SettingsReset: "بازنشانی تنظیمات", SettingsMigrated: "به‌روزرسانی ساختار تنظیمات", SupplyLow: "ولتاژ پایین", LogReset: "پاک شدن لاگ" };
+const DETAIL_FA = [["no stored settings", "تنظیمات ذخیره‌شده‌ای نبود؛ پیش‌فرض‌ها بارگذاری شد"], ["power-on after cut", "روشن شدن پس از قطع برق"], ["power-on", "روشن شدن دستگاه"], ["wind stow start", "شروع حالت ایمن باد"], ["wind stow end", "پایان حالت ایمن باد"],
+  ["end of stroke: limit reached", "انتهای کورس جک: به حد رسید"], ["manual keep-alive lost", "ارتباط دکمه دستی قطع شد"], ["angle calibration saved", "کالیبراسیون زاویه ذخیره شد"],
+  ["notification settings changed", "تنظیمات هشدار عوض شد"], ["settings password changed", "رمز عوض شد"], ["site wifi changed", "وای‌فای محل عوض شد"], ["older layout", "ساختار قدیمی"],
+  ["dir=east", "جهت: شرق"], ["dir=west", "جهت: غرب"], ["reason=", "علت: "], ["angle=", "زاویه: "], ["ms=", "مدت (میلی‌ثانیه): "], ["->", " ⟵ "],
+  ["Auto", "خودکار"], ["Manual", "دستی"], ["Wind", "باد"], ["Night", "شب"], ["Fault", "خطا"], ["stop", "توقف"], ["target", "رسیدن به هدف"]];
+function detailFa(d) { let t = String(d).replace(/[<&]/g, ""); for (const [a, b] of DETAIL_FA) t = t.split(a).join(b); return toFa(t); }
 function renderLog() {
   const tz = status ? status.tzOffsetMin : 0;
   const keep = (e) => logFilter === "all" || (logFilter === "fault" && FAULTS.includes(e.type)) || (logFilter === "move" && MOVES.includes(e.type)) || (logFilter === "system" && !FAULTS.includes(e.type) && !MOVES.includes(e.type));
   $("logRows").innerHTML = logEvents.filter(keep).slice().reverse().map((e) =>
-    `<tr class="${FAULTS.includes(e.type) ? "f" : ""}"><td class="t">${e.t > 0 ? deviceDate(e.t, tz) : "—"}</td><td>${e.type}</td><td>${String(e.detail).replace(/[<&]/g, "")}</td></tr>`).join("");
+    `<tr class="${FAULTS.includes(e.type) ? "f" : ""}"><td class="t">${e.t > 0 ? ltr(showDate(e.t, tz)) : "—"}</td><td class="k">${TYPE_FA[e.type] || e.type}</td><td>${detailFa(e.detail)}</td></tr>`).join("");
+  $("log").classList.toggle("notime", !logEvents.some((e) => e.t > 0));  // no clock yet: the time column would only show dashes
   if (logInfo) {
     const pct = Math.min(100, (logInfo.storedBytes / logInfo.maxBytes) * 100);
     $("logFill").style.width = pct + "%";
@@ -405,9 +436,12 @@ $("notifyTest").onclick = async () => {
 };
 
 // ---- firmware update ----
-$("fwSend").onclick = () => {
+$("fwPick").onclick = () => $("fwFile").click();
+$("fwFile").onchange = () => { const f = $("fwFile").files[0]; $("fwName").textContent = f ? f.name : "فایلی انتخاب نشده"; };
+$("fwSend").onclick = async () => {
   const f = $("fwFile").files[0];
   if (!f) { say($("fwMsg"), "ابتدا فایل را انتخاب کنید", "err"); return; }
+  if (!(await confirmDialog("نرم‌افزار دستگاه با این فایل عوض می‌شود و دستگاه دوباره راه‌اندازی می‌شود. مطمئنید؟"))) return;
   const xhr = new XMLHttpRequest();
   const form = new FormData();
   form.append("firmware", f, f.name);
@@ -431,6 +465,9 @@ $("pwSave").onclick = async () => {
   else toast(errText(r), "err");
 };
 
+document.querySelectorAll("input[data-show]").forEach((c) => {
+  c.onchange = () => c.dataset.show.split(",").forEach((id) => { $(id).type = c.checked ? "text" : "password"; });
+});
 bindHelp(document);
 async function loadAll() { await loadCities(); await loadSettings(); loadNetwork(); }
 

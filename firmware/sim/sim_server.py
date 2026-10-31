@@ -132,13 +132,15 @@ class Handler(BaseHTTPRequestHandler):
 
 
 def main():
-    global SIM
+    global SIM, WEB
     ap = argparse.ArgumentParser()
     ap.add_argument("--port", type=int, default=8080)
+    ap.add_argument("--web", default=WEB, help="folder with the panel files (default: firmware/web)")
     ap.add_argument("--speed", type=float, default=1.0, help="simulated seconds per real second")
     a = ap.parse_args()
     if not os.path.exists(EXE):
         sys.exit("simulator not built: run  pio run -d firmware -e sim")
+    WEB = os.path.abspath(a.web)
     SIM = Sim()
     SIM.speed = a.speed
     threading.Thread(target=clock_thread, daemon=True).start()
