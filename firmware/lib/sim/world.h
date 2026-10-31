@@ -75,6 +75,8 @@ public:
     FakeRelays& relays() { return relays_; }
     FakeEventLog& log() { return log_; }
     FakeSettingsStore& blobs() { return blobs_; }
+    FakeClock& clock() { return clock_; }
+    FakeAccel& accel() { return accel_; }
     settings::Settings& cfg() { return cfg_; }
     settings::SettingsStore& store() { return store_; }
     angle::AngleProvider& angle() { return angle_; }
@@ -229,7 +231,7 @@ private:
     int64_t utc_;
     FakeTime time_;
     FakeRelays relays_;
-    FakeEventLog log_;
+    FakeEventLog log_{&utc_};
     FakeSettingsStore blobs_;
     FakeAccel accel_;
     FakeClock clock_;

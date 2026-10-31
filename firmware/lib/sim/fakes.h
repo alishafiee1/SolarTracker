@@ -156,11 +156,19 @@ private:
 
 class FakeEventLog : public hal::IEventLog {
 public:
-    void append(hal::EventType type, const char* detail) override { events_.emplace_back(type, detail ? detail : ""); }
+    // `utc` (optional) is read at every append so the desktop simulator can show real timestamps.
+    explicit FakeEventLog(const int64_t* utc = nullptr) : utc_(utc) {}
+    void append(hal::EventType type, const char* detail) override {
+        events_.emplace_back(type, detail ? detail : "");
+        times_.push_back(utc_ ? *utc_ : 0);
+    }
     const std::vector<std::pair<hal::EventType, std::string>>& events() const { return events_; }
+    const std::vector<int64_t>& times() const { return times_; }
 
 private:
+    const int64_t* utc_;
     std::vector<std::pair<hal::EventType, std::string>> events_;
+    std::vector<int64_t> times_;
 };
 
 // Repeatable pseudo-random bytes (xorshift) for tests.

@@ -51,3 +51,15 @@ This repo is planned with RODO. Agents and contributors start with [`AGENTS.md`]
 ## License
 
 Copyright (c) 2026 Ali Shafiee. All rights reserved. See [`LICENSE`](LICENSE).
+
+## Desktop simulator (no board needed)
+
+Runs the real control logic and the real web API on the PC, behind the real panel files.
+
+```
+pio run -d firmware -e sim
+python firmware/sim/sim_server.py --speed 10
+```
+
+Panel: http://127.0.0.1:8080/ (password `sim`). Controls (wind, faults, time speed): http://127.0.0.1:8080/sim.
+The simulated day starts at 07:00 UTC on 21 June 2027 in Kerman. Sessions expire in simulated time, so at high speed log in again.
