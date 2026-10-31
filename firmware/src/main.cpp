@@ -1,5 +1,6 @@
 // SunTracker firmware entry point: wiring only, logic lives in lib/core.
 #include <Arduino.h>
+#include <WiFi.h>
 #include <Wire.h>
 
 #include "angle_provider.h"
@@ -152,6 +153,25 @@ void setup() {
     deps.sendTestMessage = [] {  // queued, not sent here: a request must never wait for the internet
         return siteNet.notify("test:" + std::to_string(millis()), "SunTracker: پیام آزمایشی", millis());  // a unique key: tests are never merged
     };
+    deps.startWifiScan = [] {
+        if (WiFi.scanComplete() != WIFI_SCAN_RUNNING) {
+            WiFi.scanDelete();
+            WiFi.scanNetworks(true);  // asynchronous: returns at once
+        }
+    };
+    deps.wifiScan = [] {
+        webapi::WifiScan s;
+        const int n = WiFi.scanComplete();
+        if (n == WIFI_SCAN_RUNNING) {
+            s.state = 1;
+        } else if (n >= 0) {
+            s.state = 2;
+            for (int i = 0; i < n; ++i) s.networks.push_back({WiFi.SSID(i).c_str(), WiFi.RSSI(i), WiFi.encryptionType(i) != WIFI_AUTH_OPEN});
+            net::tidyScan(s.networks);
+        }
+        return s;
+    };
+    deps.logBytes = [] { return eventLog.storedBytes(); };
     deps.onSettingsChanged = [] {
         motionCtl->setTiming(timingFrom(cfg));
         if (cfg.currentPresent) currentSensor.begin(cfg.currentFactor);
@@ -238,6 +258,7 @@ void loop() {
         ESP.restart();
     }
     panel->unlock();
+    panel->service();  // DNS answers for the captive portal (outside the lock)
 #ifdef BENCH_CONSOLE
     drivers::benchConsolePoll({FW_VERSION, core::resetReasonName(resetReason), now, controlLoop.ticks(),
                                controlLoop.lastTickMs(), &accel, &angleProvider, motionCtl, &cfg, &settingsStore, &rtcClock, controller,

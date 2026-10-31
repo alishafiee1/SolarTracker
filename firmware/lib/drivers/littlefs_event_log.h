@@ -28,6 +28,8 @@ public:
     bool readLine(char* out, size_t len);  // false at the end
     void endRead();
     size_t activeFileBytes() const { return activeBytes_; }
+    // Bytes in both log files (the log keeps at most 2 x kMaxFileBytes, the oldest file is dropped at a rotation).
+    size_t storedBytes();
     int activeFileIndex() const { return active_; }
 
 private:

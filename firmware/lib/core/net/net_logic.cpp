@@ -35,6 +35,32 @@ void NotifyQueue::done(bool sent, uint32_t nowMs) {
     everSent_ = true;
 }
 
+void tidyScan(std::vector<ScanEntry>& e, size_t maxEntries) {
+    std::vector<ScanEntry> out;
+    for (const ScanEntry& x : e) {
+        if (x.ssid.empty()) continue;  // hidden network
+        bool merged = false;
+        for (ScanEntry& y : out)
+            if (y.ssid == x.ssid) {
+                if (x.rssi > y.rssi) y = x;
+                merged = true;
+                break;
+            }
+        if (!merged) out.push_back(x);
+    }
+    for (size_t i = 1; i < out.size(); ++i) {  // insertion sort, strongest first (the list is short)
+        ScanEntry key = out[i];
+        size_t j = i;
+        while (j > 0 && out[j - 1].rssi < key.rssi) {
+            out[j] = out[j - 1];
+            --j;
+        }
+        out[j] = key;
+    }
+    if (out.size() > maxEntries) out.resize(maxEntries);
+    e = out;
+}
+
 std::string formatNotification(const char* device, const char* textFa, int64_t utcEpoch, int tzOffsetMin) {
     char buf[200];
     if (utcEpoch > 0) {

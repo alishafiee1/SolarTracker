@@ -141,6 +141,11 @@ Response WebApi::handle(const Request& req) {
     if (req.post && p == "/api/network") return postNetwork(req);
     if (req.post && p == "/api/notify") return postNotify(req);
     if (req.post && p == "/api/notify/test") return testNotify();
+    if (req.post && p == "/api/wifi/scan") {
+        d_.startWifiScan();
+        return getWifiScan();
+    }
+    if (!req.post && p == "/api/wifi/scan") return getWifiScan();
     if (req.post && p == "/api/password") return postPassword(req);
     return error(404, "not-found", "پیدا نشد");
 }
@@ -415,6 +420,21 @@ Response WebApi::postNotify(const Request& req) {
     return getNetwork();
 }
 
+Response WebApi::getWifiScan() {
+    const WifiScan s = d_.wifiScan();
+    static const char* const names[] = {"idle", "scanning", "done"};
+    JsonDocument d;
+    d["state"] = names[s.state < 0 || s.state > 2 ? 0 : s.state];
+    JsonArray a = d["networks"].to<JsonArray>();
+    for (const net::ScanEntry& n : s.networks) {
+        JsonObject o = a.add<JsonObject>();
+        o["ssid"] = n.ssid;
+        o["rssi"] = n.rssi;
+        o["secure"] = n.secure;
+    }
+    return json(200, d);
+}
+
 Response WebApi::testNotify() {
     net::NetConfig c;
     if (!net::load(d_.blobs, c) || c.botToken[0] == '\0' || c.chatId[0] == '\0') return error(409, "not-configured", "ابتدا توکن ربات و شناسه گفتگو را ثبت کنید");
@@ -429,6 +449,8 @@ Response WebApi::getLog(const Request& req) {
     if (n < 1) n = 1;
     if (n > 100) n = 100;
     JsonDocument d;
+    d["storedBytes"] = static_cast<uint32_t>(d_.logBytes());
+    d["maxBytes"] = 131072;  // two files of 64 KB
     JsonArray a = d["events"].to<JsonArray>();
     if (d_.readLog) {
         std::string buf(n * events::kMaxLine + 8, '\0');

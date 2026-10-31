@@ -82,6 +82,18 @@ void LittleFsEventLog::writeBuffered() {
     bufferLen_ = 0;
 }
 
+size_t LittleFsEventLog::storedBytes() {
+    size_t total = bufferLen_;
+    for (int i = 0; i < 2; ++i) {
+        File f = LittleFS.open(pathFor(i), "r");
+        if (f) {
+            total += f.size();
+            f.close();
+        }
+    }
+    return total;
+}
+
 void LittleFsEventLog::beginRead() {
     writeBuffered();
     readStep_ = 0;

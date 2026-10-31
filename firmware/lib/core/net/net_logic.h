@@ -58,6 +58,14 @@ private:
 // R3: "<device>: <Persian text> — <local time hh:mm>". An unset clock (epoch 0) leaves the time out.
 std::string formatNotification(const char* device, const char* textFa, int64_t utcEpoch, int tzOffsetMin);
 
+// Wi-Fi scan (cycle 015): one entry per SSID (the strongest), no hidden networks, strongest first, at most 20.
+struct ScanEntry {
+    std::string ssid;
+    int rssi;
+    bool secure;
+};
+void tidyScan(std::vector<ScanEntry>& entries, size_t maxEntries = 20);
+
 // R2: the clock is set from NTP only when the time is plausible and differs by more than 2 s.
 bool shouldSetClockFromNtp(int64_t rtcUtc, bool rtcValid, int64_t ntpUtc);
 

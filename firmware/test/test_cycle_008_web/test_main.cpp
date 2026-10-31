@@ -82,6 +82,9 @@ struct Rig {
     int changedCalls = 0;
     int networkChanged = 0;
     int testCalls = 0;
+    int scansStarted = 0;
+    webapi::WifiScan scanResult;
+    size_t logStored = 4200;
     bool testResult = true;
     std::string logText;
     uint32_t nowMs = 100000;
@@ -97,6 +100,12 @@ struct Rig {
             ++r.testCalls;
             return r.testResult;
         };
+        d.startWifiScan = [&r] {
+            ++r.scansStarted;
+            r.scanResult.state = 1;
+        };
+        d.wifiScan = [&r] { return r.scanResult; };
+        d.logBytes = [&r] { return r.logStored; };
         d.netInfo = [] {
             webapi::NetInfo n;
             n.connected = true;
@@ -436,6 +445,37 @@ static void status_shows_the_site_connection_without_secrets() {
     TEST_ASSERT_TRUE(d["lastNotifyOk"].as<bool>());
 }
 
+// Cycle 015: the scan is started by a POST and read by a GET; both need a login.
+static void the_wifi_scan_is_started_and_read_in_two_steps() {
+    Rig r;
+    TEST_ASSERT_EQUAL_INT(401, r.call(true, "/api/wifi/scan", "{}").status);
+    TEST_ASSERT_EQUAL_INT(401, r.call(false, "/api/wifi/scan").status);
+    const std::string c = r.login();
+    JsonDocument started = parse(r.call(true, "/api/wifi/scan", "{}", c));
+    TEST_ASSERT_EQUAL_INT(1, r.scansStarted);
+    TEST_ASSERT_EQUAL_STRING("scanning", started["state"] | "?");
+    TEST_ASSERT_EQUAL_size_t(0, started["networks"].as<JsonArray>().size());
+    r.scanResult.state = 2;
+    r.scanResult.networks = {{"WORKSHOP", -48, true}, {"Cafe", -72, false}};
+    JsonDocument done = parse(r.call(false, "/api/wifi/scan", "", c));
+    TEST_ASSERT_EQUAL_STRING("done", done["state"] | "?");
+    JsonArray a = done["networks"].as<JsonArray>();
+    TEST_ASSERT_EQUAL_size_t(2, a.size());
+    TEST_ASSERT_EQUAL_STRING("WORKSHOP", a[0]["ssid"] | "?");
+    TEST_ASSERT_EQUAL_INT(-48, a[0]["rssi"].as<int>());
+    TEST_ASSERT_TRUE(a[0]["secure"].as<bool>());
+    TEST_ASSERT_FALSE(a[1]["secure"].as<bool>());
+}
+
+// Cycle 017: the log answer says how full the log is.
+static void the_log_answer_includes_the_fill_of_the_log() {
+    Rig r;
+    const std::string c = r.login();
+    JsonDocument d = parse(r.call(false, "/api/log", "", c));
+    TEST_ASSERT_EQUAL_UINT32(4200, d["storedBytes"].as<uint32_t>());
+    TEST_ASSERT_EQUAL_UINT32(131072, d["maxBytes"].as<uint32_t>());
+}
+
 static void unknown_paths_are_404() {
     Rig r;
     const std::string c = r.login();
@@ -472,6 +512,8 @@ int main() {
     RUN_TEST(invalid_network_values_are_refused);
     RUN_TEST(the_test_message_needs_a_configuration_and_reports_failure);
     RUN_TEST(status_shows_the_site_connection_without_secrets);
+    RUN_TEST(the_wifi_scan_is_started_and_read_in_two_steps);
+    RUN_TEST(the_log_answer_includes_the_fill_of_the_log);
     RUN_TEST(unknown_paths_are_404);
     RUN_TEST(persian_status_texts_exist_for_every_id);
     return UNITY_END();

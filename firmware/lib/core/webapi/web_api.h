@@ -33,6 +33,12 @@ struct Response {
     std::string setCookie;  // full Set-Cookie header value, empty if none
 };
 
+// Result of a Wi-Fi scan (cycle 015). state: 0 idle, 1 scanning, 2 done.
+struct WifiScan {
+    int state = 0;
+    std::vector<net::ScanEntry> networks;
+};
+
 // Site Wi-Fi and notification state shown by the API (module 011). No secrets.
 struct NetInfo {
     bool connected = false;
@@ -64,6 +70,9 @@ struct Deps {
     std::function<void()> onNetworkChanged = [] {};
     std::function<NetInfo()> netInfo = [] { return NetInfo(); };
     std::function<bool()> sendTestMessage = [] { return false; };
+    std::function<void()> startWifiScan = [] {};
+    std::function<WifiScan()> wifiScan = [] { return WifiScan(); };
+    std::function<size_t()> logBytes = [] { return size_t{0}; };  // bytes stored in the event log files
 };
 
 class WebApi {
@@ -91,6 +100,7 @@ private:
     Response postNetwork(const Request& req);
     Response postNotify(const Request& req);
     Response testNotify();
+    Response getWifiScan();
     bool saveCfg(const settings::Settings& next, Response& err);
 
     Deps d_;

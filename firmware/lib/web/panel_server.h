@@ -26,6 +26,8 @@ public:
     void unlock();
 
     const char* ssid() const { return ssid_; }
+    // Call from the main loop (outside the lock): answers DNS queries of the hotspot (cycle 014).
+    void service();
     uint8_t clients() const;
 
     // CSV download of the event log (module 012). Set before begin(); both are optional.

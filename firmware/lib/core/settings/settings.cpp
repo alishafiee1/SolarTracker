@@ -56,7 +56,7 @@ size_t validate(const Settings& s, const char** invalid, size_t max) {
     if (!inRange(s.maxMoveMs, 10000u, 300000u)) bad("maxMoveMs");
     if (!inRange(s.windStowKmh, 10.0f, 100.0f)) bad("windStowKmh");
     if (!inRange(s.windStowDelayS, 1u, 60u)) bad("windStowDelayS");
-    if (!inRange(s.windReturnKmh, 5.0f, 100.0f) || !(s.windReturnKmh < s.windStowKmh)) bad("windReturnKmh");
+    if (!inRange(s.windReturnKmh, 5.0f, 99.0f) || !(s.windReturnKmh < s.windStowKmh)) bad("windReturnKmh");  // below the stow speed, which is at most 100
     if (!inRange(s.windReturnMin, 1u, 120u)) bad("windReturnMin");
     if (!inRange(s.anemometerFactor, 1.0f, 20.0f)) bad("anemometerFactor");
     if (s.mode != Mode::Auto && s.mode != Mode::Manual) bad("mode");

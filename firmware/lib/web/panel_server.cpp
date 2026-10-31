@@ -2,18 +2,22 @@
 
 #include <Arduino.h>
 #include <ESPAsyncWebServer.h>
+#include <DNSServer.h>
 #include <WiFi.h>
 #include <esp_wifi.h>
 #include <freertos/semphr.h>
 
 #include "csv_stream.h"
 #include "panel_files.h"
+#include "portal.h"
 #include "rtc_time.h"
 
 namespace web {
 
 namespace {
 AsyncWebServer server(80);
+DNSServer dns;
+bool dnsRunning = false;
 PanelServer* self = nullptr;
 
 void sendJson(AsyncWebServerRequest* r, const webapi::Response& res) {
@@ -31,8 +35,14 @@ void sendFile(AsyncWebServerRequest* r, const PanelFile& f) {
 }
 
 // Captive portals: phones probe a few well-known URLs; a redirect to the panel makes them open it.
-// A relative redirect works through the hotspot (192.168.4.1) and through the site Wi-Fi address alike.
-void redirectHome(AsyncWebServerRequest* r) { r->redirect("/"); }
+// Captive portal (cycle 014): a phone on the hotspot gets the absolute panel address, a computer on the site network keeps
+// the address it typed (relative redirect).
+void redirectHome(AsyncWebServerRequest* r) {
+    const IPAddress ip = r->client()->localIP();
+    const uint8_t bytes[4] = {ip[0], ip[1], ip[2], ip[3]};
+    if (web::redirectFor(bytes, r->url().c_str()) == web::Redirect::Absolute) r->redirect("http://192.168.4.1/");
+    else r->redirect("/");
+}
 
 void onBody(AsyncWebServerRequest* r, uint8_t* data, size_t len, size_t index, size_t total) {
     if (total > 4096) return;  // the largest real request is a few hundred bytes
@@ -152,6 +162,10 @@ void PanelServer::unlock() {
     if (mutex_) xSemaphoreGive(static_cast<SemaphoreHandle_t>(mutex_));
 }
 
+void PanelServer::service() {
+    if (dnsRunning) dns.processNextRequest();
+}
+
 uint8_t PanelServer::clients() const { return WiFi.softAPgetStationNum(); }
 
 void PanelServer::setLogCsv(drivers::LittleFsEventLog* log, std::function<int()> tz, std::function<int64_t()> utc) {
@@ -172,6 +186,8 @@ bool PanelServer::begin(const char* apPassword) {
     if (!WiFi.softAP(ssid_, apPassword, 6, 0, 4)) return false;
     WiFi.softAPConfig(IPAddress(192, 168, 4, 1), IPAddress(192, 168, 4, 1), IPAddress(255, 255, 255, 0));
 
+    dns.setTTL(0);
+    dnsRunning = dns.start(53, "*", IPAddress(192, 168, 4, 1));  // every name resolves to the panel; only on the hotspot address
     server.on("/api/update", HTTP_POST, onUpdateDone, onUpdateUpload);
     server.onRequestBody(onBody);
     server.onNotFound(onRequest);

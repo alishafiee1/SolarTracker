@@ -9,54 +9,53 @@
 <body>
 <header>
   <h1>☀ تراکر خورشیدی</h1>
-  <span id="conn" class="pill off">قطع</span>
+  <div class="hdr">
+    <span id="conn" class="pill off">قطع</span>
+    <button id="logoutBtn" class="ghost hidden">خروج</button>
+  </div>
 </header>
 
-<div id="loginBox" class="card hidden">
+<div id="loginBox" class="card narrow hidden">
   <h2>ورود</h2>
-  <p>برای حرکت دستی و تغییر تنظیمات رمز لازم است.</p>
-  <input id="loginPass" type="password" autocomplete="current-password" placeholder="رمز">
-  <button id="loginBtn" class="primary">ورود</button>
+  <p class="small">برای حرکت دستی و تغییر تنظیمات رمز لازم است. دیدن وضعیت بدون رمز ممکن است.</p>
+  <input id="loginPass" type="password" autocomplete="current-password" placeholder="رمز پنل">
+  <button id="loginBtn" class="primary wide">ورود</button>
   <p id="loginMsg" class="msg"></p>
 </div>
 
-<nav id="tabs">
-  <button data-tab="dash" class="on">وضعیت</button>
-  <button data-tab="manual">دستی</button>
-  <button data-tab="settings">تنظیمات</button>
-  <button data-tab="location">موقعیت</button>
-  <button data-tab="clock">ساعت</button>
-  <button data-tab="calib">کالیبراسیون</button>
-  <button data-tab="log">لاگ</button>
-  <button data-tab="account">رمز</button>
-  <button data-tab="update">به‌روزرسانی</button>
-  <button data-tab="network">شبکه</button>
-</nav>
+<nav id="tabs" class="hidden"></nav>
 
 <main>
 <section id="dash">
+  <div class="card gaugeCard">
+    <svg id="gauge" viewBox="0 0 320 190" role="img" aria-label="زاویه پنل"></svg>
+    <div class="row between">
+      <span id="statusBadge" class="badge">—</span>
+      <span class="small" id="stateName"></span>
+    </div>
+    <p id="statusText" class="big"></p>
+  </div>
   <div class="grid">
     <div class="tile"><span>زاویه فعلی</span><b id="angle">—</b><small id="target"></small></div>
-    <div class="tile"><span>سرعت باد</span><b id="wind">—</b><small>km/h</small></div>
+    <div class="tile"><span>سرعت باد</span><b id="wind">—</b><small id="windNote">km/h</small></div>
     <div class="tile"><span>حالت</span><b id="mode">—</b><small id="state"></small></div>
     <div class="tile"><span>آخرین خطا</span><b id="fault">—</b><small id="faultText"></small></div>
   </div>
-  <p id="statusText" class="big"></p>
   <p id="warnDefault" class="warn hidden">رمز پیش‌فرض را عوض کنید (برگه «رمز»).</p>
-  <p id="warnClock" class="warn hidden">ساعت تنظیم نشده است؛ ردیابی خودکار تا تنظیم ساعت کار نمی‌کند.</p>
+  <p id="warnClock" class="warn hidden">ساعت تنظیم نشده است؛ ردیابی خودکار تا تنظیم ساعت کار نمی‌کند (برگه «ساعت»).</p>
   <p id="warnCal" class="warn hidden">کالیبراسیون لازم است (برگه «کالیبراسیون»).</p>
-  <button id="resetFault" class="danger hidden">ریست خطا</button>
-  <p class="small">نسخه <span id="fw"></span> · زمان دستگاه <span id="devTime">—</span></p>
+  <button id="resetFault" class="danger wide hidden">ریست خطا</button>
+  <p class="small">نسخه <span id="fw"></span> · زمان دستگاه <span id="devTime">—</span> · وای‌فای محل: <span id="staState">—</span></p>
 </section>
 
 <section id="manual" class="hidden">
   <div class="card">
-    <h2>حالت</h2>
-    <div class="row">
+    <h2>حالت کار</h2>
+    <div class="seg">
       <button id="modeAuto">اتوماتیک</button>
       <button id="modeManual">دستی</button>
     </div>
-    <p class="small">حرکت دستی فقط در حالت دستی کار می‌کند. دکمه را نگه دارید؛ با رها کردن پنل می‌ایستد.</p>
+    <p class="small">حرکت دستی فقط در حالت دستی کار می‌کند. دکمه را نگه دارید؛ با رها کردن پنل می‌ایستد. بین دو حرکت تأخیر ایمنی رعایت می‌شود.</p>
   </div>
   <div class="card">
     <h2>حرکت دستی</h2>
@@ -70,27 +69,24 @@
 </section>
 
 <section id="settings" class="hidden">
-  <div class="card">
-    <h2>تنظیمات</h2>
-    <form id="settingsForm"></form>
+  <div id="dirtyBar" class="warn hidden">تغییرهای ذخیره‌نشده دارید.</div>
+  <form id="settingsForm" onsubmit="return false"></form>
+  <div class="row sticky">
     <button id="saveSettings" class="primary">ذخیره</button>
-    <p id="settingsMsg" class="msg"></p>
+    <button id="revertSettings">لغو تغییرها</button>
   </div>
 </section>
 
 <section id="location" class="hidden">
   <div class="card">
     <h2>موقعیت نصب</h2>
-    <p>مختصات فعلی: <b id="locNow">—</b></p>
-    <label>شهر
-      <select id="citySel"></select>
-    </label>
+    <p>مختصات فعلی: <b id="locNow" dir="ltr">—</b></p>
+    <div class="field"><label for="citySel">شهر</label><select id="citySel"></select><button class="help" data-help="city" aria-label="راهنما">؟</button></div>
+    <p class="helptext hidden" id="h_city"></p>
     <button id="saveCity" class="primary">ثبت شهر</button>
-    <label>یا مختصات از نقشه (مثل «30.283, 57.083»)
-      <input id="coordText" dir="ltr" placeholder="30.283, 57.083">
-    </label>
+    <div class="field"><label for="coordText">یا مختصات از نقشه</label><input id="coordText" dir="ltr" placeholder="30.283, 57.083"><button class="help" data-help="coords" aria-label="راهنما">؟</button></div>
+    <p class="helptext hidden" id="h_coords"></p>
     <button id="saveCoord" class="primary">ثبت مختصات</button>
-    <p id="locMsg" class="msg"></p>
   </div>
 </section>
 
@@ -98,33 +94,23 @@
   <div class="card">
     <h2>ساعت و تاریخ</h2>
     <p>ساعت دستگاه: <b id="clockNow">—</b></p>
-    <button id="syncPhone" class="primary">همگام‌سازی با ساعت گوشی</button>
-    <label>یا دستی (وقت محلی)
-      <input id="clockManual" type="datetime-local" step="1" dir="ltr">
-    </label>
+    <button id="syncPhone" class="primary wide">همگام‌سازی با ساعت گوشی</button>
+    <div class="field"><label for="clockManual">یا دستی (وقت محلی)</label><input id="clockManual" type="datetime-local" step="1" dir="ltr"><button class="help" data-help="clock" aria-label="راهنما">؟</button></div>
+    <p class="helptext hidden" id="h_clock"></p>
     <button id="saveClock">ثبت</button>
-    <p id="clockMsg" class="msg"></p>
   </div>
 </section>
 
 <section id="calib" class="hidden">
   <div class="card">
     <h2>کالیبراسیون زاویه‌سنج</h2>
+    <p class="small">زاویه‌سنج روی برد است و جعبه با هر جهتی بسته می‌شود؛ این دو مرحله جهت و صفر را پیدا می‌کنند.</p>
     <ol>
-      <li>پنل را در حالت افقی بگذارید و ۵ ثانیه ثابت نگه دارید.<br><button id="calH">ثبت حالت افقی</button></li>
-      <li>پنل را چند درجه (۵ تا ۲۰) به سمت شرق ببرید و ۵ ثانیه ثابت نگه دارید.<br><button id="calE">ثبت حالت شرق</button></li>
+      <li>پنل را افقی بگذارید و ۵ ثانیه ثابت نگه دارید.<br><button id="calH">ثبت حالت افقی</button></li>
+      <li>پنل را ۵ تا ۲۰ درجه به سمت شرق ببرید و ۵ ثانیه ثابت نگه دارید.<br><button id="calE">ثبت حالت شرق</button></li>
       <li><button id="calSave" class="primary">ذخیره کالیبراسیون</button></li>
     </ol>
     <p id="calMsg" class="msg"></p>
-  </div>
-</section>
-
-<section id="log" class="hidden">
-  <div class="card">
-    <h2>لاگ رویدادها</h2>
-    <button id="logReload">بازخوانی</button>
-    <a href="/api/log.csv" download><button type="button" id="logCsv">دانلود CSV</button></a>
-    <table><thead><tr><th>زمان</th><th>نوع</th><th>جزئیات</th></tr></thead><tbody id="logRows"></tbody></table>
   </div>
 </section>
 
@@ -133,20 +119,37 @@
     <h2>وای‌فای محل نصب</h2>
     <p class="small">اختیاری. هات‌اسپات دستگاه همیشه روشن می‌ماند. اتصال به اینترنت برای همگام‌سازی ساعت و ارسال هشدار لازم است. پنل روی اینترنت باز نمی‌شود.</p>
     <p>وضعیت: <b id="netState">—</b></p>
-    <label>نام شبکه <input id="netSsid" dir="ltr"></label>
-    <label>رمز شبکه (نمایش داده نمی‌شود؛ خالی = بدون تغییر) <input id="netPass" type="password" autocomplete="off"></label>
+    <button id="scanBtn" class="wide">جستجوی شبکه‌های اطراف</button>
+    <p class="small">فقط شبکه‌های ۲٫۴ گیگاهرتز دیده می‌شوند. هنگام جستجو ممکن است اتصال گوشی یکی دو ثانیه قطع و وصل شود.</p>
+    <ul id="scanList" class="list"></ul>
+    <div class="field"><label for="netSsid">نام شبکه</label><input id="netSsid" dir="ltr"><button class="help" data-help="netSsid" aria-label="راهنما">؟</button></div>
+    <p class="helptext hidden" id="h_netSsid"></p>
+    <div class="field"><label for="netPass">رمز شبکه</label><input id="netPass" type="password" autocomplete="off"><button class="help" data-help="netPass" aria-label="راهنما">؟</button></div>
+    <p class="helptext hidden" id="h_netPass"></p>
     <button id="netSave" class="primary">ثبت وای‌فای</button>
-    <p id="netMsg" class="msg"></p>
   </div>
   <div class="card">
     <h2>هشدار در بله</h2>
-    <p class="small">ربات خود را در بله بسازید و توکن آن و شناسه گفتگو را اینجا بگذارید. توکن نمایش داده نمی‌شود.</p>
-    <label>توکن ربات <input id="botToken" type="password" dir="ltr" autocomplete="off"></label>
-    <label>شناسه گفتگو (chat id) <input id="chatId" dir="ltr"></label>
-    <label><input id="notifyOn" type="checkbox" style="width:auto;min-height:0"> ارسال هشدار فعال باشد</label>
-    <button id="notifySave" class="primary">ثبت</button>
-    <button id="notifyTest">ارسال پیام آزمایشی</button>
-    <p id="notifyMsg" class="msg"></p>
+    <div class="field"><label for="botToken">توکن ربات</label><input id="botToken" type="password" dir="ltr" autocomplete="off"><button class="help" data-help="botToken" aria-label="راهنما">؟</button></div>
+    <p class="helptext hidden" id="h_botToken"></p>
+    <div class="field"><label for="chatId">شناسه گفتگو</label><input id="chatId" dir="ltr"><button class="help" data-help="chatId" aria-label="راهنما">؟</button></div>
+    <p class="helptext hidden" id="h_chatId"></p>
+    <label class="check"><input id="notifyOn" type="checkbox"> ارسال هشدار فعال باشد <button class="help" data-help="notifyOn" aria-label="راهنما">؟</button></label>
+    <p class="helptext hidden" id="h_notifyOn"></p>
+    <div class="row"><button id="notifySave" class="primary">ثبت</button><button id="notifyTest">ارسال پیام آزمایشی</button></div>
+  </div>
+</section>
+
+<section id="log" class="hidden">
+  <div class="card">
+    <h2>لاگ رویدادها</h2>
+    <div class="meter"><div id="logFill"></div></div>
+    <p class="small" id="logInfo"></p>
+    <div class="chips" id="logChips">
+      <button data-f="all" class="on">همه</button><button data-f="fault">خطاها</button><button data-f="move">حرکت‌ها</button><button data-f="system">سیستم</button>
+    </div>
+    <div class="row"><button id="logReload">بازخوانی</button><a href="/api/log.csv" download class="btnlink">دانلود CSV</a></div>
+    <div class="scrollx"><table><thead><tr><th>زمان</th><th>نوع</th><th>جزئیات</th></tr></thead><tbody id="logRows"></tbody></table></div>
   </div>
 </section>
 
@@ -155,22 +158,25 @@
     <h2>به‌روزرسانی نرم‌افزار</h2>
     <p>فایل نرم‌افزار جدید (<code dir="ltr">.bin</code>) را از گوشی انتخاب کنید. در حین به‌روزرسانی برق جک قطع است و دستگاه بعد از نصب خودش دوباره راه‌اندازی می‌شود. اگر نسخه جدید درست کار نکند، به نسخه قبلی برمی‌گردد.</p>
     <input id="fwFile" type="file" accept=".bin">
-    <button id="fwSend" class="primary">ارسال و نصب</button>
-    <progress id="fwBar" value="0" max="100" class="hidden" style="width:100%"></progress>
+    <button id="fwSend" class="primary wide">ارسال و نصب</button>
+    <progress id="fwBar" value="0" max="100" class="hidden"></progress>
     <p id="fwMsg" class="msg"></p>
   </div>
 </section>
 
 <section id="account" class="hidden">
   <div class="card">
-    <h2>تغییر رمز</h2>
-    <label>رمز فعلی <input id="pwOld" type="password" autocomplete="current-password"></label>
-    <label>رمز جدید (دست‌کم ۸ نویسه) <input id="pwNew" type="password" autocomplete="new-password"></label>
+    <h2>تغییر رمز پنل</h2>
+    <div class="field"><label for="pwOld">رمز فعلی</label><input id="pwOld" type="password" autocomplete="current-password"></div>
+    <div class="field"><label for="pwNew">رمز جدید</label><input id="pwNew" type="password" autocomplete="new-password"><button class="help" data-help="pwNew" aria-label="راهنما">؟</button></div>
+    <p class="helptext hidden" id="h_pwNew"></p>
     <button id="pwSave" class="primary">تغییر رمز</button>
-    <p id="pwMsg" class="msg"></p>
   </div>
 </section>
 </main>
+
+<div id="toasts" aria-live="polite"></div>
+<dialog id="confirmBox"><p id="confirmText"></p><div class="row"><button id="confirmOk" class="danger">بله</button><button id="confirmNo">انصراف</button></div></dialog>
 <script src="/app.js"></script>
 </body>
 </html>
