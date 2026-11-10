@@ -89,3 +89,5 @@ dialog{border:1px solid var(--line);border-radius:14px;background:var(--card);co
 .tile.empty{border-style:dashed;background:transparent;opacity:.6}
 .help.sm{width:26px;min-height:26px;height:26px;font-size:.8rem;margin-inline-start:4px}
 .angleRow{margin:6px 0;color:var(--mute)}.angleRow b{color:var(--ink);font-size:1.15rem}
+
+.tile.wide2{grid-column:1/-1}

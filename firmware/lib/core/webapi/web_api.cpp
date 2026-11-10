@@ -152,6 +152,27 @@ Response WebApi::handle(const Request& req) {
     return error(404, "not-found", "پیدا نشد");
 }
 
+namespace {
+// Highest sun elevation of the device-local day that contains `utc` (scan in 10-minute steps; the peak is flat, so the error is far below 0.1 degree).
+// Cached per day and place: the panel asks for the status every second.
+double maxElevationToday(int64_t utc, int tzOffsetMin, double lat, double lon) {
+    const int64_t localMidnight = ((utc + tzOffsetMin * 60LL) / 86400) * 86400 - tzOffsetMin * 60LL;
+    static int64_t cDay = -1;
+    static double cLat = 0, cLon = 0, cMax = 0;
+    if (cDay == localMidnight && cLat == lat && cLon == lon) return cMax;
+    double best = -90.0;
+    for (int i = 0; i < 144; ++i) {
+        const double el = 90.0 - sun::position(localMidnight + i * 600LL, lat, lon).zenithDeg;
+        if (el > best) best = el;
+    }
+    cDay = localMidnight;
+    cLat = lat;
+    cLon = lon;
+    cMax = best;
+    return best;
+}
+}  // namespace
+
 Response WebApi::status() {
     JsonDocument d;
     const control::Status s = d_.ctl.status(nowMs_);
@@ -178,9 +199,11 @@ Response WebApi::status() {
         const sun::SunPosition sp = sun::position(d_.utcNow(), d_.cfg.latDeg, d_.cfg.lonDeg);
         d["sunAzimuthDeg"] = sp.azimuthDeg;
         d["sunElevationDeg"] = 90.0 - sp.zenithDeg;
+        d["sunMaxElevationDeg"] = maxElevationToday(d_.utcNow(), d_.cfg.tzOffsetMin, d_.cfg.latDeg, d_.cfg.lonDeg);
     } else {
         d["sunAzimuthDeg"] = nullptr;
         d["sunElevationDeg"] = nullptr;
+        d["sunMaxElevationDeg"] = nullptr;
     }
     d["fwVersion"] = d_.fwVersion;
     d["passwordIsDefault"] = d_.cfg.passwordIsDefault;

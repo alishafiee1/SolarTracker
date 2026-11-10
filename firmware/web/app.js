@@ -36,8 +36,7 @@ const HELP = /*HELP-BEGIN*/{
   "city": {"t": "شهر نصب را از فهرست مراکز استان انتخاب کنید؛ مختصات آن برای حساب جای خورشید به کار می‌رود. خطای چند ده کیلومتر روی ردیابی اثر محسوسی ندارد."},
   "coords": {"t": "مختصات دقیق را از نقشه کپی کنید، به شکل «عرض، طول» مثل 30.283, 57.083. عرض بین ۹۰- و ۹۰ و طول بین ۱۸۰- و ۱۸۰ است (شرق مثبت)."},
   "gauge": {"t": "<b>نماد شرق و غرب:</b> خاکستری یعنی فرمانی نیست. نارنجی یعنی فرمان حرکت صادر شده و جهت انتخاب شده ولی موتور هنوز روشن نشده (تأخیر ایمنی). سبز یعنی موتور روشن است و پنل در همین جهت حرکت می‌کند.<br><b>عدد وسط:</b> اختلاف زاویه پنل با هدف، تقسیم بر آستانه شروع حرکت. وقتی اختلاف از آستانه بیشتر شود موتور شروع به حرکت می‌کند.<br><b>برچسب رنگی:</b> «بدون خطا» یعنی هیچ خطایی ثبت نشده و کنترل عادی کار می‌کند. «توجه» یعنی خطایی نیست ولی دستگاه در حالت ویژه است (دستی، باد شدید، انتظار تأخیر ایمنی، یا ساعت و کالیبراسیون تنظیم نشده). «خطا» یعنی دستگاه متوقف شده و باید علت را برطرف و خطا را ریست کنید."},
-  "sunAz": {"t": "جهت خورشید روی افق نسبت به جنوب و پادساعت‌گرد: ۰ یعنی خورشید درست در جنوب است (ظهر)، مثبت یعنی طرف شرق (صبح) و منفی یعنی طرف غرب (عصر)؛ مثلاً ۹۰+ شرق کامل و ۹۰− غرب کامل است. دستگاه این عدد را از ساعت و موقعیت جغرافیایی حساب می‌کند و سنسوری ندارد؛ بدون تنظیم بودن ساعت نشان داده نمی‌شود."},
-  "sunEl": {"t": "ارتفاع خورشید یعنی زاویهٔ خورشید بالای افق: ۰ درجه یعنی روی افق (طلوع یا غروب) و ۹۰ درجه یعنی درست بالای سر. منفی یعنی زیر افق و شب است و پنل به حالت شب می‌رود."},
+  "sunEl": {"t": "زاویهٔ خورشید بالای افق: ۰ درجه یعنی خورشید روی افق است (طلوع یا غروب) و ۹۰ درجه یعنی درست بالای سر. این زاویه در تابستان بالاتر و در زمستان پایین‌تر است. منفی یعنی خورشید زیر افق و شب است. دستگاه آن را از ساعت و موقعیت جغرافیایی حساب می‌کند."},
   "clock": {"t": "ساعت محلی را وارد کنید؛ دستگاه با منطقه زمانی تنظیم‌شده آن را به UTC تبدیل می‌کند. ساده‌تر این است که دکمه «همگام‌سازی با ساعت گوشی» را بزنید."},
   "netSsid": {"t": "نام وای‌فای محل نصب (فقط ۲٫۴ گیگاهرتز). از فهرست جستجو انتخاب کنید یا تایپ کنید؛ حروف بزرگ و کوچک مهم‌اند."},
   "netPass": {"t": "رمز وای‌فای محل نصب (دست‌کم ۸ نویسه؛ خالی یعنی شبکه باز). هرگز نمایش داده نمی‌شود؛ اگر خالی بگذارید رمز قبلی می‌ماند."},
@@ -51,6 +50,7 @@ function helpHtml(key) {
   const h = HELP[key];
   if (!h) return "";
   let s = h.t;
+  if (key === "sunEl" && status && status.sunMaxElevationDeg !== null && status.sunMaxElevationDeg !== undefined) s += `<br><b>بالاترین زاویه امروز:</b> ${degTxt(status.sunMaxElevationDeg)} (نزدیک ظهر خورشیدی)`;
   if (h.min !== undefined && key !== "currentPresent") {
     const lo = FLIP[key] ? uiAngle(h.max) : h.min, hi = FLIP[key] ? uiAngle(h.min) : h.max, def = FLIP[key] ? uiAngle(h.def) : h.def;
     s += `<br><b>بازه مجاز:</b> ${ltr(fa(lo, lo % 1 ? 2 : 0))} تا ${ltr(fa(hi, hi % 1 ? 2 : 0))} ${h.unit || ""} · <b>پیش‌فرض:</b> ${ltr(fa(def, def % 1 ? 1 : 0))}`;
@@ -170,8 +170,6 @@ function moveGauge(angle, target) {
 }
 buildGauge();
 
-// Sun direction measured from south, counter-clockwise (east positive, west negative), -180..180.
-function sunFromSouth(azFromNorth) { let a = (180 - azFromNorth) % 360; if (a > 180) a -= 360; if (a <= -180) a += 360; return a; }
 // ---- status (every second) ----
 // Jalali (Persian) calendar, Borkowski-style arithmetic conversion (valid for 1901-2099 Gregorian).
 function g2j(gy, gm, gd) {
@@ -243,8 +241,7 @@ async function poll() {
     $("fw").textContent = status.fwVersion;
     if (status.clockValid) { clockBase = { utc: status.utc, tz: status.tzOffsetMin, at: Date.now() }; renderClock(); }
     else { clockBase = null; $("devTime").textContent = $("clockNow").textContent = $("liveTime").textContent = "تنظیم نشده"; $("liveDate").textContent = ""; }
-    const hasSun = status.sunAzimuthDeg !== null && status.sunAzimuthDeg !== undefined;
-    $("sunAz").innerHTML = hasSun ? degTxt(sunFromSouth(status.sunAzimuthDeg)) : "—";
+    const hasSun = status.sunElevationDeg !== null && status.sunElevationDeg !== undefined;
     $("sunEl").innerHTML = hasSun ? degTxt(status.sunElevationDeg) : "—";
     $("sunNote").textContent = !hasSun ? "" : status.sunElevationDeg < 0 ? "زیر افق (شب)" : "بالای افق";
     $("staState").innerHTML = status.staConnected ? "متصل " + ltr(status.staIp) : "—";

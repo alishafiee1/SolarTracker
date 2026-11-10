@@ -175,6 +175,9 @@ static void status_has_the_live_sun_position_and_the_move_threshold() {
     const float az = d["sunAzimuthDeg"].as<float>(), el = d["sunElevationDeg"].as<float>();
     TEST_ASSERT_TRUE(az > 90.0f && az < 130.0f);  // 21 June, 10:30 local: the sun is in the south-east, high
     TEST_ASSERT_TRUE(el > 60.0f && el < 80.0f);
+    const float peak = d["sunMaxElevationDeg"].as<float>();
+    TEST_ASSERT_TRUE(peak >= el);                          // the day's highest point is never below the current height
+    TEST_ASSERT_FLOAT_WITHIN(1.0f, 83.2f, peak);           // 21 June at about 30 N: 90 - (30.3 - 23.4)
     TEST_ASSERT_EQUAL_FLOAT(5.0f, d["moveThresholdDeg"].as<float>());
     TEST_ASSERT_TRUE(d["cmdDir"].isNull());  // no move requested
 }
