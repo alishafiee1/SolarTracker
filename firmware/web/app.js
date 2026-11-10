@@ -6,13 +6,16 @@ const toFa = (s) => String(s).replace(/[0-9]/g, (d) => "۰۱۲۳۴۵۶۷۸۹"[d]
 const toLat = (s) => String(s).replace(/[٠-٩]/g, (d) => d.charCodeAt(0) - 1632).replace(/[۰-۹]/g, (d) => d.charCodeAt(0) - 1776).replace(/[٫]/g, ".").replace(/[،؛]/g, ",");
 // A number with its unit as one left-to-right piece, so the sign and the degree mark do not jump around in right-to-left text.
 const ltr = (txt) => `<bdi dir="ltr">${txt}</bdi>`;
+// Panel convention: east is positive, west is negative. The firmware uses the opposite sign, so every angle is flipped here on the way in and out.
+const uiAngle = (fw) => (fw === 0 ? 0 : -fw);
+const FLIP = { minDeg: 1, maxDeg: 1 };  // settings whose shown value is the firmware value with the sign flipped
 const degTxt = (n, d = 1) => ltr(fa(n, d) + "°");
 
 // ---- help texts: one per field. min/max/def must match the validation in the firmware (a host test compares them) ----
 const HELP = /*HELP-BEGIN*/{
   "moveThresholdDeg": {"t": "کمترین اختلاف بین زاویه پنل و زاویه‌ای که خورشید می‌خواهد تا دستگاه حرکت کند. عدد کم‌تر یعنی ردیابی دقیق‌تر ولی حرکت و قطع و وصل رله بیشتر؛ عدد بیشتر یعنی حرکت کمتر و خطای ردیابی بیشتر. با ۵ درجه فقط حدود ۰٫۴٪ تولید از دست می‌رود.", "min": 2, "max": 15, "def": 5, "unit": "درجه"},
-  "minDeg": {"t": "انتهای شرقی بازه چرخش پنل (منفی یعنی شرق). پنل هیچ‌وقت بیشتر از این به شرق نمی‌رود. باید با محدودیت مکانیکی سازه و جک هماهنگ باشد و از حداکثر کمتر باشد.", "min": -60, "max": 0, "def": -45, "unit": "درجه"},
-  "maxDeg": {"t": "انتهای غربی بازه چرخش پنل (مثبت یعنی غرب). پنل هیچ‌وقت بیشتر از این به غرب نمی‌رود. باید با محدودیت مکانیکی سازه و جک هماهنگ باشد و از حداقل بیشتر باشد.", "min": 0, "max": 60, "def": 45, "unit": "درجه"},
+  "minDeg": {"t": "انتهای شرقی بازه چرخش پنل (مثبت یعنی شرق، مثلاً ۴۵+). پنل هیچ‌وقت بیشتر از این به شرق نمی‌رود. باید با محدودیت مکانیکی سازه و جک هماهنگ باشد و از انتهای غرب بیشتر باشد.", "min": -60, "max": 0, "def": -45, "unit": "درجه"},
+  "maxDeg": {"t": "انتهای غربی بازه چرخش پنل (منفی یعنی غرب، مثلاً ۴۵−). پنل هیچ‌وقت بیشتر از این به غرب نمی‌رود. باید با محدودیت مکانیکی سازه و جک هماهنگ باشد و از انتهای شرق کمتر باشد.", "min": 0, "max": 60, "def": 45, "unit": "درجه"},
   "preDawnMinutes": {"t": "اگر بیشتر از صفر باشد، این‌قدر دقیقه پیش از طلوع پنل به سمت شرق می‌رود تا اولین نور را بگیرد. صفر یعنی خاموش: پنل تا طلوع افقی می‌ماند.", "min": 0, "max": 120, "def": 0, "unit": "دقیقه"},
   "stallCheckMs": {"t": "بعد از شروع حرکت، دستگاه این‌قدر صبر می‌کند و بعد می‌بیند زاویه دست‌کم یک درجه تغییر کرده یا نه. اگر نه، بازو گیر کرده فرض می‌شود و بعد از سه تلاش خطا می‌دهد. جک کند به زمان بیشتری نیاز دارد؛ عدد خیلی کم خطای کاذب می‌دهد.", "min": 2000, "max": 20000, "def": 5000, "unit": "میلی‌ثانیه"},
   "stopSettleMs": {"t": "بعد از هر توقف، این‌قدر صبر می‌شود تا موتور کامل بایستد و بعد حرکت بعدی اجازه دارد. کم کردنش به جک و سازه ضربه می‌زند. برای تغییر جهت جریان باید صفر و زاویه ثابت هم باشد.", "min": 1000, "max": 10000, "def": 3000, "unit": "میلی‌ثانیه"},
@@ -32,6 +35,9 @@ const HELP = /*HELP-BEGIN*/{
   "apPassword": {"t": "رمز وای‌فای هات‌اسپات دستگاه (۸ تا ۳۲ نویسه). بعد از راه‌اندازی دوباره دستگاه اعمال می‌شود و هرگز نمایش داده نمی‌شود. خالی بگذارید تا تغییر نکند."},
   "city": {"t": "شهر نصب را از فهرست مراکز استان انتخاب کنید؛ مختصات آن برای حساب جای خورشید به کار می‌رود. خطای چند ده کیلومتر روی ردیابی اثر محسوسی ندارد."},
   "coords": {"t": "مختصات دقیق را از نقشه کپی کنید، به شکل «عرض، طول» مثل 30.283, 57.083. عرض بین ۹۰- و ۹۰ و طول بین ۱۸۰- و ۱۸۰ است (شرق مثبت)."},
+  "gauge": {"t": "<b>نماد شرق و غرب:</b> خاکستری یعنی فرمانی نیست. نارنجی یعنی فرمان حرکت صادر شده و جهت انتخاب شده ولی موتور هنوز روشن نشده (تأخیر ایمنی). سبز یعنی موتور روشن است و پنل در همین جهت حرکت می‌کند.<br><b>عدد وسط:</b> اختلاف زاویه پنل با هدف، تقسیم بر آستانه شروع حرکت. وقتی اختلاف از آستانه بیشتر شود موتور شروع به حرکت می‌کند.<br><b>برچسب رنگی:</b> «بدون خطا» یعنی هیچ خطایی ثبت نشده و کنترل عادی کار می‌کند. «توجه» یعنی خطایی نیست ولی دستگاه در حالت ویژه است (دستی، باد شدید، انتظار تأخیر ایمنی، یا ساعت و کالیبراسیون تنظیم نشده). «خطا» یعنی دستگاه متوقف شده و باید علت را برطرف و خطا را ریست کنید."},
+  "sunAz": {"t": "جهت خورشید روی افق نسبت به جنوب و پادساعت‌گرد: ۰ یعنی خورشید درست در جنوب است (ظهر)، مثبت یعنی طرف شرق (صبح) و منفی یعنی طرف غرب (عصر)؛ مثلاً ۹۰+ شرق کامل و ۹۰− غرب کامل است. دستگاه این عدد را از ساعت و موقعیت جغرافیایی حساب می‌کند و سنسوری ندارد؛ بدون تنظیم بودن ساعت نشان داده نمی‌شود."},
+  "sunEl": {"t": "ارتفاع خورشید یعنی زاویهٔ خورشید بالای افق: ۰ درجه یعنی روی افق (طلوع یا غروب) و ۹۰ درجه یعنی درست بالای سر. منفی یعنی زیر افق و شب است و پنل به حالت شب می‌رود."},
   "clock": {"t": "ساعت محلی را وارد کنید؛ دستگاه با منطقه زمانی تنظیم‌شده آن را به UTC تبدیل می‌کند. ساده‌تر این است که دکمه «همگام‌سازی با ساعت گوشی» را بزنید."},
   "netSsid": {"t": "نام وای‌فای محل نصب (فقط ۲٫۴ گیگاهرتز). از فهرست جستجو انتخاب کنید یا تایپ کنید؛ حروف بزرگ و کوچک مهم‌اند."},
   "netPass": {"t": "رمز وای‌فای محل نصب (دست‌کم ۸ نویسه؛ خالی یعنی شبکه باز). هرگز نمایش داده نمی‌شود؛ اگر خالی بگذارید رمز قبلی می‌ماند."},
@@ -45,7 +51,10 @@ function helpHtml(key) {
   const h = HELP[key];
   if (!h) return "";
   let s = h.t;
-  if (h.min !== undefined && key !== "currentPresent") s += `<br><b>بازه مجاز:</b> ${fa(h.min, h.min % 1 ? 2 : 0)} تا ${fa(h.max, h.max % 1 ? 2 : 0)} ${h.unit || ""} · <b>پیش‌فرض:</b> ${fa(h.def, h.def % 1 ? 1 : 0)}`;
+  if (h.min !== undefined && key !== "currentPresent") {
+    const lo = FLIP[key] ? uiAngle(h.max) : h.min, hi = FLIP[key] ? uiAngle(h.min) : h.max, def = FLIP[key] ? uiAngle(h.def) : h.def;
+    s += `<br><b>بازه مجاز:</b> ${ltr(fa(lo, lo % 1 ? 2 : 0))} تا ${ltr(fa(hi, hi % 1 ? 2 : 0))} ${h.unit || ""} · <b>پیش‌فرض:</b> ${ltr(fa(def, def % 1 ? 1 : 0))}`;
+  }
   else if (h.unit) s += `<br><b>پیش‌فرض:</b> ${fa(h.def, 0)} (${h.unit})`;
   return s;
 }
@@ -144,7 +153,8 @@ function buildGauge() {
     `<rect x="0" y="0" width="320" height="200" rx="12" fill="var(--sky)"/>` +
     `<path d="M${x1} ${y1} A118 118 0 0 1 ${x2} ${y2}" fill="none" stroke="var(--line)" stroke-width="10" stroke-linecap="round"/>` +
     lab(limits.min, fa(limits.min, 0) + "°") + lab(0, "‎۰°") + lab(limits.max, "+" + fa(limits.max, 0) + "°") +
-    `<text x="22" y="190" font-size="14" text-anchor="start" fill="var(--mute)">◀ شرق</text><text x="298" y="190" font-size="14" text-anchor="end" fill="var(--mute)">غرب ▶</text>` +
+    `<rect id="gDiffBox" x="98" y="171" width="124" height="26" rx="13" fill="var(--card)" stroke="var(--line)"/><text id="gAngle" x="160" y="189" font-size="13" font-weight="700" text-anchor="middle" fill="var(--ink)" direction="ltr"></text>` +
+    `<g id="gWest" class="dir"><rect x="10" y="171" width="76" height="26" rx="13"/><text x="48" y="189" text-anchor="middle" font-size="13">◀ غرب</text></g><g id="gEast" class="dir"><rect x="234" y="171" width="76" height="26" rx="13"/><text x="272" y="189" text-anchor="middle" font-size="13">شرق ▶</text></g>` +
     `<line x1="160" y1="150" x2="160" y2="40" stroke="var(--line)" stroke-dasharray="4 4"/>` +
     `<circle id="gTarget" r="7" fill="var(--accent)" stroke="var(--card)" stroke-width="2"/>` +
     `<g id="gPanel"><rect x="70" y="140" width="180" height="10" rx="3" fill="var(--panel)"/><line x1="160" y1="140" x2="160" y2="95" stroke="var(--accent)" stroke-width="3"/><polygon points="160,86 154,98 166,98" fill="var(--accent)"/></g>` +
@@ -160,18 +170,64 @@ function moveGauge(angle, target) {
 }
 buildGauge();
 
+// Sun direction measured from south, counter-clockwise (east positive, west negative), -180..180.
+function sunFromSouth(azFromNorth) { let a = (180 - azFromNorth) % 360; if (a > 180) a -= 360; if (a <= -180) a += 360; return a; }
 // ---- status (every second) ----
+// Jalali (Persian) calendar, Borkowski-style arithmetic conversion (valid for 1901-2099 Gregorian).
+function g2j(gy, gm, gd) {
+  const gdm = [0, 31, 59, 90, 120, 151, 181, 212, 243, 273, 304, 334];
+  const gy2 = gm > 2 ? gy + 1 : gy;
+  let days = 355666 + 365 * gy + Math.floor((gy2 + 3) / 4) - Math.floor((gy2 + 99) / 100) + Math.floor((gy2 + 399) / 400) + gd + gdm[gm - 1];
+  let jy = -1595 + 33 * Math.floor(days / 12053); days %= 12053;
+  jy += 4 * Math.floor(days / 1461); days %= 1461;
+  if (days > 365) { jy += Math.floor((days - 1) / 365); days = (days - 1) % 365; }
+  const jm = days < 186 ? 1 + Math.floor(days / 31) : 7 + Math.floor((days - 186) / 30);
+  const jd = 1 + (days < 186 ? days % 31 : (days - 186) % 30);
+  return [jy, jm, jd];
+}
+function j2g(jy, jm, jd) {
+  jy += 1595;
+  let days = -355668 + 365 * jy + Math.floor(jy / 33) * 8 + Math.floor(((jy % 33) + 3) / 4) + jd + (jm < 7 ? (jm - 1) * 31 : (jm - 7) * 30 + 186);
+  let gy = 400 * Math.floor(days / 146097); days %= 146097;
+  if (days > 36524) { gy += 100 * Math.floor(--days / 36524); days %= 36524; if (days >= 365) days++; }
+  gy += 4 * Math.floor(days / 1461); days %= 1461;
+  if (days > 365) { gy += Math.floor((days - 1) / 365); days = (days - 1) % 365; }
+  let gd = days + 1;
+  const ml = [0, 31, (gy % 4 === 0 && gy % 100 !== 0) || gy % 400 === 0 ? 29 : 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
+  let gm = 0;
+  while (gm < 13 && gd > ml[gm]) gd -= ml[gm++];
+  return [gy, gm, gd];
+}
+const pad2 = (n) => String(n).padStart(2, "0");
+const JMONTH = ["فروردین", "اردیبهشت", "خرداد", "تیر", "مرداد", "شهریور", "مهر", "آبان", "آذر", "دی", "بهمن", "اسفند"];
+// device-local calendar parts for a UTC epoch and zone offset (minutes)
+function localParts(utc, tz) {
+  const t = new Date((utc + tz * 60) * 1000);
+  return { y: t.getUTCFullYear(), m: t.getUTCMonth() + 1, d: t.getUTCDate(), hh: t.getUTCHours(), mm: t.getUTCMinutes(), ss: t.getUTCSeconds() };
+}
+function jalaliText(utc, tz) { const p = localParts(utc, tz), j = g2j(p.y, p.m, p.d); return toFa(`${j[0]}/${pad2(j[1])}/${pad2(j[2])}`); }
+function timeText(utc, tz) { const p = localParts(utc, tz); return toFa(`${pad2(p.hh)}:${pad2(p.mm)}:${pad2(p.ss)}`); }
 function deviceDate(utc, tz) { return new Date((utc + tz * 60) * 1000).toISOString().replace("T", " ").slice(0, 19); }
 // Persian digits with "-" or a plain space between them are reordered by the bidi algorithm (the date shows reversed): use "/" and a left-to-right mark.
-function showDate(utc, tz) { return toFa(deviceDate(utc, tz).replace(/-/g, "/").replace(" ", " ‎")); }
+function showDate(utc, tz) { return jalaliText(utc, tz) + " ‎" + timeText(utc, tz); }
+// Live clock: the device time from the last poll, advanced locally every second.
+let clockBase = null;
+function renderClock() {
+  if (!clockBase) return;
+  const utc = clockBase.utc + Math.floor((Date.now() - clockBase.at) / 1000), tz = clockBase.tz;
+  const p = localParts(utc, tz), j = g2j(p.y, p.m, p.d);
+  $("liveTime").textContent = timeText(utc, tz);
+  $("liveDate").textContent = `${toFa(j[2])} ${JMONTH[j[1] - 1]} ${toFa(j[0])}`;
+  $("devTime").textContent = showDate(utc, tz);
+  $("clockNow").textContent = showDate(utc, tz);
+}
+setInterval(renderClock, 1000);
 async function poll() {
   try {
     const r = await api("GET", "/api/status");
     if (!r.ok) throw new Error("status");
     status = r.data;
     $("conn").textContent = "متصل"; $("conn").className = "pill";
-    $("angle").innerHTML = degTxt(status.angleDeg);
-    $("target").innerHTML = status.state === "Manual" ? "حالت دستی" : "هدف: " + degTxt(status.targetDeg);
     $("wind").innerHTML = ltr(fa(status.windKmh, 1));
     $("windNote").textContent = status.windStow ? "حالت ایمن باد" : "کیلومتر بر ساعت";
     $("mode").textContent = status.mode === "manual" ? "دستی" : "اتو";
@@ -182,11 +238,15 @@ async function poll() {
     $("statusText").textContent = status.text;
     const sid = status.statusId;
     const badge = status.fault ? "red" : (status.state === "Wind" || status.state === "Manual" || sid === 9 || sid === 10 || sid === 11) ? "amber" : "ok";
-    $("statusBadge").textContent = status.fault ? "خطا" : badge === "amber" ? "توجه" : "سالم";
+    $("statusBadge").textContent = status.fault ? "خطا" : badge === "amber" ? "توجه" : "بدون خطا";
     $("statusBadge").className = "badge " + badge;
     $("fw").textContent = status.fwVersion;
-    $("devTime").textContent = status.clockValid ? showDate(status.utc, status.tzOffsetMin) : "تنظیم نشده";
-    $("clockNow").textContent = status.clockValid ? showDate(status.utc, status.tzOffsetMin) : "تنظیم نشده";
+    if (status.clockValid) { clockBase = { utc: status.utc, tz: status.tzOffsetMin, at: Date.now() }; renderClock(); }
+    else { clockBase = null; $("devTime").textContent = $("clockNow").textContent = $("liveTime").textContent = "تنظیم نشده"; $("liveDate").textContent = ""; }
+    const hasSun = status.sunAzimuthDeg !== null && status.sunAzimuthDeg !== undefined;
+    $("sunAz").innerHTML = hasSun ? degTxt(sunFromSouth(status.sunAzimuthDeg)) : "—";
+    $("sunEl").innerHTML = hasSun ? degTxt(status.sunElevationDeg) : "—";
+    $("sunNote").textContent = !hasSun ? "" : status.sunElevationDeg < 0 ? "زیر افق (شب)" : "بالای افق";
     $("staState").innerHTML = status.staConnected ? "متصل " + ltr(status.staIp) : "—";
     $("warnDefault").classList.toggle("hidden", !status.passwordIsDefault);
     $("warnClock").classList.toggle("hidden", status.clockValid);
@@ -194,7 +254,13 @@ async function poll() {
     $("faultBar").classList.toggle("hidden", !status.fault);
     $("faultBarText").textContent = status.fault ? status.text : "";
     $("resetFault").classList.toggle("hidden", !status.fault || !loggedIn);
-    moveGauge(status.angleDeg, status.targetDeg);
+    moveGauge(uiAngle(status.angleDeg), uiAngle(status.targetDeg));
+    // difference between the panel and where it should point; the motor starts when it reaches the move threshold
+    const diff = uiAngle(status.targetDeg) - uiAngle(status.angleDeg), thr = status.moveThresholdDeg;
+    $("gAngle").textContent = "‎Δ " + toFa(Math.abs(diff).toFixed(1)) + "° / " + toFa(Number(thr).toFixed(0)) + "°";
+    $("gDiffBox").setAttribute("stroke", Math.abs(diff) > thr ? "var(--accent)" : "var(--line)");
+    const dirClass = (d) => "dir" + (status.cmdDir === d ? (status.moving ? " run" : " cmd") : "");
+    $("gEast").setAttribute("class", dirClass("east")); $("gWest").setAttribute("class", dirClass("west"));
   } catch (e) {
     $("conn").textContent = "قطع"; $("conn").className = "pill off";
   }
@@ -229,14 +295,14 @@ $("moveStop").onclick = release;
 
 // ---- settings ----
 const GROUPS = [
-  ["حرکت و محدوده", [["moveThresholdDeg", "آستانه شروع حرکت"], ["minDeg", "حداقل زاویه (شرق)"], ["maxDeg", "حداکثر زاویه (غرب)"], ["preDawnMinutes", "آماده‌سازی پیش از طلوع"]]],
+  ["حرکت و محدوده", [["moveThresholdDeg", "آستانه شروع حرکت"], ["minDeg", "انتهای شرق (زاویه مثبت)"], ["maxDeg", "انتهای غرب (زاویه منفی)"], ["preDawnMinutes", "آماده‌سازی پیش از طلوع"]]],
   ["ایمنی حرکت", [["stallCheckMs", "زمان بررسی گیرکردن"], ["stopSettleMs", "مکث بعد از توقف"], ["minMoveGapMs", "فاصله بین دو حرکت"], ["maxMoveMs", "سقف زمان یک حرکت"]]],
   ["باد", [["windStowKmh", "آستانه باد شدید"], ["windStowDelayS", "تأخیر ورود به حالت باد"], ["windReturnKmh", "آستانه بازگشت از باد"], ["windReturnMin", "مدت آرامش برای بازگشت"], ["anemometerFactor", "ضریب بادسنج"]]],
   ["ماژول جریان", [["currentPresent", "ماژول جریان نصب است"], ["currentFactor", "ضریب ترانس جریان"], ["stallCurrentA", "جریان گیرکردن"], ["maxCurrentA", "حداکثر جریان مجاز"], ["zeroCurrentA", "جریان «صفر»"]]],
   ["دستگاه", [["supplyLowV", "هشدار ولتاژ تغذیه"], ["apPassword", "رمز هات‌اسپات (پس از ریستارت)"]]],
 ];
 const ALL_KEYS = GROUPS.flatMap((g) => g[1].map((f) => f[0]));
-function shown(k) { const v = settingsData[k]; return toFa(typeof v === "boolean" ? (v ? "1" : "0") : v === undefined ? "" : String(v)); }
+function shown(k) { const v = FLIP[k] ? uiAngle(settingsData[k]) : settingsData[k]; return toFa(typeof v === "boolean" ? (v ? "1" : "0") : v === undefined ? "" : String(v)); }
 function renderSettings() {
   $("settingsForm").innerHTML = GROUPS.map(([title, fields], gi) =>
     `<details class="card group"${gi < 2 ? " open" : ""}><summary>${title}</summary>` + fields.map(([k, label]) => {
@@ -255,7 +321,7 @@ function changes() {
     const v = $("i_" + k).value.trim();
     if (k === "apPassword") { if (v) body[k] = v; continue; }
     if (v === "" || toLat(v) === toLat(shown(k))) continue;
-    if (k === "currentPresent") body[k] = toLat(v) === "1"; else body[k] = toNum(v);
+    if (k === "currentPresent") body[k] = toLat(v) === "1"; else body[k] = FLIP[k] ? uiAngle(toNum(v)) : toNum(v);
   }
   return body;
 }
@@ -271,7 +337,7 @@ async function loadSettings() {
   const r = await api("GET", "/api/settings");
   if (!r.ok) return;
   settingsData = r.data;
-  limits = { min: settingsData.minDeg, max: settingsData.maxDeg };
+  limits = { min: uiAngle(settingsData.maxDeg), max: uiAngle(settingsData.minDeg) };
   buildGauge();
   renderSettings();
   $("locNow").innerHTML = ltr(toFa(`${settingsData.latDeg.toFixed(3)}, ${settingsData.lonDeg.toFixed(3)}`)) + (settingsData.cityId ? ` (${(cities.find((c) => c.id === settingsData.cityId) || {}).name || settingsData.cityId})` : "");
@@ -319,14 +385,15 @@ $("syncPhone").onclick = async () => {
 };
 function fillClock() {
   if (!status || !status.clockValid || $("clockDate").value || $("clockTime").value) return;
-  const t = deviceDate(status.utc, status.tzOffsetMin).split(" ");
-  $("clockDate").value = toFa(t[0].replace(/-/g, "/")); $("clockTime").value = toFa(t[1]);
+  $("clockDate").value = jalaliText(status.utc, status.tzOffsetMin); $("clockTime").value = timeText(status.utc, status.tzOffsetMin);
 }
 $("saveClock").onclick = async () => {
   const d = toLat($("clockDate").value).trim().match(/^(\d{4})[-\/.](\d{1,2})[-\/.](\d{1,2})$/);
   const t = toLat($("clockTime").value).trim().match(/^(\d{1,2}):(\d{2})(?::(\d{2}))?$/);
-  if (!d || !t || !status) { toast("تاریخ را مثل ۲۰۲۷-۰۶-۲۱ و ساعت را مثل ۱۴:۳۰:۰۰ بنویسید", "err"); return; }
-  const local = Date.UTC(+d[1], +d[2] - 1, +d[3], +t[1], +t[2], +(t[3] || 0)) / 1000;
+  if (!d || !t || !status) { toast("تاریخ شمسی را مثل ۱۴۰۶/۰۴/۳۱ و ساعت را مثل ۱۴:۳۰:۰۰ بنویسید", "err"); return; }
+  if (+d[1] < 1300 || +d[2] < 1 || +d[2] > 12 || +d[3] < 1 || +d[3] > 31) { toast("تاریخ شمسی معتبر نیست", "err"); return; }
+  const g = j2g(+d[1], +d[2], +d[3]);
+  const local = Date.UTC(g[0], g[1] - 1, g[2], +t[1], +t[2], +(t[3] || 0)) / 1000;
   const r = await api("POST", "/api/clock", { utc: local - status.tzOffsetMin * 60 });
   toast(r.ok ? "ساعت ثبت شد" : errText(r), r.ok ? "ok" : "err"); poll();
 };
@@ -358,7 +425,7 @@ const DETAIL_FA = [["no stored settings", "تنظیمات ذخیره‌شده‌
   ["notification settings changed", "تنظیمات هشدار عوض شد"], ["settings password changed", "رمز عوض شد"], ["site wifi changed", "وای‌فای محل عوض شد"], ["older layout", "ساختار قدیمی"],
   ["dir=east", "جهت: شرق"], ["dir=west", "جهت: غرب"], ["reason=", "علت: "], ["angle=", "زاویه: "], ["ms=", "مدت (میلی‌ثانیه): "], ["->", " ⟵ "],
   ["Auto", "خودکار"], ["Manual", "دستی"], ["Wind", "باد"], ["Night", "شب"], ["Fault", "خطا"], ["stop", "توقف"], ["target", "رسیدن به هدف"]];
-function detailFa(d) { let t = String(d).replace(/[<&]/g, ""); for (const [a, b] of DETAIL_FA) t = t.split(a).join(b); return toFa(t); }
+function detailFa(d) { let t = String(d).replace(/[<&]/g, "").replace(/angle=(-?\d+(?:\.\d+)?)/g, (m, v) => "angle=" + uiAngle(parseFloat(v)).toFixed(1)); for (const [a, b] of DETAIL_FA) t = t.split(a).join(b); return toFa(t); }
 function renderLog() {
   const tz = status ? status.tzOffsetMin : 0;
   const keep = (e) => logFilter === "all" || (logFilter === "fault" && FAULTS.includes(e.type)) || (logFilter === "move" && MOVES.includes(e.type)) || (logFilter === "system" && !FAULTS.includes(e.type) && !MOVES.includes(e.type));

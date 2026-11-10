@@ -66,6 +66,24 @@ struct Rig {
     control::Status st() const { return sm.status(time.nowMs()); }
 };
 
+// The panel shows two symbols: "direction chosen" (command issued) and "motor running".
+static void the_status_tells_the_chosen_direction_before_and_while_the_motor_runs() {
+    Rig r;
+    r.angle = sunTarget(r.in.utcEpoch) + 8.0f;  // beyond the threshold, on the east side of the target
+    TEST_ASSERT_EQUAL_UINT8(0, r.st().cmdDir);
+    bool chosenNotRunning = false, chosenAndRunning = false;
+    for (int i = 0; i < 600; ++i) {
+        r.run(100);
+        const control::Status st = r.st();
+        if (st.cmdDir == 1 && !st.moving) chosenNotRunning = true;
+        if (st.cmdDir == 1 && st.moving) chosenAndRunning = true;
+        TEST_ASSERT_NOT_EQUAL(2, st.cmdDir);  // never the other direction
+    }
+    TEST_ASSERT_TRUE(chosenNotRunning);
+    TEST_ASSERT_TRUE(chosenAndRunning);
+    TEST_ASSERT_EQUAL_UINT8(0, r.st().cmdDir);  // arrived: nothing is selected any more
+}
+
 // ------------------------------------------------------------ R2
 static void moves_only_beyond_the_threshold_and_stops_within_one_degree() {
     Rig r;
@@ -361,6 +379,7 @@ static void state_changes_are_logged() {
 int main() {
     UNITY_BEGIN();
     RUN_TEST(moves_only_beyond_the_threshold_and_stops_within_one_degree);
+    RUN_TEST(the_status_tells_the_chosen_direction_before_and_while_the_motor_runs);
     RUN_TEST(a_morning_of_tracking_stays_inside_six_degrees);
     RUN_TEST(night_stows_the_panel_horizontally);
     RUN_TEST(pre_dawn_faces_east_shortly_before_sunrise);

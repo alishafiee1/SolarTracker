@@ -280,6 +280,8 @@ Status ControlStateMachine::status(uint32_t nowMs) const {
     s.angleDeg = in_.angleDeg;
     s.targetDeg = hasTarget_ ? target_ : in_.angleDeg;
     s.moving = motion_.running();
+    const bool dirOut = motion_.state() == motion::State::Selecting || motion_.state() == motion::State::Running;
+    s.cmdDir = !dirOut ? 0 : motion_.direction() == hal::Dir::East ? 1 : 2;
     s.waitS = (motion_.safetyWaitMs(nowMs) + 999) / 1000;
     switch (state_) {
         case ActiveState::Fault:

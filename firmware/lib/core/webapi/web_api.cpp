@@ -7,6 +7,7 @@
 
 #include "event_format.h"
 #include "location.h"
+#include "sun_position.h"
 
 namespace webapi {
 
@@ -131,6 +132,7 @@ Response WebApi::handle(const Request& req) {
         return ok();
     }
     if (req.post && p == "/api/fault/reset") {
+        d_.angle.clearFault();  // without this a latched sensor fault would latch again at once
         d_.ctl.command(control::Command::ResetFault, req.nowMs);
         return ok();
     }
@@ -165,11 +167,21 @@ Response WebApi::status() {
     if (s.fault == control::FaultCode::None) d["fault"] = nullptr;
     else d["fault"] = control::faultName(s.fault);
     d["moving"] = s.moving;
+    d["cmdDir"] = s.cmdDir == 1 ? "east" : s.cmdDir == 2 ? "west" : nullptr;
+    d["moveThresholdDeg"] = d_.cfg.moveThresholdDeg;
     d["waitingS"] = s.waitS;
     d["clockValid"] = d_.clockValid();
     d["calibrated"] = d_.angle.calibrated();
     d["utc"] = d_.utcNow();
     d["tzOffsetMin"] = d_.cfg.tzOffsetMin;
+    if (d_.clockValid()) {
+        const sun::SunPosition sp = sun::position(d_.utcNow(), d_.cfg.latDeg, d_.cfg.lonDeg);
+        d["sunAzimuthDeg"] = sp.azimuthDeg;
+        d["sunElevationDeg"] = 90.0 - sp.zenithDeg;
+    } else {
+        d["sunAzimuthDeg"] = nullptr;
+        d["sunElevationDeg"] = nullptr;
+    }
     d["fwVersion"] = d_.fwVersion;
     d["passwordIsDefault"] = d_.cfg.passwordIsDefault;
     const NetInfo ni = d_.netInfo();

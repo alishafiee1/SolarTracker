@@ -67,6 +67,7 @@ struct Status {
     float targetDeg;   // meaningful in Auto, Night and Wind
     bool moving;
     uint32_t waitS;    // seconds until a pending move may start (safety delay)
+    uint8_t cmdDir;    // direction output selected for a move: 0 none, 1 east, 2 west (set while the move starts and while it runs)
 };
 
 constexpr float kStopToleranceDeg = 1.0f;     // R2: a move ends within this of the target

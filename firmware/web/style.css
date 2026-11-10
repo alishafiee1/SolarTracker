@@ -80,3 +80,12 @@ progress{width:100%;height:14px}
 .toast.err{background:var(--bad);color:#fff}.toast.ok{background:var(--ok);color:#fff}
 dialog{border:1px solid var(--line);border-radius:14px;background:var(--card);color:var(--ink);max-width:340px}dialog::backdrop{background:rgba(0,0,0,.45)}
 .hidden{display:none!important}
+
+.dir rect{fill:var(--card);stroke:var(--line)}.dir text{fill:var(--mute)}
+.dir.cmd rect{stroke:var(--accent);fill:var(--sky)}.dir.cmd text{fill:var(--accent)}
+.dir.run rect{stroke:var(--ok);fill:var(--sky);animation:dirpulse 1s ease-in-out infinite}.dir.run text{fill:var(--ok);font-weight:700}
+@keyframes dirpulse{50%{stroke-width:3}}
+.tile b.sm{font-size:1.25rem}
+.tile.empty{border-style:dashed;background:transparent;opacity:.6}
+.help.sm{width:26px;min-height:26px;height:26px;font-size:.8rem;margin-inline-start:4px}
+.angleRow{margin:6px 0;color:var(--mute)}.angleRow b{color:var(--ink);font-size:1.15rem}

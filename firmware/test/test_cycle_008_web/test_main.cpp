@@ -168,6 +168,17 @@ static void status_is_public_and_complete() {
     TEST_ASSERT_FALSE(d["calibrated"].as<bool>());
 }
 
+static void status_has_the_live_sun_position_and_the_move_threshold() {
+    Rig r;
+    JsonDocument d = parse(r.call(false, "/api/status"));
+    TEST_ASSERT_TRUE(d["clockValid"].as<bool>());
+    const float az = d["sunAzimuthDeg"].as<float>(), el = d["sunElevationDeg"].as<float>();
+    TEST_ASSERT_TRUE(az > 90.0f && az < 130.0f);  // 21 June, 10:30 local: the sun is in the south-east, high
+    TEST_ASSERT_TRUE(el > 60.0f && el < 80.0f);
+    TEST_ASSERT_EQUAL_FLOAT(5.0f, d["moveThresholdDeg"].as<float>());
+    TEST_ASSERT_TRUE(d["cmdDir"].isNull());  // no move requested
+}
+
 static void cities_list_has_31_entries() {
     Rig r;
     JsonDocument d = parse(r.call(false, "/api/cities"));
@@ -348,6 +359,28 @@ static void manual_commands_and_their_refusals() {
     TEST_ASSERT_TRUE(parse(r.call(false, "/api/status"))["fault"].isNull());
 }
 
+static void fault_reset_also_clears_a_latched_angle_sensor_fault() {
+    Rig r;
+    const std::string c = r.login();
+    r.accel.setGravity({0.0f, 0.0f, 1.0f});
+    r.call(true, "/api/calibrate/horizontal", "{}", c);
+    for (int i = 0; i < 50; ++i) r.angle.sample();
+    r.call(true, "/api/calibrate/east", "{}", c);
+    r.accel.setGravity({0.0f, 0.1392f, 0.9903f});
+    for (int i = 0; i < 50; ++i) r.angle.sample();
+    TEST_ASSERT_TRUE(r.angle.calibrated());
+    for (int i = 0; i < 10; ++i) r.angle.sample();
+    TEST_ASSERT_TRUE(r.angle.ok());
+    r.accel.setGravity({0.0f, 0.0f, 0.0f});  // a glitching sensor
+    for (int i = 0; i < 10; ++i) r.angle.sample();
+    TEST_ASSERT_FALSE(r.angle.ok());
+    r.accel.setGravity({0.0f, 0.1392f, 0.9903f});
+    TEST_ASSERT_EQUAL_INT(200, r.call(true, "/api/fault/reset", "{}", c).status);
+    for (int i = 0; i < 10; ++i) r.angle.sample();
+    TEST_ASSERT_TRUE(r.angle.ok());
+    TEST_ASSERT_TRUE(fabsf(r.angle.angleDeg()) > 5.0f);  // east is negative
+}
+
 static void calibration_wizard() {
     Rig r;
     const std::string c = r.login();
@@ -506,6 +539,8 @@ int main() {
     RUN_TEST(location_by_city_or_pasted_coordinates);
     RUN_TEST(clock_set_from_the_phone);
     RUN_TEST(manual_commands_and_their_refusals);
+    RUN_TEST(fault_reset_also_clears_a_latched_angle_sensor_fault);
+    RUN_TEST(status_has_the_live_sun_position_and_the_move_threshold);
     RUN_TEST(calibration_wizard);
     RUN_TEST(log_lines_come_back_as_json);
     RUN_TEST(network_and_notification_settings_never_return_their_secrets);

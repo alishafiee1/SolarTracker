@@ -35,17 +35,22 @@
   <div class="card gaugeCard">
     <svg id="gauge" viewBox="0 0 320 200" role="img" aria-label="زاویه پنل"></svg>
     <div class="row between">
-      <span id="statusBadge" class="badge">—</span>
+      <span><span id="statusBadge" class="badge">—</span> <button class="help sm" data-help="gauge" aria-label="راهنما">؟</button></span>
       <span class="small" id="stateName"></span>
     </div>
+    <p class="helptext hidden" id="h_gauge"></p>
     <p id="statusText" class="big"></p>
   </div>
   <div class="grid">
-    <div class="tile"><span>زاویه فعلی</span><b id="angle">—</b><small id="target"></small></div>
+    <div class="tile"><span>ساعت دستگاه</span><b class="sm" dir="ltr" id="liveTime">—</b><small id="liveDate"></small></div>
+    <div class="tile"><span>سمت خورشید <button class="help sm" data-help="sunAz" aria-label="راهنما">؟</button></span><b id="sunAz">—</b><small>از جنوب، پادساعت‌گرد (شرق +)</small></div>
+    <div class="tile"><span>ارتفاع خورشید <button class="help sm" data-help="sunEl" aria-label="راهنما">؟</button></span><b id="sunEl">—</b><small id="sunNote"></small></div>
     <div class="tile"><span>سرعت باد</span><b id="wind">—</b><small id="windNote">کیلومتر بر ساعت</small></div>
     <div class="tile"><span>حالت</span><b id="mode">—</b><small id="state"></small></div>
     <div class="tile"><span>آخرین خطا</span><b id="fault">—</b><small id="faultText"></small></div>
   </div>
+  <p class="helptext hidden" id="h_sunAz"></p>
+  <p class="helptext hidden" id="h_sunEl"></p>
   <p id="warnDefault" class="warn hidden">رمز پیش‌فرض را عوض کنید (بخش ابزار، برگه «رمز»).</p>
   <p id="warnClock" class="warn hidden">ساعت تنظیم نشده است؛ ردیابی خودکار تا تنظیم ساعت کار نمی‌کند (بخش تنظیمات، برگه «ساعت»).</p>
   <p id="warnCal" class="warn hidden">کالیبراسیون لازم است (بخش کنترل، برگه «کالیبراسیون»).</p>
@@ -63,11 +68,11 @@
   </div>
   <div class="card">
     <h2>حرکت دستی</h2>
-    <p class="small">جهت‌ها مثل نمودار صفحهٔ وضعیت‌اند: شرق سمت چپ، غرب سمت راست.</p>
+    <p class="small">جهت‌ها مثل نمودار صفحهٔ وضعیت‌اند: شرق سمت راست، غرب سمت چپ.</p>
     <div class="row ltr">
-      <button id="moveEast" class="move">◀ شرق</button>
+      <button id="moveWest" class="move">◀ غرب</button>
       <button id="moveStop" class="move stop">توقف</button>
-      <button id="moveWest" class="move">غرب ▶</button>
+      <button id="moveEast" class="move">شرق ▶</button>
     </div>
     <p id="manualMsg" class="msg"></p>
   </div>
@@ -108,7 +113,7 @@
     <p>ساعت دستگاه: <bdi dir="ltr" id="clockNow">—</bdi></p>
     <button id="syncPhone" class="primary wide">همگام‌سازی با ساعت گوشی</button>
     <div class="field"><label for="clockDate">یا دستی (وقت محلی)</label><button class="help" data-help="clock" aria-label="راهنما">؟</button>
-      <div class="pair"><input id="clockDate" dir="ltr" inputmode="numeric" placeholder="تاریخ  ۲۰۲۷/۰۶/۲۱" aria-label="تاریخ"><input id="clockTime" dir="ltr" inputmode="numeric" placeholder="ساعت  ۱۴:۳۰:۰۰" aria-label="ساعت"></div></div>
+      <div class="pair"><input id="clockDate" dir="ltr" inputmode="numeric" placeholder="تاریخ شمسی  ۱۴۰۶/۰۴/۳۱" aria-label="تاریخ"><input id="clockTime" dir="ltr" inputmode="numeric" placeholder="ساعت  ۱۴:۳۰:۰۰" aria-label="ساعت"></div></div>
     <p class="helptext hidden" id="h_clock"></p>
     <button id="saveClock" class="primary wide">ثبت ساعت</button>
   </div>
