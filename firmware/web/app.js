@@ -377,9 +377,18 @@ $("saveLoc").onclick = async () => {
 };
 
 // ---- clock ----
+// After a clock write, check that it stuck: with the site Wi-Fi connected the internet time (NTP) overwrites it.
+async function clockSetDone(r, wantUtc) {
+  if (!r.ok) { toast(errText(r), "err"); poll(); return; }
+  await new Promise((res) => setTimeout(res, 2500));
+  await poll();
+  if (status && status.clockValid && Math.abs(status.utc - (wantUtc + 2)) > 10) {
+    toast("ثبت شد ولی ساعت دوباره عوض شد: دستگاه به وای‌فای محل وصل است و ساعت را خودکار از اینترنت می‌گیرد", "err");
+  } else toast("ساعت ثبت شد", "ok");
+}
 $("syncPhone").onclick = async () => {
-  const r = await api("POST", "/api/clock", { utc: Math.floor(Date.now() / 1000) });
-  toast(r.ok ? "ساعت با گوشی همگام شد" : errText(r), r.ok ? "ok" : "err"); poll();
+  const want = Math.floor(Date.now() / 1000);
+  await clockSetDone(await api("POST", "/api/clock", { utc: want }), want);
 };
 function fillClock() {
   if (!status || !status.clockValid || $("clockDate").value || $("clockTime").value) return;
@@ -392,8 +401,8 @@ $("saveClock").onclick = async () => {
   if (+d[1] < 1300 || +d[2] < 1 || +d[2] > 12 || +d[3] < 1 || +d[3] > 31) { toast("تاریخ شمسی معتبر نیست", "err"); return; }
   const g = j2g(+d[1], +d[2], +d[3]);
   const local = Date.UTC(g[0], g[1] - 1, g[2], +t[1], +t[2], +(t[3] || 0)) / 1000;
-  const r = await api("POST", "/api/clock", { utc: local - status.tzOffsetMin * 60 });
-  toast(r.ok ? "ساعت ثبت شد" : errText(r), r.ok ? "ok" : "err"); poll();
+  const want = local - status.tzOffsetMin * 60;
+  await clockSetDone(await api("POST", "/api/clock", { utc: want }), want);
 };
 
 // ---- calibration ----
