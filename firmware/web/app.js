@@ -105,8 +105,8 @@ async function api(method, path, body) {
 
 // ---- tabs: four sections, the pages of the open section show in a second row ----
 const NAV = [["وضعیت", [["dash", "وضعیت"]]], ["کنترل", [["manual", "دستی"], ["calib", "کالیبراسیون"]]],
-  ["تنظیمات", [["settings", "پارامترها"], ["location", "موقعیت"], ["clock", "ساعت"], ["network", "شبکه"]]],
-  ["ابزار", [["log", "لاگ"], ["update", "به‌روزرسانی"], ["account", "رمز"]]]];
+  ["تنظیمات", [["settings", "پارامترها"], ["location", "موقعیت"], ["clock", "ساعت"], ["network", "شبکه"], ["account", "رمز"]]],
+  ["ابزار", [["log", "لاگ"], ["update", "به‌روزرسانی"]]]];
 function buildTabs(active) {
   const grp = NAV.findIndex(([, pages]) => pages.some(([id]) => id === active));
   let html = '<div class="navMain">' + NAV.map(([title, pages], i) => `<button data-tab="${pages[0][0]}"${i === grp ? ' class="on"' : ""}>${title}</button>`).join("") + "</div>";
@@ -299,7 +299,7 @@ const GROUPS = [
   ["ایمنی حرکت", [["stallCheckMs", "زمان بررسی گیرکردن"], ["stopSettleMs", "مکث بعد از توقف"], ["minMoveGapMs", "فاصله بین دو حرکت"], ["maxMoveMs", "سقف زمان یک حرکت"]]],
   ["باد", [["windStowKmh", "آستانه باد شدید"], ["windStowDelayS", "تأخیر ورود به حالت باد"], ["windReturnKmh", "آستانه بازگشت از باد"], ["windReturnMin", "مدت آرامش برای بازگشت"], ["anemometerFactor", "ضریب بادسنج"]]],
   ["ماژول جریان", [["currentPresent", "ماژول جریان نصب است"], ["currentFactor", "ضریب ترانس جریان"], ["stallCurrentA", "جریان گیرکردن"], ["maxCurrentA", "حداکثر جریان مجاز"], ["zeroCurrentA", "جریان «صفر»"]]],
-  ["دستگاه", [["supplyLowV", "هشدار ولتاژ تغذیه"], ["apPassword", "رمز هات‌اسپات (پس از ریستارت)"]]],
+  ["دستگاه", [["supplyLowV", "هشدار ولتاژ تغذیه"]]],
 ];
 const ALL_KEYS = GROUPS.flatMap((g) => g[1].map((f) => f[0]));
 function shown(k) { const v = FLIP[k] ? uiAngle(settingsData[k]) : settingsData[k]; return toFa(typeof v === "boolean" ? (v ? "1" : "0") : v === undefined ? "" : String(v)); }
@@ -307,8 +307,7 @@ function renderSettings() {
   $("settingsForm").innerHTML = GROUPS.map(([title, fields], gi) =>
     `<details class="card group"${gi < 2 ? " open" : ""}><summary>${title}</summary>` + fields.map(([k, label]) => {
       const unit = HELP[k] && HELP[k].unit && k !== "currentPresent" ? ` <span class="small">(${HELP[k].unit})</span>` : "";
-      const type = k === "apPassword" ? "password" : "text";
-      return `<div class="field" id="f_${k}"><label for="i_${k}">${label}${unit}</label><button class="help" type="button" data-help="${k}" aria-label="راهنما">؟</button><input id="i_${k}" type="${type}" inputmode="${k === "apPassword" ? "text" : "decimal"}" autocomplete="off" value="${k === "apPassword" ? "" : shown(k)}"${k === "apPassword" ? ' placeholder="بدون تغییر"' : ""}></div><p class="helptext hidden" id="h_${k}"></p>`;
+      return `<div class="field" id="f_${k}"><label for="i_${k}">${label}${unit}</label><button class="help" type="button" data-help="${k}" aria-label="راهنما">؟</button><input id="i_${k}" type="text" inputmode="decimal" autocomplete="off" value="${shown(k)}"></div><p class="helptext hidden" id="h_${k}"></p>`;
     }).join("") + `</details>`).join("");
   bindHelp($("settingsForm"));
   for (const k of ALL_KEYS) $("i_" + k).oninput = markDirty;
@@ -319,7 +318,6 @@ function changes() {
   const body = {};
   for (const k of ALL_KEYS) {
     const v = $("i_" + k).value.trim();
-    if (k === "apPassword") { if (v) body[k] = v; continue; }
     if (v === "" || toLat(v) === toLat(shown(k))) continue;
     if (k === "currentPresent") body[k] = toLat(v) === "1"; else body[k] = FLIP[k] ? uiAngle(toNum(v)) : toNum(v);
   }
@@ -548,6 +546,13 @@ $("fwSend").onclick = async () => {
 };
 
 // ---- password ----
+$("apSave").onclick = async () => {
+  const v = $("apNew").value;
+  if (v.length < 8 || v.length > 32) { toast("رمز وای‌فای باید ۸ تا ۳۲ نویسه باشد", "err"); return; }
+  const r = await api("POST", "/api/settings", { apPassword: v });
+  if (r.ok) { toast("رمز وای‌فای ذخیره شد؛ بعد از راه‌اندازی دوبارهٔ دستگاه اعمال می‌شود", "ok"); $("apNew").value = ""; }
+  else toast(errText(r), "err");
+};
 $("pwSave").onclick = async () => {
   const r = await api("POST", "/api/password", { old: $("pwOld").value, new: $("pwNew").value });
   if (r.ok) { toast("رمز عوض شد؛ دوباره وارد شوید", "ok"); $("pwOld").value = ""; $("pwNew").value = ""; setLoggedIn(false); }

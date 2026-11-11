@@ -49,7 +49,7 @@
     <div class="tile wide2"><span>آخرین خطا</span><b id="fault">—</b><small id="faultText"></small></div>
   </div>
   <p class="helptext hidden" id="h_sunEl"></p>
-  <p id="warnDefault" class="warn hidden">رمز پیش‌فرض را عوض کنید (بخش ابزار، برگه «رمز»).</p>
+  <p id="warnDefault" class="warn hidden">رمز پیش‌فرض را عوض کنید (بخش تنظیمات، برگه «رمز»).</p>
   <p id="warnClock" class="warn hidden">ساعت تنظیم نشده است؛ ردیابی خودکار تا تنظیم ساعت کار نمی‌کند (بخش تنظیمات، برگه «ساعت»).</p>
   <p id="warnCal" class="warn hidden">کالیبراسیون لازم است (بخش کنترل، برگه «کالیبراسیون»). <span id="rawG" class="ltr"></span></p>
   <p class="small">نسخه <bdi dir="ltr" id="fw"></bdi> · زمان دستگاه <bdi dir="ltr" id="devTime">—</bdi> · وای‌فای محل: <bdi id="staState">—</bdi></p>
@@ -192,6 +192,14 @@
     <p class="helptext hidden" id="h_pwNew"></p>
     <label class="check"><input type="checkbox" data-show="pwOld,pwNew"> نمایش رمزها</label>
     <button id="pwSave" class="primary">تغییر رمز</button>
+  </div>
+  <div class="card">
+    <h2>رمز وای‌فای دستگاه</h2>
+    <p class="small">رمزی که برای وصل شدن به هات‌اسپات دستگاه لازم است (۸ تا ۳۲ نویسه). بعد از راه‌اندازی دوبارهٔ دستگاه اعمال می‌شود.</p>
+    <div class="field"><label for="apNew">رمز وای‌فای جدید</label><button class="help" data-help="apPassword" aria-label="راهنما">؟</button><input id="apNew" type="password" autocomplete="new-password" placeholder="۸ تا ۳۲ نویسه"></div>
+    <p class="helptext hidden" id="h_apPassword"></p>
+    <label class="check"><input type="checkbox" data-show="apNew"> نمایش رمز</label>
+    <button id="apSave" class="primary">ذخیره رمز وای‌فای</button>
   </div>
 </section>
 </main>
