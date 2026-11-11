@@ -9,8 +9,9 @@ namespace drivers {
 
 namespace {
 constexpr uint8_t kRegSeconds = 0x00;
-constexpr uint8_t kRegStatus = 0x0F;
-constexpr uint8_t kOscillatorStopped = 0x80;
+// The fitted chip is a DS1307 (HW-111 module). Its register 0x0F is plain RAM, so the DS3231 "oscillator
+// stopped" flag cannot be used; the DS1307 equivalent is the CH (clock halt) bit, bit 7 of the seconds register.
+constexpr uint8_t kClockHalt = 0x80;
 }  // namespace
 
 bool Ds3231Clock::readRegs(uint8_t reg, uint8_t* buf, size_t len) const {
@@ -28,14 +29,14 @@ bool Ds3231Clock::readRegs(uint8_t reg, uint8_t* buf, size_t len) const {
 }
 
 bool Ds3231Clock::present() const {
-    uint8_t status;
-    return readRegs(kRegStatus, &status, 1);
+    uint8_t seconds;
+    return readRegs(kRegSeconds, &seconds, 1);
 }
 
 bool Ds3231Clock::lostPower() const {
-    uint8_t status;
-    if (!readRegs(kRegStatus, &status, 1)) return true;
-    if (status & kOscillatorStopped) return true;
+    uint8_t seconds;
+    if (!readRegs(kRegSeconds, &seconds, 1)) return true;
+    if (seconds & kClockHalt) return true;  // stopped: battery was empty or the time was never set
     return utc() == 0;  // unreadable or implausible date
 }
 
@@ -64,13 +65,7 @@ bool Ds3231Clock::setUtc(int64_t epochSec) {
     Wire.write(rtc::toBcd(dt.day));
     Wire.write(rtc::toBcd(dt.month));
     Wire.write(rtc::toBcd(dt.year - 2000));
-    if (Wire.endTransmission() != 0) return false;
-    // Clear the oscillator-stop flag: the time is valid again.
-    uint8_t status;
-    if (!readRegs(kRegStatus, &status, 1)) return false;
-    Wire.beginTransmission(kAddress);
-    Wire.write(kRegStatus);
-    Wire.write(static_cast<uint8_t>(status & ~kOscillatorStopped));
+    // Seconds are written with bit 7 clear, which also starts a halted DS1307.
     return Wire.endTransmission() == 0;
 }
 
