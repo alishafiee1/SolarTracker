@@ -75,6 +75,15 @@ static void the_same_fault_within_ten_minutes_is_merged() {
     TEST_ASSERT_TRUE(q.enqueue("fault:other", "other", 1000));          // a different fault is never merged
 }
 
+static void a_fault_that_was_cleared_is_reported_again_at_once() {
+    NotifyQueue q;
+    TEST_ASSERT_TRUE(q.enqueue("fault:stall", "stall", 0));
+    TEST_ASSERT_FALSE(q.enqueue("fault:stall", "again", 60000));  // still inside the ten minutes
+    q.forget("fault:stall");                                       // the fault was reset
+    TEST_ASSERT_TRUE(q.enqueue("fault:stall", "again", 90000));    // so the next one is news
+    TEST_ASSERT_FALSE(q.enqueue("fault:stall", "third", 100000));  // and merging works again from here
+}
+
 static void the_queue_keeps_the_newest_twenty() {
     NotifyQueue q;
     char key[16], text[16];
@@ -156,6 +165,7 @@ int main() {
     RUN_TEST(messages_are_sent_one_per_ten_seconds);
     RUN_TEST(a_failed_send_is_retried_after_the_gap_and_keeps_the_message);
     RUN_TEST(the_same_fault_within_ten_minutes_is_merged);
+    RUN_TEST(a_fault_that_was_cleared_is_reported_again_at_once);
     RUN_TEST(the_queue_keeps_the_newest_twenty);
     RUN_TEST(the_message_names_the_device_the_fault_and_the_local_time);
     RUN_TEST(configuration_round_trips_and_survives_only_when_intact);

@@ -24,6 +24,8 @@ public:
 
     // Queue a message (merged and rate limited by net::NotifyQueue). Returns false when notifications are off.
     bool notify(const std::string& key, const std::string& text, uint32_t nowMs);
+    // Allow the same key to be sent again (called when a fault is cleared).
+    void forget(const std::string& key);
 
 private:
     static void task(void* self);

@@ -39,6 +39,8 @@ public:
     bool peek(uint32_t nowMs, std::string& text) const;
     // Report the outcome of the send of the message returned by peek(). A failed send keeps it for a retry.
     void done(bool sent, uint32_t nowMs);
+    // The cause is gone (e.g. the fault was reset): the same key may be reported again at once.
+    void forget(const char* key);
     size_t size() const { return items_.size(); }
 
 private:

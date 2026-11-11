@@ -69,6 +69,13 @@ bool SiteNet::notify(const std::string& key, const std::string& text, uint32_t n
     return enabled && queued;
 }
 
+void SiteNet::forget(const std::string& key) {
+    if (!mutex_) return;
+    xSemaphoreTake(static_cast<SemaphoreHandle_t>(mutex_), portMAX_DELAY);
+    queue_.forget(key.c_str());
+    xSemaphoreGive(static_cast<SemaphoreHandle_t>(mutex_));
+}
+
 bool SiteNet::post(const std::string& text) {
     net::NetConfig c;
     xSemaphoreTake(static_cast<SemaphoreHandle_t>(mutex_), portMAX_DELAY);
