@@ -55,6 +55,7 @@ void AngleProvider::pushAngle(float deg) {
 void AngleProvider::sample() {
     Vec3 g{0, 0, 0};
     bool valid = accel_.read(g) && validGravity(g, 0.8f, 1.2f);
+    if (valid) lastG_ = g;
 
     if (capturing_) {
         if (!valid) {

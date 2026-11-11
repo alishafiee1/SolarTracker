@@ -248,6 +248,7 @@ async function poll() {
     $("warnDefault").classList.toggle("hidden", !status.passwordIsDefault);
     $("warnClock").classList.toggle("hidden", status.clockValid);
     $("warnCal").classList.toggle("hidden", status.calibrated);
+    if (!status.calibrated && status.gravity) { const g = status.gravity.map((v) => v.toFixed(2)); $("rawG").textContent = "سنسور زنده: x=" + g[0] + " y=" + g[1] + " z=" + g[2]; }
     $("faultBar").classList.toggle("hidden", !status.fault);
     $("faultBarText").textContent = status.fault ? status.text : "";
     $("resetFault").classList.toggle("hidden", !status.fault || !loggedIn);

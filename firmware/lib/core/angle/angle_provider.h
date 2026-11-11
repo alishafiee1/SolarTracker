@@ -43,6 +43,8 @@ public:
     // Moving average of the last 5 valid samples, degrees. 0 when not calibrated.
     float angleDeg() const;
     bool calibrated() const { return calibrated_; }
+    // Last valid raw gravity reading (g), so the panel can show the sensor is alive before calibration.
+    const hal::Vec3& lastGravity() const { return lastG_; }
     // False after a latched sensor fault (R5) until clearFault().
     bool ok() const { return !fault_; }
     void clearFault();
@@ -78,6 +80,7 @@ private:
     float window_[kAverageSamples] = {};
     size_t windowCount_ = 0;
     size_t windowPos_ = 0;
+    hal::Vec3 lastG_{0, 0, 0};
     uint8_t invalidRun_ = 0;
     bool fault_ = false;
 

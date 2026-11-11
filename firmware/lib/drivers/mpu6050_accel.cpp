@@ -8,6 +8,7 @@ namespace drivers {
 namespace {
 constexpr uint8_t kRegConfig = 0x1A;
 constexpr uint8_t kRegAccelConfig = 0x1C;
+constexpr uint8_t kRegAccelConfig2 = 0x1D;  // MPU6500/9250 only: accelerometer low-pass filter
 constexpr uint8_t kRegAccelXout = 0x3B;
 constexpr uint8_t kRegPwrMgmt1 = 0x6B;
 constexpr uint8_t kRegWhoAmI = 0x75;
@@ -46,7 +47,10 @@ bool Mpu6050Accel::begin() {
     ok_ = false;
     if (!checkIdentity()) return false;
     // Wake up, accelerometer +-2 g, digital low-pass filter about 21 Hz.
-    configured_ = writeReg(kRegPwrMgmt1, 0x00) && writeReg(kRegAccelConfig, 0x00) && writeReg(kRegConfig, 0x04);
+    // The MPU6500 filters the accelerometer in ACCEL_CONFIG2 (0x04 = 21 Hz); without it the noise is about 1 degree.
+    // On a real MPU6050 that register does not exist and the write is ignored.
+    configured_ = writeReg(kRegPwrMgmt1, 0x00) && writeReg(kRegAccelConfig, 0x00) && writeReg(kRegConfig, 0x04) &&
+                  writeReg(kRegAccelConfig2, 0x04);
     ok_ = configured_;
     return ok_;
 }

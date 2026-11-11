@@ -193,6 +193,13 @@ Response WebApi::status() {
     d["waitingS"] = s.waitS;
     d["clockValid"] = d_.clockValid();
     d["calibrated"] = d_.angle.calibrated();
+    {
+        const hal::Vec3& g = d_.angle.lastGravity();
+        JsonArray ga = d["gravity"].to<JsonArray>();
+        ga.add(g.x);
+        ga.add(g.y);
+        ga.add(g.z);
+    }
     d["utc"] = d_.utcNow();
     d["tzOffsetMin"] = d_.cfg.tzOffsetMin;
     if (d_.clockValid()) {
