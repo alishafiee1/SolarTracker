@@ -104,7 +104,7 @@ async function api(method, path, body) {
 }
 
 // ---- tabs: four sections, the pages of the open section show in a second row ----
-const NAV = [["وضعیت", [["dash", "وضعیت"]]], ["کنترل", [["manual", "دستی"], ["calib", "کالیبراسیون"]]],
+const NAV = [["داشبورد", [["dash", "داشبورد"]]], ["کنترل", [["manual", "دستی"], ["calib", "کالیبراسیون"]]],
   ["تنظیمات", [["settings", "پارامترها"], ["location", "موقعیت"], ["clock", "ساعت"], ["network", "شبکه"], ["account", "رمز"]]],
   ["ابزار", [["log", "لاگ"], ["update", "به‌روزرسانی"]]]];
 function buildTabs(active) {
@@ -286,13 +286,17 @@ async function move(dir) {
   if (r.ok && dir !== "stop" && !keep) keep = setInterval(() => api("POST", "/api/manual/keepalive", {}), 1000);
 }
 function release() { if (keep) { clearInterval(keep); keep = null; } api("POST", "/api/manual", { dir: "stop" }); }
-for (const [id, dir] of [["moveEast", "east"], ["moveWest", "west"]]) {
+for (const [id, dir] of [["moveEast", "east"], ["moveWest", "west"], ["dMoveEast", "east"], ["dMoveWest", "west"]]) {
   const b = $(id);
   b.onpointerdown = (e) => { e.preventDefault(); b.setPointerCapture(e.pointerId); move(dir); };
   b.onpointerup = release; b.onpointercancel = release; b.onlostpointercapture = release;
   b.oncontextmenu = (e) => e.preventDefault();
 }
 $("moveStop").onclick = release;
+$("dMoveStop").onclick = release;
+// The dashboard shows its own move buttons while the manual mode is on (and the user is logged in).
+function dashMoveVisible() { $("dashMove").classList.toggle("hidden", !(loggedIn && status && status.mode === "manual")); }
+setInterval(dashMoveVisible, 500);
 
 // ---- settings ----
 const GROUPS = [

@@ -40,6 +40,14 @@
     </div>
     <p class="helptext hidden" id="h_gauge"></p>
     <p id="statusText" class="big"></p>
+    <div id="dashMove" class="hidden">
+      <p class="small">حالت دستی فعال است. دکمه را نگه دارید؛ با رها کردن می‌ایستد.</p>
+      <div class="row ltr">
+        <button id="dMoveWest" class="move">◀ غرب</button>
+        <button id="dMoveStop" class="move stop">توقف</button>
+        <button id="dMoveEast" class="move">شرق ▶</button>
+      </div>
+    </div>
   </div>
   <div class="grid">
     <div class="tile"><span>ساعت دستگاه</span><b class="sm" dir="ltr" id="liveTime">—</b><small id="liveDate"></small></div>
@@ -66,7 +74,7 @@
   </div>
   <div class="card">
     <h2>حرکت دستی</h2>
-    <p class="small">جهت‌ها مثل نمودار صفحهٔ وضعیت‌اند: شرق سمت راست، غرب سمت چپ.</p>
+    <p class="small">جهت‌ها مثل نمودار داشبورداند: شرق سمت راست، غرب سمت چپ.</p>
     <div class="row ltr">
       <button id="moveWest" class="move">◀ غرب</button>
       <button id="moveStop" class="move stop">توقف</button>

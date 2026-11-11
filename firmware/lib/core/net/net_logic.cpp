@@ -22,6 +22,13 @@ bool NotifyQueue::enqueue(const char* key, const char* text, uint32_t nowMs) {
     return true;
 }
 
+void NotifyQueue::forget(const char* key) {
+    for (size_t i = 0; i < seen_.size();) {
+        if (seen_[i].key == key) seen_.erase(seen_.begin() + static_cast<long>(i));
+        else ++i;
+    }
+}
+
 bool NotifyQueue::peek(uint32_t nowMs, std::string& text) const {
     if (items_.empty()) return false;
     if (everSent_ && nowMs - lastSendMs_ < kMinGapMs) return false;

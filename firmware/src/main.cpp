@@ -236,6 +236,8 @@ void loop() {
         controlLoop.tick(now);
         const control::Status st = controller->status(now);  // a new fault goes to the phone (module 011)
         if (st.fault != lastNotifiedFault) {
+            // A cleared fault that comes back later is a new event: it must not be merged with the old one.
+            if (st.fault == control::FaultCode::None) siteNet.forget(std::string("fault:") + control::faultName(lastNotifiedFault));
             lastNotifiedFault = st.fault;
             if (st.fault != control::FaultCode::None) {
                 siteNet.notify(std::string("fault:") + control::faultName(st.fault), net::formatNotification(panel->ssid(), webapi::statusTextFa(st.text, 0).c_str(), utcNow(), cfg.tzOffsetMin), now);
