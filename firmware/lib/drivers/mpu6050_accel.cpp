@@ -36,7 +36,8 @@ bool Mpu6050Accel::checkIdentity() {
     uint8_t id = 0;
     whoAmI_ = readRegs(kRegWhoAmI, &id, 1) ? id : 0;
     lastCheckMs_ = millis();
-    return whoAmI_ == kWhoAmIExpected;
+    // Many cheap GY-521 boards carry an MPU6500/9250 clone: same accelerometer registers, other ID.
+    return whoAmI_ == kWhoAmIExpected || whoAmI_ == 0x70 || whoAmI_ == 0x71 || whoAmI_ == 0x73;
 }
 
 bool Mpu6050Accel::begin() {

@@ -7,7 +7,7 @@ namespace drivers {
 class Mpu6050Accel : public hal::IAccel {
 public:
     static constexpr uint8_t kAddress = 0x69;
-    static constexpr uint8_t kWhoAmIExpected = 0x68;
+    static constexpr uint8_t kWhoAmIExpected = 0x68;  // MPU6050; 0x70/0x71/0x73 (MPU6500/9250) are accepted too
 
     // Wire must be started by the caller (SDA 21, SCL 22).
     bool begin();
