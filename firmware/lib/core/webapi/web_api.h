@@ -44,6 +44,7 @@ struct NetInfo {
     bool connected = false;
     char ip[16] = "";
     int lastNotify = -1;  // -1 never tried, 0 failed, 1 sent
+    int rssiDbm = 0;      // signal strength of the site Wi-Fi while connected, else 0
 };
 
 struct Deps {

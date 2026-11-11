@@ -244,6 +244,7 @@ async function poll() {
     const hasSun = status.sunElevationDeg !== null && status.sunElevationDeg !== undefined;
     $("sunEl").innerHTML = hasSun ? degTxt(status.sunElevationDeg) : "—";
     $("sunNote").textContent = !hasSun ? "" : status.sunElevationDeg < 0 ? "زیر افق (شب)" : "بالای افق";
+    netFromStatus();
     $("staState").innerHTML = status.staConnected ? "متصل " + ltr(status.staIp) : "—";
     $("warnDefault").classList.toggle("hidden", !status.passwordIsDefault);
     $("warnClock").classList.toggle("hidden", status.clockValid);
@@ -476,13 +477,31 @@ $("logChips").onclick = (e) => {
 
 // ---- site Wi-Fi and notifications ----
 function bars(rssi) { return rssi > -55 ? "▂▄▆█" : rssi > -67 ? "▂▄▆" : rssi > -78 ? "▂▄" : "▂"; }
+let netCfgSsid = "", netWasConnected = null;
+// Green = connected (with signal bars), amber = set but not connected, grey = not set. Updated by every status poll.
+function renderNetState(connected, ip, rssi) {
+  const box = $("netBox");
+  box.className = "netbox " + (connected ? "on" : netCfgSsid ? "wait" : "off");
+  $("netState").innerHTML = connected ? "متصل به " + (netCfgSsid ? `<bdi dir="ltr">${netCfgSsid.replace(/[<&]/g, "")}</bdi> · ` : "") + ltr(ip) : netCfgSsid ? "متصل نیست؛ در حال تلاش…" : "تنظیم نشده";
+  $("netBars").textContent = connected && rssi ? bars(rssi) + " " + fa(rssi, 0) + "dBm" : "";
+}
+function netFromStatus() {
+  if (!status) return;
+  const c = !!status.staConnected;
+  if (netWasConnected !== null && c !== netWasConnected) toast(c ? "به وای‌فای محل وصل شد" : "اتصال وای‌فای محل قطع شد", c ? "ok" : "err");
+  if (c !== netWasConnected && !$("network").classList.contains("hidden")) loadNetwork();
+  netWasConnected = c;
+  renderNetState(c, status.staIp, status.staRssi);
+}
 async function loadNetwork() {
   const r = await api("GET", "/api/network");
   if (!r.ok) return;
-  $("netSsid").value = r.data.ssid;
+  if (!$("netSsid").value) $("netSsid").value = r.data.ssid;
   $("chatId").value = r.data.chatId;
   $("notifyOn").checked = r.data.enabled;
-  $("netState").textContent = r.data.ssid ? (r.data.connected ? "متصل · " + r.data.ip : "متصل نیست") : "تنظیم نشده";
+  netCfgSsid = r.data.ssid;
+  if (!r.data.ssid) $("netChange").open = true;  // nothing set yet: show the form
+  renderNetState(r.data.connected, r.data.ip, r.data.rssi);
   $("botToken").placeholder = r.data.tokenSet ? "ثبت شده" : "";
   $("netPass").placeholder = r.data.passwordSet ? "ثبت شده" : "";
 }
@@ -508,7 +527,7 @@ $("netSave").onclick = async () => {
   if ($("netPass").value) body.password = $("netPass").value;
   const r = await api("POST", "/api/network", body);
   toast(r.ok ? "ثبت شد؛ در حال اتصال" : errText(r), r.ok ? "ok" : "err");
-  if (r.ok) { $("netPass").value = ""; loadNetwork(); }
+  if (r.ok) { $("netPass").value = ""; netCfgSsid = $("netSsid").value; $("netChange").open = false; renderNetState(false, "", 0); loadNetwork(); }
 };
 $("notifySave").onclick = async () => {
   const body = { chatId: $("chatId").value, enabled: $("notifyOn").checked };

@@ -218,6 +218,7 @@ Response WebApi::status() {
     const NetInfo ni = d_.netInfo();
     d["staConnected"] = ni.connected;
     d["staIp"] = ni.ip;
+    d["staRssi"] = ni.connected ? ni.rssiDbm : 0;
     if (ni.lastNotify < 0) d["lastNotifyOk"] = nullptr;
     else d["lastNotifyOk"] = ni.lastNotify == 1;
     return json(200, d);
@@ -436,6 +437,7 @@ Response WebApi::getNetwork() {
     d["enabled"] = c.notifyEnabled;
     d["connected"] = ni.connected;
     d["ip"] = ni.ip;
+    d["rssi"] = ni.connected ? ni.rssiDbm : 0;
     return json(200, d);
 }
 

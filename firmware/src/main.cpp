@@ -148,6 +148,7 @@ void setup() {
         n.connected = siteNet.connected();
         snprintf(n.ip, sizeof(n.ip), "%s", siteNet.ip());
         n.lastNotify = siteNet.lastNotify();
+        n.rssiDbm = n.connected ? WiFi.RSSI() : 0;
         return n;
     };
     deps.sendTestMessage = [] {  // queued, not sent here: a request must never wait for the internet

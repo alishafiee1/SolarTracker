@@ -132,7 +132,8 @@
   <div class="card">
     <h2>وای‌فای محل نصب</h2>
     <p class="small">اختیاری. هات‌اسپات دستگاه همیشه روشن می‌ماند. اتصال به اینترنت برای همگام‌سازی ساعت و ارسال هشدار لازم است. پنل روی اینترنت باز نمی‌شود.</p>
-    <p>وضعیت: <b id="netState">—</b></p>
+    <div id="netBox" class="netbox off"><span id="netState">—</span><span id="netBars" class="bars"></span></div>
+    <details id="netChange"><summary>تغییر وای‌فای</summary>
     <button id="scanBtn" class="wide">جستجوی شبکه‌های اطراف</button>
     <p class="small">فقط شبکه‌های ۲٫۴ گیگاهرتز دیده می‌شوند. هنگام جستجو ممکن است اتصال گوشی یکی دو ثانیه قطع و وصل شود.</p>
     <ul id="scanList" class="list"></ul>
@@ -142,6 +143,7 @@
     <p class="helptext hidden" id="h_netPass"></p>
     <label class="check"><input type="checkbox" data-show="netPass"> نمایش رمز</label>
     <button id="netSave" class="primary">ثبت وای‌فای</button>
+    </details>
   </div>
   <div class="card">
     <h2>هشدار در بله</h2>
