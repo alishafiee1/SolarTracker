@@ -477,6 +477,14 @@ $("logChips").onclick = (e) => {
 
 // ---- site Wi-Fi and notifications ----
 function bars(rssi) { return rssi > -55 ? "▂▄▆█" : rssi > -67 ? "▂▄▆" : rssi > -78 ? "▂▄" : "▂"; }
+const MASK = "••••••••";
+function setMasked(el, isSet) {
+  if (document.activeElement === el || (el.value && el.value !== MASK)) return;
+  el.value = isSet ? MASK : "";
+  el.dataset.masked = isSet ? "1" : "";
+}
+function secretValue(el) { return el.value && el.value !== MASK ? el.value : ""; }
+for (const id of ["botToken", "netPass"]) $(id).addEventListener("focus", (e) => { if (e.target.value === MASK) e.target.select(); });
 let netCfgSsid = "", netWasConnected = null;
 // Green = connected (with signal bars), amber = set but not connected, grey = not set. Updated by every status poll.
 function renderNetState(connected, ip, rssi) {
@@ -497,13 +505,14 @@ async function loadNetwork() {
   const r = await api("GET", "/api/network");
   if (!r.ok) return;
   if (!$("netSsid").value) $("netSsid").value = r.data.ssid;
-  $("chatId").value = r.data.chatId;
-  $("notifyOn").checked = r.data.enabled;
+  if (document.activeElement !== $("chatId")) $("chatId").value = r.data.chatId;  // never overwrite what is being typed
+  if (document.activeElement !== $("notifyOn")) $("notifyOn").checked = r.data.enabled;
   netCfgSsid = r.data.ssid;
   if (!r.data.ssid) $("netChange").open = true;  // nothing set yet: show the form
   renderNetState(r.data.connected, r.data.ip, r.data.rssi);
-  $("botToken").placeholder = r.data.tokenSet ? "ثبت شده" : "";
-  $("netPass").placeholder = r.data.passwordSet ? "ثبت شده" : "";
+  // A saved secret is shown as bullets (never the real value) so the field does not look empty.
+  setMasked($("botToken"), r.data.tokenSet);
+  setMasked($("netPass"), r.data.passwordSet);
 }
 $("scanBtn").onclick = async () => {
   $("scanBtn").disabled = true;
@@ -524,14 +533,14 @@ $("scanBtn").onclick = async () => {
 $("scanList").onclick = (e) => { const li = e.target.closest("li"); if (li && li.dataset.ssid) { $("netSsid").value = li.dataset.ssid; $("netPass").focus(); } };
 $("netSave").onclick = async () => {
   const body = { ssid: $("netSsid").value };
-  if ($("netPass").value) body.password = $("netPass").value;
+  if (secretValue($("netPass"))) body.password = secretValue($("netPass"));
   const r = await api("POST", "/api/network", body);
   toast(r.ok ? "ثبت شد؛ در حال اتصال" : errText(r), r.ok ? "ok" : "err");
-  if (r.ok) { $("netPass").value = ""; netCfgSsid = $("netSsid").value; $("netChange").open = false; renderNetState(false, "", 0); loadNetwork(); }
+  if (r.ok) { $("netPass").value = ""; $("netPass").dataset.masked = ""; netCfgSsid = $("netSsid").value; $("netChange").open = false; renderNetState(false, "", 0); loadNetwork(); }
 };
 $("notifySave").onclick = async () => {
   const body = { chatId: $("chatId").value, enabled: $("notifyOn").checked };
-  if ($("botToken").value) body.token = $("botToken").value;
+  if (secretValue($("botToken"))) body.token = secretValue($("botToken"));
   const r = await api("POST", "/api/notify", body);
   toast(r.ok ? "ثبت شد" : errText(r), r.ok ? "ok" : "err");
   if (r.ok) { $("botToken").value = ""; loadNetwork(); }
