@@ -251,7 +251,7 @@ void loop() {
         }
     }
     eventLog.service();
-    siteNet.service(now, rtcClock, cachedClockValid, &eventLog);
+    siteNet.service(now, rtcClock, cachedClockValid, &eventLog, cfg.clockAuto);
     otaUpdate.confirmIfHealthy(now, panelStarted && controlLoop.ticks() > 100, &eventLog);
     if (otaUpdate.restartDue(now)) {
         eventLog.flush();

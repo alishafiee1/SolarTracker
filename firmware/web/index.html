@@ -109,8 +109,8 @@
   <div class="card">
     <h2>ساعت و تاریخ</h2>
     <p>ساعت دستگاه: <bdi dir="ltr" id="clockNow">—</bdi></p>
-    <button id="syncPhone" class="primary wide">همگام‌سازی با ساعت گوشی</button>
-    <div class="field"><label for="clockDate">یا دستی (وقت محلی)</label><button class="help" data-help="clock" aria-label="راهنما">؟</button>
+    <label class="check"><input type="checkbox" id="clockAuto"> همگام‌سازی خودکار ساعت (با ساعت سیستم و اینترنت)</label>
+    <div class="field"><label for="clockDate">دستی (وقت محلی؛ فقط وقتی همگام‌سازی خودکار خاموش است)</label><button class="help" data-help="clock" aria-label="راهنما">؟</button>
       <div class="pair"><input id="clockDate" dir="ltr" inputmode="numeric" placeholder="تاریخ شمسی  ۱۴۰۶/۰۴/۳۱" aria-label="تاریخ"><input id="clockTime" dir="ltr" inputmode="numeric" placeholder="ساعت  ۱۴:۳۰:۰۰" aria-label="ساعت"></div></div>
     <p class="helptext hidden" id="h_clock"></p>
     <button id="saveClock" class="primary wide">ثبت ساعت</button>

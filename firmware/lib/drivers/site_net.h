@@ -16,7 +16,7 @@ public:
     // Take (new) configuration; reconnects with the new credentials.
     void apply(const net::NetConfig& cfg);
     // Call from the main loop (cheap). Reconnects with backoff, runs NTP, reports a corrected time through `rtc`.
-    void service(uint32_t nowMs, hal::IClock& rtc, bool rtcValid, hal::IEventLog* log);
+    void service(uint32_t nowMs, hal::IClock& rtc, bool rtcValid, hal::IEventLog* log, bool setClockFromNtp = true);
 
     bool connected() const { return connected_; }
     const char* ip() const { return ip_; }

@@ -37,7 +37,7 @@ const HELP = /*HELP-BEGIN*/{
   "coords": {"t": "مختصات دقیق را از نقشه کپی کنید، به شکل «عرض، طول» مثل 30.283, 57.083. عرض بین ۹۰- و ۹۰ و طول بین ۱۸۰- و ۱۸۰ است (شرق مثبت)."},
   "gauge": {"t": "<b>نماد شرق و غرب:</b> خاکستری یعنی فرمانی نیست. نارنجی یعنی فرمان حرکت صادر شده و جهت انتخاب شده ولی موتور هنوز روشن نشده (تأخیر ایمنی). سبز یعنی موتور روشن است و پنل در همین جهت حرکت می‌کند.<br><b>عدد وسط:</b> اختلاف زاویه پنل با هدف، تقسیم بر آستانه شروع حرکت. وقتی اختلاف از آستانه بیشتر شود موتور شروع به حرکت می‌کند.<br><b>برچسب رنگی:</b> «بدون خطا» یعنی هیچ خطایی ثبت نشده و کنترل عادی کار می‌کند. «توجه» یعنی خطایی نیست ولی دستگاه در حالت ویژه است (دستی، باد شدید، انتظار تأخیر ایمنی، یا ساعت و کالیبراسیون تنظیم نشده). «خطا» یعنی دستگاه متوقف شده و باید علت را برطرف و خطا را ریست کنید."},
   "sunEl": {"t": "زاویهٔ خورشید بالای افق: ۰ درجه یعنی خورشید روی افق است (طلوع یا غروب) و ۹۰ درجه یعنی درست بالای سر. این زاویه در تابستان بالاتر و در زمستان پایین‌تر است. منفی یعنی خورشید زیر افق و شب است. دستگاه آن را از ساعت و موقعیت جغرافیایی حساب می‌کند."},
-  "clock": {"t": "ساعت محلی را وارد کنید؛ دستگاه با منطقه زمانی تنظیم‌شده آن را به UTC تبدیل می‌کند. ساده‌تر این است که دکمه «همگام‌سازی با ساعت گوشی» را بزنید."},
+  "clock": {"t": "ساعت محلی را وارد کنید؛ دستگاه با منطقه زمانی تنظیم‌شده آن را به UTC تبدیل می‌کند. ساده‌تر این است که تیک «همگام‌سازی خودکار ساعت» را بزنید تا ساعت دستگاه با ساعت کامپیوتر یا گوشی که پنل را باز کرده (و با اینترنت، اگر وصل باشد) یکی شود. با برداشتن تیک، ساعت فقط دستی تغییر می‌کند."},
   "netSsid": {"t": "نام وای‌فای محل نصب (فقط ۲٫۴ گیگاهرتز). از فهرست جستجو انتخاب کنید یا تایپ کنید؛ حروف بزرگ و کوچک مهم‌اند."},
   "netPass": {"t": "رمز وای‌فای محل نصب (دست‌کم ۸ نویسه؛ خالی یعنی شبکه باز). هرگز نمایش داده نمی‌شود؛ اگر خالی بگذارید رمز قبلی می‌ماند."},
   "botToken": {"t": "توکن ربات بله که از BotFather می‌گیرید. نمایش داده نمی‌شود و فقط روی دستگاه ذخیره می‌شود؛ خالی بگذارید تا تغییر نکند."},
@@ -248,6 +248,8 @@ async function poll() {
     $("warnDefault").classList.toggle("hidden", !status.passwordIsDefault);
     $("warnClock").classList.toggle("hidden", status.clockValid);
     $("warnCal").classList.toggle("hidden", status.calibrated);
+    if (document.activeElement !== $("clockAuto")) $("clockAuto").checked = !!status.clockAuto;
+    autoClockSync();
     if (!status.calibrated && status.gravity) { const g = status.gravity.map((v) => v.toFixed(2)); $("rawG").textContent = "سنسور زنده: x=" + g[0] + " y=" + g[1] + " z=" + g[2]; }
     $("faultBar").classList.toggle("hidden", !status.fault);
     $("faultBarText").textContent = status.fault ? status.text : "";
@@ -383,18 +385,31 @@ async function clockSetDone(r, wantUtc) {
   await new Promise((res) => setTimeout(res, 2500));
   await poll();
   if (status && status.clockValid && Math.abs(status.utc - (wantUtc + 2)) > 10) {
-    toast("ثبت شد ولی ساعت دوباره عوض شد: دستگاه به وای‌فای محل وصل است و ساعت را خودکار از اینترنت می‌گیرد", "err");
+    toast("ثبت شد ولی ساعت دوباره عوض شد؛ همگام‌سازی خودکار روشن است", "err");
   } else toast("ساعت ثبت شد", "ok");
 }
-$("syncPhone").onclick = async () => {
+let autoSyncAt = 0;
+// With the tick on, the open panel keeps the device clock equal to this computer's/phone's clock.
+function autoClockSync() {
+  if (!status || !status.clockAuto || Date.now() - autoSyncAt < 30000) return;
   const want = Math.floor(Date.now() / 1000);
-  await clockSetDone(await api("POST", "/api/clock", { utc: want }), want);
+  if (status.clockValid && Math.abs(status.utc - want) <= 3) return;
+  autoSyncAt = Date.now();
+  api("POST", "/api/clock", { utc: want });
+}
+$("clockAuto").onchange = async () => {
+  const on = $("clockAuto").checked;
+  const r = await api("POST", "/api/settings", { clockAuto: on });
+  if (!r.ok) { toast(errText(r), "err"); $("clockAuto").checked = !on; return; }
+  toast(on ? "همگام‌سازی خودکار روشن شد" : "همگام‌سازی خودکار خاموش شد؛ ساعت را دستی ثبت کنید", "ok");
+  autoSyncAt = 0; await poll();
 };
 function fillClock() {
   if (!status || !status.clockValid || $("clockDate").value || $("clockTime").value) return;
   $("clockDate").value = jalaliText(status.utc, status.tzOffsetMin); $("clockTime").value = timeText(status.utc, status.tzOffsetMin);
 }
 $("saveClock").onclick = async () => {
+  if (status && status.clockAuto) { toast("اول تیک «همگام‌سازی خودکار ساعت» را بردارید", "err"); return; }
   const d = toLat($("clockDate").value).trim().match(/^(\d{4})[-\/.](\d{1,2})[-\/.](\d{1,2})$/);
   const t = toLat($("clockTime").value).trim().match(/^(\d{1,2}):(\d{2})(?::(\d{2}))?$/);
   if (!d || !t || !status) { toast("تاریخ شمسی را مثل ۱۴۰۶/۰۴/۳۱ و ساعت را مثل ۱۴:۳۰:۰۰ بنویسید", "err"); return; }

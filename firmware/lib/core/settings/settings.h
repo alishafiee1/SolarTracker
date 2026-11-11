@@ -54,6 +54,10 @@ struct Settings {
     float stallCurrentA = 4.5f;
     float maxCurrentA = 5.0f;
     float zeroCurrentA = 0.2f;
+
+    // Clock: true = the device follows the internet time (NTP) and the open panel pushes the computer/phone time.
+    // False = the clock is only changed by hand. Appended after the first layout: older blobs get true.
+    bool clockAuto = true;
 };
 
 // Names of invalid fields (R1). Returns how many were written (at most `max`).

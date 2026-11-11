@@ -193,6 +193,7 @@ Response WebApi::status() {
     d["waitingS"] = s.waitS;
     d["clockValid"] = d_.clockValid();
     d["calibrated"] = d_.angle.calibrated();
+    d["clockAuto"] = d_.cfg.clockAuto;
     {
         const hal::Vec3& g = d_.angle.lastGravity();
         JsonArray ga = d["gravity"].to<JsonArray>();
@@ -261,6 +262,7 @@ Response WebApi::getSettings() {
     d["tzOffsetMin"] = d_.cfg.tzOffsetMin;
     d["mode"] = modeName(d_.cfg.mode);
     d["currentPresent"] = d_.cfg.currentPresent;
+    d["clockAuto"] = d_.cfg.clockAuto;
     return json(200, d);
 }
 
@@ -293,6 +295,10 @@ Response WebApi::postSettings(const Request& req) {
     if (in["tzOffsetMin"].is<int>()) {
         next.tzOffsetMin = static_cast<int16_t>(in["tzOffsetMin"].as<int>());
         changed += std::string(changed.empty() ? "" : " ") + "tzOffsetMin";
+    }
+    if (in["clockAuto"].is<bool>()) {
+        next.clockAuto = in["clockAuto"].as<bool>();
+        changed += std::string(changed.empty() ? "" : " ") + "clockAuto";
     }
     if (in["currentPresent"].is<bool>()) {
         next.currentPresent = in["currentPresent"].as<bool>();

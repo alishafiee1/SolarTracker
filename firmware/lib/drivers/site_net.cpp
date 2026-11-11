@@ -28,7 +28,7 @@ void SiteNet::apply(const net::NetConfig& cfg) {
     }
 }
 
-void SiteNet::service(uint32_t nowMs, hal::IClock& rtc, bool rtcValid, hal::IEventLog* log) {
+void SiteNet::service(uint32_t nowMs, hal::IClock& rtc, bool rtcValid, hal::IEventLog* log, bool setClockFromNtp) {
     if (!wanted_) return;
     if (WiFi.status() == WL_CONNECTED) {
         if (!connected_) {
@@ -44,7 +44,7 @@ void SiteNet::service(uint32_t nowMs, hal::IClock& rtc, bool rtcValid, hal::IEve
             configTime(0, 0, "pool.ntp.org", "time.google.com");
         }
         const time_t t = time(nullptr);
-        if (ntpStarted_ && t > 1704067200 && net::shouldSetClockFromNtp(rtc.utc(), rtcValid, static_cast<int64_t>(t))) {
+        if (setClockFromNtp && ntpStarted_ && t > 1704067200 && net::shouldSetClockFromNtp(rtc.utc(), rtcValid, static_cast<int64_t>(t))) {
             if (rtc.setUtc(static_cast<int64_t>(t)) && log) log->append(hal::EventType::ClockSet, "ntp");
         }
         return;

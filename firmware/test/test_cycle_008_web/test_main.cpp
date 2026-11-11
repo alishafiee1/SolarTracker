@@ -168,6 +168,16 @@ static void status_is_public_and_complete() {
     TEST_ASSERT_FALSE(d["calibrated"].as<bool>());
 }
 
+static void the_clock_auto_tick_defaults_on_and_can_be_switched_off() {
+    Rig r;
+    const std::string c = r.login();
+    TEST_ASSERT_TRUE(parse(r.call(false, "/api/status"))["clockAuto"].as<bool>());
+    TEST_ASSERT_TRUE(parse(r.call(false, "/api/settings", "", c))["clockAuto"].as<bool>());
+    TEST_ASSERT_EQUAL_INT(200, r.call(true, "/api/settings", "{\"clockAuto\":false}", c).status);
+    TEST_ASSERT_FALSE(parse(r.call(false, "/api/status"))["clockAuto"].as<bool>());
+    TEST_ASSERT_FALSE(parse(r.call(false, "/api/settings", "", c))["clockAuto"].as<bool>());
+}
+
 static void status_has_the_live_sun_position_and_the_move_threshold() {
     Rig r;
     JsonDocument d = parse(r.call(false, "/api/status"));
@@ -544,6 +554,7 @@ int main() {
     RUN_TEST(manual_commands_and_their_refusals);
     RUN_TEST(fault_reset_also_clears_a_latched_angle_sensor_fault);
     RUN_TEST(status_has_the_live_sun_position_and_the_move_threshold);
+    RUN_TEST(the_clock_auto_tick_defaults_on_and_can_be_switched_off);
     RUN_TEST(calibration_wizard);
     RUN_TEST(log_lines_come_back_as_json);
     RUN_TEST(network_and_notification_settings_never_return_their_secrets);
