@@ -192,6 +192,7 @@ Response WebApi::status() {
     d["targetDeg"] = s.targetDeg;
     d["windKmh"] = d_.wind.speedKmh();
     d["windStow"] = d_.wind.stow();
+    d["windStowKmh"] = d_.cfg.windStowKmh;  // the configured limit, shown under the wind speed
     d["windSensorFault"] = d_.wind.sensorFault();  // cycle 024
     const power::Info pw = d_.powerInfo();  // cycle 023: null while the pin sees no battery / the charger pin is not wired
     if (pw.batteryKnown) {

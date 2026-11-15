@@ -47,10 +47,10 @@
     <p id="statusText" class="big"></p>
     <div id="dashMove" class="hidden">
       <p class="small">حالت دستی فعال است. دکمه را نگه دارید؛ با رها کردن می‌ایستد.</p>
-      <div class="row ltr">
-        <button id="dMoveWest" class="move">◀ غرب</button>
-        <button id="dMoveStop" class="move stop">توقف</button>
-        <button id="dMoveEast" class="move">شرق ▶</button>
+      <div class="pad">
+        <button id="dMoveWest" class="move west"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M14 6l-6 6 6 6M20 6l-6 6 6 6"/></svg><b>غرب</b><small>نگه دارید</small></button>
+        <button id="dMoveStop" class="move stop"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="5" width="14" height="14" rx="3"/></svg><b>توقف</b></button>
+        <button id="dMoveEast" class="move east"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M10 6l6 6-6 6M4 6l6 6-6 6"/></svg><b>شرق</b><small>نگه دارید</small></button>
       </div>
     </div>
   </div>
@@ -59,7 +59,7 @@
     <div class="li xp" id="rowWind" data-x="wind" role="button" tabindex="0">
       <svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 9h11a3 3 0 1 0-3-3M3 14h15a3 3 0 1 1-3 3M3 19h7"/></svg>
       <span class="t">سرعت باد<small id="windNote"></small></span>
-      <b><span id="wind">—</span><span class="u">کیلومتر بر ساعت</span></b>
+      <div class="v"><b><span id="wind">—</span><span class="u">کیلومتر بر ساعت</span></b><small id="windMax"></small></div>
     </div>
     <div class="li hl" data-help="sunEl" role="button" tabindex="0">
       <svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M5 5l2 2M17 17l2 2M19 5l-2 2M7 17l-2 2"/></svg>
@@ -82,7 +82,7 @@
   <p id="warnReversed" class="warn xp hidden" data-x="warn:reversed">دستگاه برعکسِ فرمان حرکت کرد و ایستاد. یا سیم‌های رلهٔ جهت جابه‌جا بسته شده‌اند، یا در کالیبراسیون «شرق» را به سمت غرب برده‌اید. بازو را دستی آزاد کنید، علت را درست کنید و بعد خطا را ریست کنید.</p>
   <p id="warnAngle" class="warn xp hidden" data-x="warn:angle">هشدار: زاویهٔ دستگاه خارج از محدودهٔ عادی است. حرکت خودکار متوقف است؛ دستگاه را در وضعیت نصب بگذارید. <span id="warnAngleVal" class="ltr"></span></p>
   <p id="warnCal" class="warn xp hidden" data-x="warn:cal">کالیبراسیون لازم است (بخش کنترل، برگه «کالیبراسیون»). <span id="rawG" class="ltr"></span></p>
-  <p class="small">نسخه <bdi dir="ltr" id="fw"></bdi></p>
+  <p class="small">نسخه <bdi dir="ltr" id="fw"></bdi> · <a class="site" href="https://roditeam.ir" target="_blank" rel="noopener" dir="ltr">roditeam.ir</a></p>
 </section>
 
 <section id="manual" class="hidden">
@@ -97,11 +97,11 @@
   <div class="card">
     <h2>حرکت دستی</h2>
     <p class="small">جهت‌ها مثل نمودار داشبورداند: شرق سمت راست، غرب سمت چپ.</p>
-    <div class="row ltr">
-      <button id="moveWest" class="move">◀ غرب</button>
-      <button id="moveStop" class="move stop">توقف</button>
-      <button id="moveEast" class="move">شرق ▶</button>
-    </div>
+    <div class="pad">
+        <button id="moveWest" class="move west"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M14 6l-6 6 6 6M20 6l-6 6 6 6"/></svg><b>غرب</b><small>نگه دارید</small></button>
+        <button id="moveStop" class="move stop"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="5" width="14" height="14" rx="3"/></svg><b>توقف</b></button>
+        <button id="moveEast" class="move east"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M10 6l6 6-6 6M4 6l6 6-6 6"/></svg><b>شرق</b><small>نگه دارید</small></button>
+      </div>
     <p id="manualMsg" class="msg"></p>
   </div>
   <div class="card">

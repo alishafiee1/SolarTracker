@@ -368,6 +368,7 @@ async function poll() {
     $("conn").textContent = "متصل"; $("conn").className = "pill";
     $("wind").innerHTML = ltr(fa(status.windKmh, 1));
     renderPower(status);  // cycle 026: battery and mains in the header
+    $("windMax").textContent = status.windStowKmh != null ? "حداکثر مجاز " + toFa(Number(status.windStowKmh).toFixed(0)) + " کیلومتر بر ساعت" : "";
     $("windNote").textContent = status.windSensorFault ? "بادسنج خطا می‌دهد؛ سیم و سنسور را ببینید" : status.windStow ? "حالت ایمن باد" : "";
     $("rowWind").classList.toggle("bad", !!status.windSensorFault);
     $("segAuto").classList.toggle("on", status.mode !== "manual"); $("segMan").classList.toggle("on", status.mode === "manual");
@@ -445,8 +446,9 @@ async function move(dir) {
 function release() { if (keep) { clearInterval(keep); keep = null; } api("POST", "/api/manual", { dir: "stop" }); }
 for (const [id, dir] of [["moveEast", "east"], ["moveWest", "west"], ["dMoveEast", "east"], ["dMoveWest", "west"]]) {
   const b = $(id);
-  b.onpointerdown = (e) => { e.preventDefault(); b.setPointerCapture(e.pointerId); move(dir); };
-  b.onpointerup = release; b.onpointercancel = release; b.onlostpointercapture = release;
+  const up = () => { b.classList.remove("down"); release(); };
+  b.onpointerdown = (e) => { e.preventDefault(); b.setPointerCapture(e.pointerId); b.classList.add("down"); move(dir); };
+  b.onpointerup = up; b.onpointercancel = up; b.onlostpointercapture = up;
   b.oncontextmenu = (e) => e.preventDefault();
 }
 $("moveStop").onclick = release;

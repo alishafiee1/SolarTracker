@@ -42,7 +42,7 @@ button.mini{min-height:34px;padding:4px 12px}button.wide{width:100%;margin:8px 0
 button:disabled{opacity:.5}
 .row{display:flex;gap:8px;margin:8px 0}.row>button,.row>.btnlink{flex:1}.row.between{justify-content:space-between;align-items:center}.row.ltr{direction:ltr}
 .seg{display:flex;border:1px solid var(--line);border-radius:10px;overflow:hidden;margin:0 0 8px}.seg button{flex:1;border:0;border-radius:0}.seg button.on{background:var(--accent);color:#000;font-weight:600}
-.move{height:84px;font-size:1.2rem;touch-action:none;user-select:none;-webkit-user-select:none;direction:rtl}.move.stop{background:var(--bad);color:#fff;border-color:var(--bad)}
+.move{touch-action:none;user-select:none;-webkit-user-select:none;direction:rtl}
 label{display:block;color:var(--mute);font-size:.9rem}
 input,select{width:100%;font:inherit;padding:9px;border-radius:8px;border:1px solid var(--line);background:var(--bg);color:var(--ink);min-height:44px}
 input[type=checkbox]{width:auto;min-height:0}
@@ -160,3 +160,19 @@ header{flex-wrap:wrap;gap:6px}
 .mseg i{font-style:normal;font-size:.8rem;padding:2px 12px;border-radius:99px;color:var(--mute)}.mseg i.on{background:var(--accent);color:#111;font-weight:700}
 .xbox{margin:-4px 0 12px}
 .warn.xp,.faultBar .xp,.tile.xp{cursor:pointer}
+
+/* manual move pad (cycle 031): big hold-to-move keys with arrows, a round stop key between them */
+.pad{display:grid;grid-template-columns:1fr 78px 1fr;gap:10px;align-items:center;margin:10px 0;direction:ltr}
+.pad .move{min-height:0;height:92px;border-radius:22px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px;font-weight:700;font-size:1.05rem;
+  background:linear-gradient(180deg,var(--card),color-mix(in srgb,var(--accent) 12%,var(--card)));border:1.5px solid color-mix(in srgb,var(--accent) 55%,var(--line));
+  box-shadow:0 3px 0 color-mix(in srgb,var(--accent) 35%,var(--line));transition:transform .08s,box-shadow .08s,background .15s}
+.pad .move svg{width:30px;height:30px;stroke:var(--accent);fill:none;stroke-width:2.6;stroke-linecap:round;stroke-linejoin:round}
+.pad .move b{font-weight:700}.pad .move small{font-size:.7rem;font-weight:400;color:var(--mute)}
+.pad .move.down{transform:translateY(3px);box-shadow:0 0 0 transparent;background:var(--accent);color:#111}.pad .move.down svg{stroke:#111}.pad .move.down small{color:#111}
+.pad .move.stop{width:78px;height:78px;border-radius:50%;padding:0;background:var(--bad);color:#fff;border-color:var(--bad);box-shadow:0 3px 0 color-mix(in srgb,var(--bad) 55%,#000);font-size:.78rem}
+.pad .move.stop svg{width:22px;height:22px;stroke:none;fill:#fff}
+.pad .move.stop:active{transform:translateY(3px);box-shadow:none}
+/* wind row: the configured limit under the speed; clock centred in its row */
+.info .hero{align-items:center}
+.info .v{display:flex;flex-direction:column;align-items:flex-end;gap:1px}.info .v small{color:var(--mute);font-size:.72rem;white-space:nowrap}.info .v small:empty{display:none}
+a.site{color:var(--mute)}
