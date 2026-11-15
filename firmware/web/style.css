@@ -176,3 +176,7 @@ header{flex-wrap:wrap;gap:6px}
 .info .hero{align-items:center}
 .info .v{display:flex;flex-direction:column;align-items:flex-end;gap:1px}.info .v small{color:var(--mute);font-size:.72rem;white-space:nowrap}.info .v small:empty{display:none}
 a.site{color:var(--mute)}
+
+/* logo (cycle 032) */
+h1.logo{display:flex;align-items:center;margin:0;color:var(--ink);line-height:1}
+h1.logo svg{display:block}
