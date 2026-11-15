@@ -38,6 +38,7 @@ struct Rig {
     control::ControlStateMachine sm;
     control::Inputs in;
     float angle = 0.0f;
+    bool reversedWiring = false;  // the direction relay moves the panel the other way
     bool stuck = false;  // the arm is jammed: the relays switch but the panel does not move
     const float speedDegPerS = 0.6f;
     int powerOns = 0;
@@ -57,7 +58,7 @@ struct Rig {
             time.advance(100);
             in.utcEpoch += 0;  // the sun hardly moves in a test; tests that need it advance utc themselves
             const bool wasOn = relays.power();
-            if (wasOn && !stuck) angle += (relays.direction() == hal::Dir::West ? 1.0f : -1.0f) * speedDegPerS * 0.1f;
+            if (wasOn && !stuck) angle += (relays.direction() == hal::Dir::West ? 1.0f : -1.0f) * (reversedWiring ? -1.0f : 1.0f) * speedDegPerS * 0.1f;
             in.angleDeg = angle;
             sm.tick(time.nowMs(), in);
             if (!wasOn && relays.power()) ++powerOns;
@@ -312,6 +313,29 @@ static void a_jammed_arm_gives_three_tries_then_a_fault() {
     TEST_ASSERT_TRUE(logged);
 }
 
+static void a_reversed_direction_latches_at_once_and_says_so() {  // cycle 022
+    Rig r;
+    r.angle = sunTarget(r.in.utcEpoch) + 15.0f;
+    r.reversedWiring = true;
+    r.run(30000);
+    TEST_ASSERT_EQUAL(static_cast<int>(FaultCode::Stall), static_cast<int>(r.sm.fault()));
+    TEST_ASSERT_EQUAL_INT(1, r.powerOns);  // no second try towards the stop
+    TEST_ASSERT_TRUE(r.st().reversedHint);
+    TEST_ASSERT_FALSE(r.relays.power());
+    r.reversedWiring = false;
+    r.sm.command(Command::ResetFault, r.time.nowMs());
+    TEST_ASSERT_FALSE(r.st().reversedHint);
+}
+
+static void a_plain_jam_is_not_called_reversed() {
+    Rig r;
+    r.angle = sunTarget(r.in.utcEpoch) + 15.0f;
+    r.stuck = true;
+    r.run(70000);
+    TEST_ASSERT_EQUAL(static_cast<int>(FaultCode::Stall), static_cast<int>(r.sm.fault()));
+    TEST_ASSERT_FALSE(r.st().reversedHint);
+}
+
 static void fault_reset_lets_the_loop_try_again() {
     Rig r;
     const float target = sunTarget(r.in.utcEpoch);
@@ -422,6 +446,8 @@ int main() {
     RUN_TEST(out_of_range_angle_stops_auto_but_not_manual_and_is_no_fault);
     RUN_TEST(no_automatic_move_while_the_clock_is_not_set);
     RUN_TEST(a_jammed_arm_gives_three_tries_then_a_fault);
+    RUN_TEST(a_reversed_direction_latches_at_once_and_says_so);
+    RUN_TEST(a_plain_jam_is_not_called_reversed);
     RUN_TEST(fault_reset_lets_the_loop_try_again);
     RUN_TEST(a_move_with_progress_does_not_count_as_a_stall);
     RUN_TEST(wind_gets_one_stow_attempt_even_after_a_stall_fault);

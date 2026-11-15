@@ -59,6 +59,7 @@
   <p class="helptext hidden" id="h_sunEl"></p>
   <p id="warnDefault" class="warn hidden">رمز پیش‌فرض را عوض کنید (بخش تنظیمات، برگه «رمز»).</p>
   <p id="warnClock" class="warn hidden">ساعت تنظیم نشده است؛ ردیابی خودکار تا تنظیم ساعت کار نمی‌کند (بخش تنظیمات، برگه «ساعت»).</p>
+  <p id="warnReversed" class="warn hidden">دستگاه برعکسِ فرمان حرکت کرد و ایستاد. یا سیم‌های رلهٔ جهت جابه‌جا بسته شده‌اند، یا در کالیبراسیون «شرق» را به سمت غرب برده‌اید. بازو را دستی آزاد کنید، علت را درست کنید و بعد خطا را ریست کنید.</p>
   <p id="warnAngle" class="warn hidden">هشدار: زاویهٔ دستگاه خارج از محدودهٔ عادی است. حرکت خودکار متوقف است؛ دستگاه را در وضعیت نصب بگذارید. <span id="warnAngleVal" class="ltr"></span></p>
   <p id="warnCal" class="warn hidden">کالیبراسیون لازم است (بخش کنترل، برگه «کالیبراسیون»). <span id="rawG" class="ltr"></span></p>
   <p class="small">نسخه <bdi dir="ltr" id="fw"></bdi> · زمان دستگاه <bdi dir="ltr" id="devTime">—</bdi> · وای‌فای محل: <bdi id="staState">—</bdi></p>
@@ -145,7 +146,7 @@
     <p class="small">زاویه‌سنج روی برد است و جعبه با هر جهتی بسته می‌شود؛ این دو مرحله جهت و صفر را پیدا می‌کنند.</p>
     <p id="liveAngle" class="small"></p>
     <div class="step"><span class="n">۱</span><p>پنل را افقی بگذارید و ۵ ثانیه ثابت نگه دارید.</p><button id="calH">ثبت حالت افقی</button></div>
-    <div class="step"><span class="n">۲</span><p>پنل را ۵ تا ۲۰ درجه به سمت شرق ببرید و ۵ ثانیه ثابت نگه دارید.</p><button id="calE">ثبت حالت شرق</button></div>
+    <div class="step"><span class="n">۲</span><p>پنل را ۵ تا ۲۰ درجه به سمت <b>شرق واقعی</b> (سمت طلوع خورشید) ببرید و ۵ ثانیه ثابت نگه دارید.</p><button id="calE">ثبت حالت شرق</button></div>
     <div class="step"><span class="n">۳</span><p>هر دو مرحله ثبت شد؟ کالیبراسیون را ذخیره کنید.</p><button id="calSave" class="primary">ذخیره کالیبراسیون</button></div>
     <p id="calMsg" class="msg"></p>
   </div>

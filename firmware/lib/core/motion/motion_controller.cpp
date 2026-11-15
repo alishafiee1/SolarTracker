@@ -181,6 +181,15 @@ void MotionController::tick(uint32_t nowMs, float angleDeg, float currentA) {
             break;
     }
 
+    // Cycle 022: CH2 energised means west. When nothing is asked and CH1 is off, release it so the coil does not stay powered for hours.
+    // R8 holds (CH1 off, not Running); the next move sets CH2 again in its own Selecting step (R2), so nothing else changes.
+    // It waits kReleaseAfterIdleMs of real idleness first: a target that flickers around the move threshold must not click CH2 on and off.
+    if (state_ != State::Idle || hasPending_ || relays_.power()) idleSinceMs_ = nowMs;
+    if (state_ == State::Idle && !hasPending_ && !relays_.power() && relays_.direction() == hal::Dir::West &&
+        elapsed(nowMs, idleSinceMs_) >= kReleaseAfterIdleMs) {
+        relays_.setDirection(hal::Dir::East);
+    }
+
     if (state_ == State::Idle && hasPending_) {
         if (pending_.kind == Cmd::Kind::Stop) {
             hasPending_ = false;

@@ -29,6 +29,7 @@ public:
     // R9: starts in Settling with a full stopSettleMs, so the first move is never immediate.
     MotionController(hal::IRelays& relays, const Timing& timing, uint32_t nowMs);
 
+    static constexpr uint32_t kReleaseAfterIdleMs = 60000;  // cycle 022
     void setEventLog(hal::IEventLog* log) { log_ = log; }
     void setTiming(const Timing& timing) { timing_ = timing; }
 
@@ -77,6 +78,7 @@ private:
     uint32_t moveStartMs_ = 0;
     uint32_t lastMoveEndMs_ = 0;
 
+    uint32_t idleSinceMs_ = 0;  // cycle 022: when the controller last was busy; CH2 is released after a calm minute
     bool hasPending_ = false;
     Cmd pending_ = Cmd::stop();
 

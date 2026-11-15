@@ -202,6 +202,7 @@ Response WebApi::status() {
     d["clockValid"] = d_.clockValid();
     d["calibrated"] = d_.angle.calibrated();
     d["angleWarning"] = s.angleWarning;
+    d["reversedHint"] = s.reversedHint;
     {
         float live = 0.0f;
         if (d_.angle.liveAngle(live)) d["liveAngleDeg"] = live;

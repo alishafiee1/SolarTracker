@@ -322,6 +322,67 @@ static void move_start_and_end_are_logged() {
     TEST_ASSERT_TRUE(end);
 }
 
+// Cycle 022: CH2 (west) is released once the move is over and nothing else is asked.
+static void the_direction_relay_is_released_after_a_west_move() {
+    Rig r;
+    startRunning(r, Dir::West);
+    r.run(1000);
+    TEST_ASSERT_TRUE(r.relays.direction() == Dir::West);  // still energised while moving
+    r.ctrl.request(Cmd::stop());
+    r.run(200);
+    TEST_ASSERT_FALSE(r.relays.power());
+    r.run(30000);  // a calm idle time is needed first, so a flickering target cannot click the relay
+    TEST_ASSERT_TRUE_MESSAGE(r.relays.direction() == Dir::West, "CH2 is not released within the first 30 s");
+    r.run(35000);
+    TEST_ASSERT_TRUE_MESSAGE(r.relays.direction() == Dir::East, "CH2 must be de-energised when idle");
+    // CH2 never changed while CH1 was on.
+    bool prevPower = false;
+    Dir prevDir = Dir::East;
+    for (const auto& w : r.relays.writes()) {
+        if (w.dir != prevDir) TEST_ASSERT_FALSE_MESSAGE(prevPower, "CH2 changed while CH1 was on");
+        prevPower = w.power;
+        prevDir = w.dir;
+    }
+}
+
+static void a_waiting_west_request_keeps_the_direction_relay_and_east_never_energises_it() {
+    Rig r;
+    startRunning(r, Dir::West);
+    r.run(500);
+    r.ctrl.request(Cmd::stop());
+    r.run(100);
+    r.ctrl.request(Cmd::move(Dir::West));  // held by the 10 s gap, so it waits with CH2 set
+    r.run(5000);
+    TEST_ASSERT_TRUE_MESSAGE(r.relays.direction() == Dir::West, "a pending west move keeps CH2");
+    r.runUntil([&] { return r.ctrl.state() == State::Running; }, 15000);
+    TEST_ASSERT_TRUE(r.relays.direction() == Dir::West);
+    r.ctrl.request(Cmd::stop());
+    r.run(4000);
+    r.ctrl.request(Cmd::move(Dir::East));
+    r.run(15000);
+    TEST_ASSERT_TRUE(r.relays.direction() == Dir::East);
+}
+
+static void a_flickering_target_does_not_click_the_direction_relay() {
+    Rig r;
+    startRunning(r, Dir::West);
+    r.run(500);
+    r.ctrl.request(Cmd::stop());
+    r.run(4000);
+    size_t before = r.relays.writes().size();
+    for (int i = 0; i < 20; ++i) {  // the target appears and disappears every few seconds, like an angle at the threshold
+        r.ctrl.request(Cmd::move(Dir::West));
+        r.run(100);
+        r.ctrl.request(Cmd::stop());
+        r.run(4000);
+    }
+    int dirChanges = 0;
+    Dir prev = Dir::West;
+    for (size_t i = before; i < r.relays.writes().size(); ++i)
+        if (r.relays.writes()[i].dir != prev) { ++dirChanges; prev = r.relays.writes()[i].dir; }
+    TEST_ASSERT_EQUAL_INT_MESSAGE(0, dirChanges, "CH2 must not click while the target flickers");
+}
+
 int main() {
     UNITY_BEGIN();
     RUN_TEST(start_sequence_direction_then_power);
@@ -339,5 +400,8 @@ int main() {
     RUN_TEST(same_direction_request_while_running_is_ignored);
     RUN_TEST(latest_request_wins_while_held);
     RUN_TEST(move_start_and_end_are_logged);
+    RUN_TEST(the_direction_relay_is_released_after_a_west_move);
+    RUN_TEST(a_flickering_target_does_not_click_the_direction_relay);
+    RUN_TEST(a_waiting_west_request_keeps_the_direction_relay_and_east_never_energises_it);
     return UNITY_END();
 }

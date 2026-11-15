@@ -49,7 +49,7 @@
 
 ## قواعدی که همه باید بدانند
 
-- Safety first: relays are OFF after every boot, reset and watchdog trip; CH2 (direction) never switches under load; every timing interlock also applies in manual and wind modes.
+- Safety first: relays are OFF after every boot, reset and watchdog trip; CH2 (direction) never switches under load and is released (east = off) when idle; every timing interlock also applies in manual and wind modes.
 - Angles are in degrees. Panel rotation `R` is positive towards **west**; 0° = horizontal (stow).
 - New subfolders of `lib/core` must be added to `-I` in `platformio.ini` (and `lib/core/library.json`); the library is named in `lib_deps` because PlatformIO's dependency finder does not see headers in subfolders. Native tests need `-DUNITY_INCLUDE_DOUBLE` (set in the `native` env), otherwise Unity's double asserts always fail.
 - Time is stored and computed in UTC; only the web panel shows local time.

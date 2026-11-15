@@ -292,6 +292,7 @@ async function poll() {
     $("warnDefault").classList.toggle("hidden", !status.passwordIsDefault);
     $("warnClock").classList.toggle("hidden", status.clockValid);
     $("warnCal").classList.toggle("hidden", status.calibrated);
+    $("warnReversed").classList.toggle("hidden", !status.reversedHint);
     $("warnAngle").classList.toggle("hidden", !status.angleWarning);
     if (status.angleWarning && status.liveAngleDeg != null) $("warnAngleVal").innerHTML = degTxt(status.liveAngleDeg);
     const live = status.liveAngleDeg;

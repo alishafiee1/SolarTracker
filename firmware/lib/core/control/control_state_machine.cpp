@@ -85,6 +85,7 @@ CommandResult ControlStateMachine::command(Command cmd, uint32_t nowMs) {
             if (fault_ != FaultCode::None && log_) log_->append(hal::EventType::FaultReset, faultName(fault_));
             fault_ = FaultCode::None;
             stallAttempts_ = 0;
+            reversed_ = false;
             stowFailed_ = false;
             motion_.clearFault();
             return CommandResult::Ok;
@@ -210,6 +211,11 @@ void ControlStateMachine::watchStall(uint32_t nowMs, const Inputs& in) {
         return;
     }
     motion_.request(motion::Cmd::stop());
+    if (progress <= -kStallProgressDeg) {  // cycle 022: it went the other way. Retrying would only drive it towards the stop, so latch at once.
+        reversed_ = true;
+        if (fault_ == FaultCode::None) latch(FaultCode::Stall, nowMs, "stall: angle moved against the command (direction reversed: relay wiring or east calibration)");
+        return;
+    }
     ++stallAttempts_;
     stallRefMs_ = nowMs;
     // Manual moves and the single stow attempt after a fault are not retried.
@@ -284,6 +290,7 @@ Status ControlStateMachine::status(uint32_t nowMs) const {
     s.angleDeg = in_.angleDeg;
     s.targetDeg = hasTarget_ ? target_ : in_.angleDeg;
     s.angleWarning = in_.calibrated && in_.angleOk && in_.angleOutOfRange;
+    s.reversedHint = fault_ == FaultCode::Stall && reversed_;
     s.moving = motion_.running();
     const bool dirOut = motion_.state() == motion::State::Selecting || motion_.state() == motion::State::Running;
     s.cmdDir = !dirOut ? 0 : motion_.direction() == hal::Dir::East ? 1 : 2;

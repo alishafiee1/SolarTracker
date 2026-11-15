@@ -70,6 +70,7 @@ struct Status {
     bool moving;
     uint32_t waitS;    // seconds until a pending move may start (safety delay)
     bool angleWarning; // cycle 019: the angle is out of the normal range (not a fault)
+    bool reversedHint; // cycle 022: the stall fault came from an angle that moved AGAINST the command (wiring or east calibration reversed)
     uint8_t cmdDir;    // direction output selected for a move: 0 none, 1 east, 2 west (set while the move starts and while it runs)
 };
 
@@ -127,6 +128,7 @@ private:
     uint32_t stallRefMs_ = 0;
     hal::Dir stallDir_ = hal::Dir::East;
     uint8_t stallAttempts_ = 0;
+    bool reversed_ = false;  // see Status::reversedHint
     // The jack's own limit switch stopped it (module 009): do not push the same way again until the panel has left that end.
     bool limitActive_ = false;
     hal::Dir limitDir_ = hal::Dir::East;

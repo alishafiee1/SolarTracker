@@ -2,7 +2,7 @@
 
 Usage:  python firmware/tools/ota_push.py <ip> [file] [--password PW]
   file      default: .pio/build/esp32dev/firmware.signed.bin (use firmware.bin for a device that has no signing key yet)
-  password  default: environment SUNTRACKER_PASSWORD, else DEFAULT_PANEL_PASSWORD from src/secrets.h
+  password  default: environment SUNTRACKER_PASSWORD, else firmware/.panel_password (tools/save_password.py), else DEFAULT_PANEL_PASSWORD from src/secrets.h
 It logs in, uploads, waits for the restart and checks that the device now reports the new version.
 Needs only the Python standard library. Exit code 0 = new version is running.
 """
@@ -22,6 +22,12 @@ ROOT = os.path.dirname(HERE)
 def default_password():
     if os.environ.get("SUNTRACKER_PASSWORD"):
         return os.environ["SUNTRACKER_PASSWORD"]
+    try:  # saved with tools/save_password.py
+        saved = open(os.path.join(ROOT, ".panel_password"), encoding="utf-8").read().strip()
+        if saved:
+            return saved
+    except OSError:
+        pass
     try:
         text = open(os.path.join(ROOT, "src", "secrets.h"), encoding="utf-8").read()
         m = re.search(r'#define\s+DEFAULT_PANEL_PASSWORD\s+"([^"]*)"', text)
