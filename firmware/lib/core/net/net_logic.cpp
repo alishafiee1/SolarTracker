@@ -86,6 +86,8 @@ bool shouldSetClockFromNtp(int64_t rtcUtc, bool rtcValid, int64_t ntpUtc) {
     return diff > 2;
 }
 
+bool ntpSetAllowed(bool everSet, uint32_t nowMs, uint32_t lastSetMs) { return !everSet || nowMs - lastSetMs >= kNtpSetGapMs; }
+
 bool validate(const NetConfig& c, const char** badField) {
     auto bad = [&](const char* f) {
         if (badField) *badField = f;

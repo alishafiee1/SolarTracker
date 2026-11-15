@@ -249,6 +249,36 @@ static void manual_works_without_a_calibration_but_auto_does_not() {
     TEST_ASSERT_FALSE(r.relays.power());
 }
 
+// Cycle 019: an out-of-range angle stops the automatic movement with a warning; manual still works; it is not a fault.
+static void out_of_range_angle_stops_auto_but_not_manual_and_is_no_fault() {
+    Rig r;
+    r.angle = 20.0f;
+    r.in.angleOutOfRange = true;
+    r.run(60000);
+    TEST_ASSERT_EQUAL(static_cast<int>(StatusText::AngleOutOfRange), static_cast<int>(r.st().text));
+    TEST_ASSERT_TRUE(r.st().angleWarning);
+    TEST_ASSERT_EQUAL(static_cast<int>(control::FaultCode::None), static_cast<int>(r.st().fault));
+    TEST_ASSERT_FALSE(r.relays.power());  // no tracking on a doubtful angle
+
+    r.sm.command(Command::ModeManual, r.time.nowMs());
+    r.run(4000);
+    r.sm.command(Command::ManualWest, r.time.nowMs());
+    for (int i = 0; i < 4; ++i) {
+        r.run(1000);
+        r.sm.command(Command::KeepAlive, r.time.nowMs());
+    }
+    TEST_ASSERT_TRUE(r.relays.power());  // the installer can still move it by hand
+    TEST_ASSERT_TRUE(r.st().angleWarning);
+    r.sm.command(Command::ManualStop, r.time.nowMs());
+    r.run(4000);
+
+    r.sm.command(Command::ModeAuto, r.time.nowMs());
+    r.in.angleOutOfRange = false;  // back in the normal range: the warning goes and tracking continues
+    r.run(60000);
+    TEST_ASSERT_FALSE(r.st().angleWarning);
+    TEST_ASSERT_TRUE(r.st().text != StatusText::AngleOutOfRange);
+}
+
 // ------------------------------------------------------------ R7 clock
 static void no_automatic_move_while_the_clock_is_not_set() {
     Rig r;
@@ -389,6 +419,7 @@ int main() {
     RUN_TEST(manual_stop_command_stops_at_once);
     RUN_TEST(manual_stops_at_the_angle_limit);
     RUN_TEST(manual_works_without_a_calibration_but_auto_does_not);
+    RUN_TEST(out_of_range_angle_stops_auto_but_not_manual_and_is_no_fault);
     RUN_TEST(no_automatic_move_while_the_clock_is_not_set);
     RUN_TEST(a_jammed_arm_gives_three_tries_then_a_fault);
     RUN_TEST(fault_reset_lets_the_loop_try_again);

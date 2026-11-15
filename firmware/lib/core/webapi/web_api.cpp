@@ -95,6 +95,7 @@ std::string statusTextFa(control::StatusText t, uint32_t waitS) {
         case T::FaultWireBreak: return "خطا: قطع سیم جک";
         case T::FaultRelayStuck: return "خطا: رله چسبیده — برق جک را دستی قطع کنید";
         case T::FaultOvercurrent: return "خطا: اضافه جریان";
+        case T::AngleOutOfRange: return "هشدار: زاویه خارج از محدوده است — حرکت خودکار متوقف";
     }
     return "";
 }
@@ -138,6 +139,8 @@ Response WebApi::handle(const Request& req) {
     }
     if (!req.post && p == "/api/calibrate") return getCalibrate();
     if (req.post && p.rfind("/api/calibrate/", 0) == 0) return calibrate(req, p.substr(15));
+    if (!req.post && p == "/api/offsets") return getOffsets();
+    if (req.post && p.rfind("/api/offsets/", 0) == 0) return offsets(p.substr(13));
     if (!req.post && p == "/api/log") return getLog(req);
     if (!req.post && p == "/api/network") return getNetwork();
     if (req.post && p == "/api/network") return postNetwork(req);
@@ -193,9 +196,15 @@ Response WebApi::status() {
     d["waitingS"] = s.waitS;
     d["clockValid"] = d_.clockValid();
     d["calibrated"] = d_.angle.calibrated();
+    d["angleWarning"] = s.angleWarning;
+    {
+        float live = 0.0f;
+        if (d_.angle.liveAngle(live)) d["liveAngleDeg"] = live;
+        else d["liveAngleDeg"] = nullptr;
+    }
     d["clockAuto"] = d_.cfg.clockAuto;
     {
-        const hal::Vec3& g = d_.angle.lastGravity();
+        const hal::Vec3& g = d_.angle.lastGravityRaw();  // raw: the panel shows the live face before any offset exists
         JsonArray ga = d["gravity"].to<JsonArray>();
         ga.add(g.x);
         ga.add(g.y);
@@ -396,7 +405,7 @@ Response WebApi::postManual(const Request& req) {
 }
 
 Response WebApi::getCalibrate() {
-    static const char* const names[] = {"ok", "pending", "moving", "too-small-angle", "too-large-angle", "bad-gravity", "sensor-fault", "not-captured"};
+    static const char* const names[] = {"ok", "pending", "moving", "too-small-angle", "too-large-angle", "bad-gravity", "sensor-fault", "not-captured", "bad-face"};
     JsonDocument d;
     d["capturing"] = d_.angle.capturing();
     d["result"] = names[static_cast<int>(d_.angle.captureResult())];
@@ -420,6 +429,42 @@ Response WebApi::calibrate(const Request& req, const std::string& step) {
         d_.angle.setCreatedUtc(static_cast<uint32_t>(d_.utcNow()));
         if (!d_.angle.saveTo(d_.blobs)) return error(500, "save-failed", "ذخیره ناموفق بود");
         d_.log.append(hal::EventType::SettingsChange, "angle calibration saved");
+        return ok();
+    }
+    return error(404, "not-found", "پیدا نشد");
+}
+
+Response WebApi::getOffsets() {
+    static const char* const names[] = {"ok", "pending", "moving", "too-small-angle", "too-large-angle", "bad-gravity", "sensor-fault", "not-captured", "bad-face"};
+    JsonDocument d;
+    d["capturing"] = d_.angle.capturing();
+    d["result"] = names[static_cast<int>(d_.angle.captureResult())];
+    d["faces"] = d_.angle.faceMask();
+    d["saved"] = d_.angle.offsetsSaved();
+    const angle::AngleOffsets& o = d_.angle.offsets();
+    JsonArray off = d["offset"].to<JsonArray>();
+    JsonArray sc = d["scale"].to<JsonArray>();
+    for (int k = 0; k < 3; ++k) {
+        off.add(o.offset[k]);
+        sc.add(o.scale[k]);
+    }
+    return json(200, d);
+}
+
+Response WebApi::offsets(const std::string& step) {
+    if (step == "capture") {
+        d_.angle.beginFaceCapture();
+        return getOffsets();
+    }
+    if (step == "save") {
+        if (d_.angle.faceMask() != 0x3F) return error(409, "faces-missing", "ابتدا هر شش وجه را ثبت کنید");
+        if (!d_.angle.saveOffsets(d_.blobs)) return error(409, "bad-offsets", "ضریب سنسور خارج از محدوده است؛ شش وجه را دوباره ثبت کنید");
+        d_.log.append(hal::EventType::SettingsChange, "sensor offsets saved");
+        return ok();
+    }
+    if (step == "reset") {
+        if (!d_.angle.resetOffsets(d_.blobs)) return error(500, "save-failed", "ذخیره ناموفق بود");
+        d_.log.append(hal::EventType::SettingsChange, "sensor offsets reset");
         return ok();
     }
     return error(404, "not-found", "پیدا نشد");

@@ -59,6 +59,7 @@
   <p class="helptext hidden" id="h_sunEl"></p>
   <p id="warnDefault" class="warn hidden">رمز پیش‌فرض را عوض کنید (بخش تنظیمات، برگه «رمز»).</p>
   <p id="warnClock" class="warn hidden">ساعت تنظیم نشده است؛ ردیابی خودکار تا تنظیم ساعت کار نمی‌کند (بخش تنظیمات، برگه «ساعت»).</p>
+  <p id="warnAngle" class="warn hidden">هشدار: زاویهٔ دستگاه خارج از محدودهٔ عادی است. حرکت خودکار متوقف است؛ دستگاه را در وضعیت نصب بگذارید. <span id="warnAngleVal" class="ltr"></span></p>
   <p id="warnCal" class="warn hidden">کالیبراسیون لازم است (بخش کنترل، برگه «کالیبراسیون»). <span id="rawG" class="ltr"></span></p>
   <p class="small">نسخه <bdi dir="ltr" id="fw"></bdi> · زمان دستگاه <bdi dir="ltr" id="devTime">—</bdi> · وای‌فای محل: <bdi id="staState">—</bdi></p>
 </section>
@@ -127,8 +128,17 @@
 
 <section id="calib" class="hidden">
   <div class="card">
+    <h2>آفست‌گیری سنسور <small>(یک بار، قبل از نصب)</small></h2>
+    <p class="small">سنسور روی هر محور کمی انحراف دارد. دستگاه را هر بار روی یکی از شش وجهش بگذارید و ۵ ثانیه ثابت نگه دارید. پنل خودش وجه را تشخیص می‌دهد: مربع زرد یعنی «الان روی این وجه است» و سبز یعنی ثبت شده. جعبه را قبل از بستن، با برد صاف روی میز، انجام دهید.</p>
+    <svg id="cube" viewBox="0 0 272 204" role="img" aria-label="شش وجه دستگاه"></svg>
+    <p id="liveG" class="small"></p>
+    <div class="row"><button id="offCap">ثبت وجه فعلی</button><button id="offSave" class="primary">ذخیره آفست‌ها</button><button id="offReset">پاک کردن</button></div>
+    <p id="offMsg" class="msg"></p>
+  </div>
+  <div class="card">
     <h2>کالیبراسیون زاویه‌سنج</h2>
     <p class="small">زاویه‌سنج روی برد است و جعبه با هر جهتی بسته می‌شود؛ این دو مرحله جهت و صفر را پیدا می‌کنند.</p>
+    <p id="liveAngle" class="small"></p>
     <div class="step"><span class="n">۱</span><p>پنل را افقی بگذارید و ۵ ثانیه ثابت نگه دارید.</p><button id="calH">ثبت حالت افقی</button></div>
     <div class="step"><span class="n">۲</span><p>پنل را ۵ تا ۲۰ درجه به سمت شرق ببرید و ۵ ثانیه ثابت نگه دارید.</p><button id="calE">ثبت حالت شرق</button></div>
     <div class="step"><span class="n">۳</span><p>هر دو مرحله ثبت شد؟ کالیبراسیون را ذخیره کنید.</p><button id="calSave" class="primary">ذخیره کالیبراسیون</button></div>

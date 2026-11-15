@@ -130,6 +130,10 @@ bool ControlStateMachine::autoTarget(const Inputs& in, ActiveState s, float& tar
         inactiveReason_ = StatusText::NeedCalibration;
         return false;
     }
+    if (in.angleOutOfRange) {  // cycle 019: the stow and tracking targets depend on an angle that cannot be trusted now
+        inactiveReason_ = StatusText::AngleOutOfRange;
+        return false;
+    }
     if (s == ActiveState::Wind) {
         target = 0.0f;
         return true;
@@ -279,6 +283,7 @@ Status ControlStateMachine::status(uint32_t nowMs) const {
     s.fault = fault_;
     s.angleDeg = in_.angleDeg;
     s.targetDeg = hasTarget_ ? target_ : in_.angleDeg;
+    s.angleWarning = in_.calibrated && in_.angleOk && in_.angleOutOfRange;
     s.moving = motion_.running();
     const bool dirOut = motion_.state() == motion::State::Selecting || motion_.state() == motion::State::Running;
     s.cmdDir = !dirOut ? 0 : motion_.direction() == hal::Dir::East ? 1 : 2;

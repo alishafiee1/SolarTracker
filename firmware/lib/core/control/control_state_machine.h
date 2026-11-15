@@ -43,6 +43,7 @@ enum class StatusText : uint8_t {
     FaultWireBreak,
     FaultRelayStuck,
     FaultOvercurrent,
+    AngleOutOfRange,  // cycle 019: the angle is beyond +-60 degrees; automatic movement stops, it is a warning not a fault
 };
 
 enum class Command : uint8_t { ModeAuto, ModeManual, ManualEast, ManualWest, ManualStop, KeepAlive, ResetFault };
@@ -51,6 +52,7 @@ enum class CommandResult : uint8_t { Ok, NotInManualMode, WindActive, FaultActiv
 struct Inputs {
     float angleDeg = 0.0f;
     bool angleOk = true;
+    bool angleOutOfRange = false;  // cycle 019
     bool calibrated = true;
     int64_t utcEpoch = 0;
     bool clockValid = true;
@@ -67,6 +69,7 @@ struct Status {
     float targetDeg;   // meaningful in Auto, Night and Wind
     bool moving;
     uint32_t waitS;    // seconds until a pending move may start (safety delay)
+    bool angleWarning; // cycle 019: the angle is out of the normal range (not a fault)
     uint8_t cmdDir;    // direction output selected for a move: 0 none, 1 east, 2 west (set while the move starts and while it runs)
 };
 

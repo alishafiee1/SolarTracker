@@ -44,8 +44,13 @@ void SiteNet::service(uint32_t nowMs, hal::IClock& rtc, bool rtcValid, hal::IEve
             configTime(0, 0, "pool.ntp.org", "time.google.com");
         }
         const time_t t = time(nullptr);
-        if (setClockFromNtp && ntpStarted_ && t > 1704067200 && net::shouldSetClockFromNtp(rtc.utc(), rtcValid, static_cast<int64_t>(t))) {
-            if (rtc.setUtc(static_cast<int64_t>(t)) && log) log->append(hal::EventType::ClockSet, "ntp");
+        if (setClockFromNtp && ntpStarted_ && t > 1704067200 && net::ntpSetAllowed(clockSetOnce_, nowMs, lastClockSetMs_) &&
+            net::shouldSetClockFromNtp(rtc.utc(), rtcValid, static_cast<int64_t>(t))) {
+            if (rtc.setUtc(static_cast<int64_t>(t))) {
+                clockSetOnce_ = true;
+                lastClockSetMs_ = nowMs;
+                if (log) log->append(hal::EventType::ClockSet, "ntp");
+            }
         }
         return;
     }

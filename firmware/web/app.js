@@ -146,27 +146,70 @@ $("logoutBtn").onclick = async () => { await api("POST", "/api/logout", {}); set
 // ---- gauge ----
 const NS = "http://www.w3.org/2000/svg";
 const pt = (a, r) => { const t = (a * Math.PI) / 180; return [160 + r * Math.sin(t), 150 - r * Math.cos(t)]; };
+const SC = { orbit: 120, range: 96 };  // radius of the sun's path and of the panel's working arc around the hub (160, 150)
+const SCENE = "#dbe6f0";                // the sky is dark in both themes, so its labels are fixed
 function buildGauge() {
-  const [x1, y1] = pt(limits.min, 118), [x2, y2] = pt(limits.max, 118);
-  const lab = (a, txt) => { const [x, y] = pt(a, 138); return `<text x="${x}" y="${y}" text-anchor="middle" font-size="12" fill="var(--mute)">${txt}</text>`; };
+  const [x1, y1] = pt(limits.min, SC.range), [x2, y2] = pt(limits.max, SC.range);
+  const [o1x, o1y] = pt(-90, SC.orbit), [o2x, o2y] = pt(90, SC.orbit);
+  const lab = (a, txt) => { const [x, y] = pt(a, SC.range - 16); return `<text x="${x}" y="${y}" text-anchor="middle" font-size="11" fill="${SCENE}" fill-opacity=".8">${txt}</text>`; };
+  const stars = [[50, 30], [110, 18], [230, 26], [286, 54], [200, 70], [78, 76], [140, 52]].map(([x, y]) => `<circle cx="${x}" cy="${y}" r="1.4" fill="#fff"/>`).join("");
+  const rays = Array.from({ length: 8 }, (_, i) => { const a = (i * Math.PI) / 4; return `<line x1="${(17 * Math.cos(a)).toFixed(1)}" y1="${(17 * Math.sin(a)).toFixed(1)}" x2="${(23 * Math.cos(a)).toFixed(1)}" y2="${(23 * Math.sin(a)).toFixed(1)}"/>`; }).join("");
   $("gauge").innerHTML =
-    `<rect x="0" y="0" width="320" height="200" rx="12" fill="var(--sky)"/>` +
-    `<path d="M${x1} ${y1} A118 118 0 0 1 ${x2} ${y2}" fill="none" stroke="var(--line)" stroke-width="10" stroke-linecap="round"/>` +
-    lab(limits.min, fa(limits.min, 0) + "°") + lab(0, "‎۰°") + lab(limits.max, "+" + fa(limits.max, 0) + "°") +
+    `<rect id="gSky" x="0" y="0" width="320" height="200" rx="12" fill="#2a3f66"/>` +
+    `<rect id="gBand" x="0" y="116" width="320" height="34" fill="#d9825b" opacity="0"/>` +
+    `<path d="M${o1x} ${o1y} A${SC.orbit} ${SC.orbit} 0 0 1 ${o2x} ${o2y}" fill="none" stroke="#fff" stroke-opacity=".25" stroke-width="2" stroke-dasharray="2 6" stroke-linecap="round"/>` +
+    `<g id="gStars" opacity="0">${stars}</g>` +
+    `<path d="M${x1} ${y1} A${SC.range} ${SC.range} 0 0 1 ${x2} ${y2}" fill="none" stroke="#fff" stroke-opacity=".22" stroke-width="8" stroke-linecap="round"/>` +
+    lab(limits.min, fa(limits.min, 0) + "°") + lab(limits.max, "+" + fa(limits.max, 0) + "°") +
+    `<g id="gSun" style="display:none"><circle id="gGlow" r="26" opacity=".22"/><g id="gRays" stroke-width="2.5" stroke-linecap="round">${rays}</g><circle id="gDisc" r="12"/></g>` +
+    `<path d="M0 150H320V188a12 12 0 0 1-12 12H12a12 12 0 0 1-12-12Z" fill="#070a10" fill-opacity=".9"/><line x1="0" y1="150" x2="320" y2="150" stroke="#fff" stroke-opacity=".35" stroke-width="1.5"/>` +
+    `<text id="gUnder" x="160" y="24" font-size="12" text-anchor="middle" fill="#9fb0c6"></text>` +
     `<rect id="gDiffBox" x="98" y="171" width="124" height="26" rx="13" fill="var(--card)" stroke="var(--line)"/><text id="gAngle" x="160" y="189" font-size="13" font-weight="700" text-anchor="middle" fill="var(--ink)" direction="ltr"></text>` +
     `<g id="gWest" class="dir"><rect x="10" y="171" width="76" height="26" rx="13"/><text x="48" y="189" text-anchor="middle" font-size="13">◀ غرب</text></g><g id="gEast" class="dir"><rect x="234" y="171" width="76" height="26" rx="13"/><text x="272" y="189" text-anchor="middle" font-size="13">شرق ▶</text></g>` +
-    `<line x1="160" y1="150" x2="160" y2="40" stroke="var(--line)" stroke-dasharray="4 4"/>` +
-    `<circle id="gTarget" r="7" fill="var(--accent)" stroke="var(--card)" stroke-width="2"/>` +
-    `<g id="gPanel"><rect x="70" y="140" width="180" height="10" rx="3" fill="var(--panel)"/><line x1="160" y1="140" x2="160" y2="95" stroke="var(--accent)" stroke-width="3"/><polygon points="160,86 154,98 166,98" fill="var(--accent)"/></g>` +
-    `<circle cx="160" cy="150" r="9" fill="var(--ink)"/>`;
+    `<line x1="160" y1="150" x2="160" y2="40" stroke="#fff" stroke-opacity=".25" stroke-dasharray="4 4"/>` +
+    `<g id="gPanel"><rect x="70" y="140" width="180" height="10" rx="3" fill="#7fb0e0"/><line x1="160" y1="140" x2="160" y2="95" stroke="var(--accent)" stroke-width="3"/><polygon points="160,86 154,98 166,98" fill="var(--accent)"/></g>` +
+    `<circle cx="160" cy="150" r="9" fill="#e8edf2"/>`;
 }
-function moveGauge(angle, target) {
+function moveGauge(angle) {
   const clamp = (a) => Math.max(limits.min - 8, Math.min(limits.max + 8, a));
-  const g = $("gPanel"), t = $("gTarget");
-  if (!g || !t) return;
-  g.setAttribute("transform", `rotate(${clamp(angle)} 160 150)`);
-  const [x, y] = pt(clamp(target), 118);
-  t.setAttribute("cx", x); t.setAttribute("cy", y);
+  const g = $("gPanel");
+  if (g) g.setAttribute("transform", `rotate(${clamp(angle)} 160 150)`);
+}
+// ---- the sun: its place comes only from the clock and the location, never from faults or the panel ----
+const lerp = (a, b, t) => a + (b - a) * t;
+const hex3 = (c) => [1, 3, 5].map((i) => parseInt(c.slice(i, i + 2), 16));
+const mixHex = (c1, c2, t) => { const a = hex3(c1), b = hex3(c2); return "#" + a.map((v, i) => Math.round(lerp(v, b[i], t)).toString(16).padStart(2, "0")).join(""); };
+const ramp = (el, stops) => {
+  if (el <= stops[0][0]) return stops[0][1];
+  for (let i = 1; i < stops.length; i++) if (el <= stops[i][0]) return mixHex(stops[i - 1][1], stops[i][1], (el - stops[i - 1][0]) / (stops[i][0] - stops[i - 1][0]));
+  return stops[stops.length - 1][1];
+};
+const SKY = [[-12, "#0d1424"], [-6, "#1b2748"], [0, "#2a3f66"], [10, "#3a63a0"], [30, "#2f6fb3"]];
+const SUNC = [[0, "#ff8a4c"], [12, "#ffb347"], [30, "#ffc83d"]];
+let sunPrev = null;
+function moveSun(el, az) {
+  const sun = $("gSun");
+  if (!sun) return;
+  if (el === null || el === undefined || az === null || az === undefined) { sun.style.display = "none"; $("gUnder").textContent = ""; return; }  // no clock: no sun
+  const rad = Math.PI / 180;
+  const th = Math.atan2(Math.cos(el * rad) * Math.sin(az * rad), Math.sin(el * rad)) / rad;  // + = east = right
+  const [x, y] = pt(th, SC.orbit);
+  const jump = sunPrev === null || Math.abs(th - sunPrev) > 90;
+  sunPrev = th;
+  sun.style.display = "";
+  sun.style.transition = jump ? "none" : "transform 1s linear";
+  sun.style.transform = `translate(${x.toFixed(1)}px, ${y.toFixed(1)}px)`;
+  $("gSky").setAttribute("fill", ramp(el, SKY));
+  $("gBand").setAttribute("opacity", (Math.max(0, 1 - Math.abs(el - 2) / 10) * 0.6).toFixed(2));
+  $("gStars").setAttribute("opacity", Math.max(0, Math.min(1, (-6 - el) / 6)).toFixed(2));
+  const day = el >= 0, c = day ? ramp(el, SUNC) : "#8ea0b8";
+  $("gGlow").setAttribute("fill", c); $("gGlow").style.display = day ? "" : "none";
+  $("gRays").setAttribute("stroke", c); $("gRays").style.display = day ? "" : "none";
+  const d = $("gDisc");
+  d.setAttribute("fill", day ? c : "none");
+  d.setAttribute("stroke", day ? "none" : c);
+  d.setAttribute("stroke-width", "2"); d.setAttribute("stroke-dasharray", day ? "" : "4 4");
+  $("gUnder").textContent = day ? "" : "خورشید زیر افق، \u2066" + toFa(Math.abs(el).toFixed(1)) + "°\u2069";
 }
 buildGauge();
 
@@ -235,7 +278,7 @@ async function poll() {
     $("faultText").textContent = status.fault ? status.text : "بدون خطا";
     $("statusText").textContent = status.text;
     const sid = status.statusId;
-    const badge = status.fault ? "red" : (status.state === "Wind" || status.state === "Manual" || sid === 9 || sid === 10 || sid === 11) ? "amber" : "ok";
+    const badge = status.fault ? "red" : (status.state === "Wind" || status.state === "Manual" || sid === 9 || sid === 10 || sid === 11 || sid === 15) ? "amber" : "ok";
     $("statusBadge").textContent = status.fault ? "خطا" : badge === "amber" ? "توجه" : "بدون خطا";
     $("statusBadge").className = "badge " + badge;
     $("fw").textContent = status.fwVersion;
@@ -249,13 +292,20 @@ async function poll() {
     $("warnDefault").classList.toggle("hidden", !status.passwordIsDefault);
     $("warnClock").classList.toggle("hidden", status.clockValid);
     $("warnCal").classList.toggle("hidden", status.calibrated);
+    $("warnAngle").classList.toggle("hidden", !status.angleWarning);
+    if (status.angleWarning && status.liveAngleDeg != null) $("warnAngleVal").innerHTML = degTxt(status.liveAngleDeg);
+    const live = status.liveAngleDeg;
+    $("liveAngle").innerHTML = live == null ? "زاویهٔ زنده: — (کالیبراسیون کامل نیست یا سنسور داده نمی‌دهد)"
+      : "زاویهٔ زنده: " + degTxt(live) + (status.angleWarning ? " — <b>خارج از محدودهٔ عادی</b>" : " — در محدوده");
+    if (!$("calib").classList.contains("hidden")) refreshOffsets();
     if (document.activeElement !== $("clockAuto")) $("clockAuto").checked = !!status.clockAuto;
     autoClockSync();
     if (!status.calibrated && status.gravity) { const g = status.gravity.map((v) => v.toFixed(2)); $("rawG").textContent = "سنسور زنده: x=" + g[0] + " y=" + g[1] + " z=" + g[2]; }
     $("faultBar").classList.toggle("hidden", !status.fault);
     $("faultBarText").textContent = status.fault ? status.text : "";
     $("resetFault").classList.toggle("hidden", !status.fault || !loggedIn);
-    moveGauge(uiAngle(status.angleDeg), uiAngle(status.targetDeg));
+    moveGauge(uiAngle(status.angleDeg));
+    moveSun(status.sunElevationDeg, status.sunAzimuthDeg);
     // difference between the panel and where it should point; the motor starts when it reaches the move threshold
     const diff = uiAngle(status.targetDeg) - uiAngle(status.angleDeg), thr = status.moveThresholdDeg;
     $("gAngle").textContent = "‎Δ " + toFa(Math.abs(diff).toFixed(1)) + "° / " + toFa(Number(thr).toFixed(0)) + "°";
@@ -423,9 +473,68 @@ $("saveClock").onclick = async () => {
   await clockSetDone(await api("POST", "/api/clock", { utc: want }), want);
 };
 
+// ---- sensor offsets: the unfolded cube (cycle 018) ----
+// [label, column, row] in the cross layout; the index is the face number the device uses (2*axis + negative).
+const FACES = [["X+", 2, 1], ["X−", 0, 1], ["Y+", 1, 0], ["Y−", 1, 2], ["Z+", 1, 1], ["Z−", 3, 1]];
+let offState = { faces: 0, capturing: false, saved: false };
+// Which face the device stands on right now, from the live (raw) reading; -1 when it is tilted between faces.
+function faceNow(g) {
+  const a = g.map(Math.abs); let k = 0;
+  if (a[1] > a[k]) k = 1;
+  if (a[2] > a[k]) k = 2;
+  if (a[k] < 0.7 || a.some((v, i) => i !== k && v > 0.35)) return -1;
+  return 2 * k + (g[k] < 0 ? 1 : 0);
+}
+function drawCube() {
+  const g = status && status.gravity, now = g ? faceNow(g) : -1;
+  $("cube").innerHTML = FACES.map(([label, c, r], i) => {
+    const done = (offState.faces >> i) & 1, here = i === now;
+    const stroke = here ? "var(--accent)" : done ? "var(--ok)" : "var(--line)";
+    const fill = here ? "var(--accent)" : done ? "var(--ok)" : "var(--card)";
+    const sub = here ? "الان" : done ? "✓ ثبت شد" : "";
+    return `<rect x="${c * 68 + 2}" y="${r * 68 + 2}" width="64" height="64" rx="8" fill="${fill}" fill-opacity="${here || done ? 0.28 : 1}" stroke="${stroke}" stroke-width="${here ? 4 : 2}"/>` +
+      `<text x="${c * 68 + 34}" y="${r * 68 + 38}" text-anchor="middle" font-size="22" font-weight="700" fill="var(--ink)">${label}</text>` +
+      `<text x="${c * 68 + 34}" y="${r * 68 + 56}" text-anchor="middle" font-size="11" fill="var(--mute)">${sub}</text>`;
+  }).join("");
+  if (g) $("liveG").innerHTML = "سنسور زنده: " + ltr("x=" + g[0].toFixed(2) + " y=" + g[1].toFixed(2) + " z=" + g[2].toFixed(2)) + (now < 0 ? " — روی یک وجه صاف نیست" : "");
+  $("offCap").disabled = now < 0 || offState.capturing;
+  $("offSave").disabled = offState.faces !== 63;
+}
+async function refreshOffsets() {
+  const r = await api("GET", "/api/offsets");
+  if (r.ok) offState = r.data;
+  drawCube();
+}
+const OFF = { pending: "در حال ثبت… دستگاه را ثابت نگه دارید", ok: "ثبت شد", moving: "دستگاه حرکت کرد؛ دوباره امتحان کنید", "bad-face": "دستگاه روی یک وجه صاف نیست",
+  "bad-gravity": "داده سنسور درست نیست", "sensor-fault": "سنسور زاویه پاسخ نمی‌دهد", "not-captured": "" };
+$("offCap").onclick = async () => {
+  const r = await api("POST", "/api/offsets/capture", {});
+  if (!r.ok) { say($("offMsg"), errText(r), "err"); return; }
+  offState.capturing = true;
+  for (let i = 0; i < 40; i++) {
+    const s = await api("GET", "/api/offsets");
+    if (s.ok) offState = s.data;
+    say($("offMsg"), OFF[s.data.result] || "", s.data.result === "pending" ? "" : (s.data.result === "ok" ? "ok" : "err"));
+    drawCube();
+    if (s.data.result !== "pending") return;
+    await new Promise((res) => setTimeout(res, 500));
+  }
+};
+$("offSave").onclick = async () => {
+  const r = await api("POST", "/api/offsets/save", {});
+  toast(r.ok ? "آفست‌ها ذخیره شد؛ کالیبراسیون زاویه را دوباره انجام دهید" : errText(r), r.ok ? "ok" : "err");
+  refreshOffsets(); poll();
+};
+$("offReset").onclick = async () => {
+  if (!confirm("آفست‌های ذخیره‌شده و وجه‌های ثبت‌شده پاک شود؟ کالیبراسیون زاویه هم باید دوباره انجام شود.")) return;
+  const r = await api("POST", "/api/offsets/reset", {});
+  toast(r.ok ? "پاک شد" : errText(r), r.ok ? "ok" : "err");
+  say($("offMsg"), "", ""); refreshOffsets(); poll();
+};
+
 // ---- calibration ----
 const CAL = { pending: "در حال ثبت… پنل را ثابت نگه دارید", ok: "ثبت شد", moving: "کالیبراسیون نامعتبر: پنل در حال حرکت بود", "too-small-angle": "کالیبراسیون نامعتبر: زاویه دو مرحله خیلی کم است",
-  "too-large-angle": "کالیبراسیون نامعتبر: زاویه دو مرحله خیلی زیاد است", "bad-gravity": "کالیبراسیون نامعتبر: داده سنسور درست نیست", "sensor-fault": "سنسور زاویه پاسخ نمی‌دهد", "not-captured": "" };
+  "too-large-angle": "کالیبراسیون نامعتبر: زاویه دو مرحله خیلی زیاد است", "bad-gravity": "کالیبراسیون نامعتبر: داده سنسور درست نیست؛ اگر آفست‌گیری نکرده‌اید اول آن را کامل کنید", "sensor-fault": "سنسور زاویه پاسخ نمی‌دهد", "not-captured": "" };
 async function capture(step) {
   const r = await api("POST", "/api/calibrate/" + step, {});
   if (!r.ok) { say($("calMsg"), errText(r), "err"); return; }
@@ -446,7 +555,7 @@ const MOVES = ["MoveStart", "MoveEnd"], FAULTS = ["Fault", "FaultReset"];
 const TYPE_FA = { PowerUp: "روشن شدن", StateChange: "تغییر وضعیت", Fault: "خطا", FaultReset: "ریست خطا", MoveStart: "شروع حرکت", MoveEnd: "پایان حرکت", ClockSet: "تنظیم ساعت",
   SettingsChange: "تغییر تنظیمات", SettingsReset: "بازنشانی تنظیمات", SettingsMigrated: "به‌روزرسانی ساختار تنظیمات", SupplyLow: "ولتاژ پایین", LogReset: "پاک شدن لاگ" };
 const DETAIL_FA = [["no stored settings", "تنظیمات ذخیره‌شده‌ای نبود؛ پیش‌فرض‌ها بارگذاری شد"], ["power-on after cut", "روشن شدن پس از قطع برق"], ["power-on", "روشن شدن دستگاه"], ["wind stow start", "شروع حالت ایمن باد"], ["wind stow end", "پایان حالت ایمن باد"],
-  ["end of stroke: limit reached", "انتهای کورس جک: به حد رسید"], ["manual keep-alive lost", "ارتباط دکمه دستی قطع شد"], ["angle calibration saved", "کالیبراسیون زاویه ذخیره شد"],
+  ["end of stroke: limit reached", "انتهای کورس جک: به حد رسید"], ["manual keep-alive lost", "ارتباط دکمه دستی قطع شد"], ["angle calibration saved", "کالیبراسیون زاویه ذخیره شد"], ["sensor offsets saved", "آفست سنسور ذخیره شد"], ["sensor offsets reset", "آفست سنسور پاک شد"],
   ["notification settings changed", "تنظیمات هشدار عوض شد"], ["settings password changed", "رمز عوض شد"], ["site wifi changed", "وای‌فای محل عوض شد"], ["older layout", "ساختار قدیمی"],
   ["dir=east", "جهت: شرق"], ["dir=west", "جهت: غرب"], ["reason=", "علت: "], ["angle=", "زاویه: "], ["ms=", "مدت (میلی‌ثانیه): "], ["->", " ⟵ "],
   ["Auto", "خودکار"], ["Manual", "دستی"], ["Wind", "باد"], ["Night", "شب"], ["Fault", "خطا"], ["stop", "توقف"], ["target", "رسیدن به هدف"]];

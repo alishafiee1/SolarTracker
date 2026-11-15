@@ -94,6 +94,8 @@ private:
     Response postManual(const Request& req);
     Response calibrate(const Request& req, const std::string& step);
     Response getCalibrate();
+    Response getOffsets();
+    Response offsets(const std::string& step);
     Response getLog(const Request& req);
     Response postPassword(const Request& req);
     Response cities();

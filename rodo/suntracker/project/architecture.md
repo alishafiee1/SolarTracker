@@ -39,6 +39,7 @@
 - `Event` (LittleFS rotating log): UTC timestamp, type (fault, move start/end, mode change, power restored, wind stow/return, settings change, update), short detail.
 - `Status` (RAM, served at `/api/status`): current and target angle, wind speed, current RMS, mode, state, last fault.
 - Time: the DS3231 always holds UTC; local time = UTC + stored offset.
+- Angle sensor correction (cycle 018): per-axis offset and gain from the six-face procedure (NVS blob `angle_off`), applied to every accelerometer reading before the checks and the angle maths. Saving new offsets drops the angle calibration.
 
 ## تست
 

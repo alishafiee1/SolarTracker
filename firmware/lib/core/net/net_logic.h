@@ -71,6 +71,11 @@ void tidyScan(std::vector<ScanEntry>& entries, size_t maxEntries = 20);
 // R2: the clock is set from NTP only when the time is plausible and differs by more than 2 s.
 bool shouldSetClockFromNtp(int64_t rtcUtc, bool rtcValid, int64_t ntpUtc);
 
+// The clock is set at most once per minute. The "clock valid" answer the loop sees is refreshed only once a second, so without
+// this gap the same NTP time was written and logged dozens of times right after boot (cycle 011 fix).
+constexpr uint32_t kNtpSetGapMs = 60u * 1000u;
+bool ntpSetAllowed(bool everSet, uint32_t nowMs, uint32_t lastSetMs);
+
 // Stored network configuration (kept in its own NVS blob so the secrets never appear in Settings or its API).
 struct NetConfig {
     char ssid[33] = "";

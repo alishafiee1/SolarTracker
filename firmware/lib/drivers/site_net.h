@@ -40,6 +40,8 @@ private:
     char ip_[16] = "";
     bool ntpStarted_ = false;
     uint32_t lastNtpMs_ = 0;
+    bool clockSetOnce_ = false;
+    uint32_t lastClockSetMs_ = 0;
     int lastNotify_ = -1;
     bool taskStarted_ = false;
     void* mutex_ = nullptr;

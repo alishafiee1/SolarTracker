@@ -211,6 +211,7 @@ void loop() {
         control::Inputs in;
         in.angleDeg = angleProvider.angleDeg();
         in.angleOk = angleProvider.ok();
+        in.angleOutOfRange = angleProvider.outOfRange();
         in.calibrated = angleProvider.calibrated();
         in.clockValid = cachedClockValid;
         in.utcEpoch = utcNow();

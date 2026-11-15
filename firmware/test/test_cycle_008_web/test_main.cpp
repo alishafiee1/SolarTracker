@@ -530,11 +530,81 @@ static void unknown_paths_are_404() {
 }
 
 static void persian_status_texts_exist_for_every_id() {
-    for (int i = 0; i <= static_cast<int>(control::StatusText::FaultOvercurrent); ++i) {
+    for (int i = 0; i <= static_cast<int>(control::StatusText::AngleOutOfRange); ++i) {
         const std::string t = webapi::statusTextFa(static_cast<control::StatusText>(i), 7);
         TEST_ASSERT_TRUE(t.size() > 4);
     }
     TEST_ASSERT_EQUAL_STRING("منتظر تأخیر ایمنی (7 ثانیه)", webapi::statusTextFa(control::StatusText::WaitingSafety, 7).c_str());
+}
+
+// Cycle 019: the status shows the live angle and the out-of-range warning.
+static void status_shows_live_angle_and_the_warning() {
+    Rig r;
+    JsonDocument d = parse(r.call(false, "/api/status"));
+    TEST_ASSERT_TRUE(d["liveAngleDeg"].isNull());           // no calibration yet
+    TEST_ASSERT_FALSE(d["angleWarning"].as<bool>());
+    const std::string c = r.login();
+    r.accel.setGravity({0.0f, 0.0f, 1.0f});
+    r.call(true, "/api/calibrate/horizontal", "{}", c);
+    for (int i = 0; i < 50; ++i) r.angle.sample();
+    r.call(true, "/api/calibrate/east", "{}", c);
+    r.accel.setGravity({0.0f, 0.1392f, 0.9903f});
+    for (int i = 0; i < 50; ++i) r.angle.sample();
+    TEST_ASSERT_TRUE(r.angle.calibrated());
+    for (int i = 0; i < 10; ++i) r.angle.sample();
+    d = parse(r.call(false, "/api/status"));
+    TEST_ASSERT_TRUE(fabsf(d["liveAngleDeg"].as<float>()) > 5.0f);
+    TEST_ASSERT_FALSE(d["angleWarning"].as<bool>());
+    r.accel.setGravity({0.0f, 0.0f, -1.0f});  // upside down
+    for (int i = 0; i < 10; ++i) r.angle.sample();
+    TEST_ASSERT_TRUE(r.angle.outOfRange());
+    TEST_ASSERT_TRUE(r.angle.ok());
+    control::Inputs in;  // what the main loop passes to the state machine
+    in.calibrated = r.angle.calibrated();
+    in.angleOk = r.angle.ok();
+    in.angleOutOfRange = r.angle.outOfRange();
+    r.ctl.tick(r.time.nowMs(), in);
+    d = parse(r.call(false, "/api/status"));
+    TEST_ASSERT_TRUE(fabsf(d["liveAngleDeg"].as<float>()) > 60.0f);
+    TEST_ASSERT_TRUE(d["angleWarning"].as<bool>());
+    TEST_ASSERT_EQUAL_INT(15, d["statusId"].as<int>());
+}
+
+// Cycle 018: the six-face offset wizard through the API.
+static void offsets_wizard_through_the_api() {
+    Rig r;
+    const std::string c = r.login();
+    TEST_ASSERT_EQUAL_INT(401, r.call(false, "/api/offsets").status);       // login needed
+    TEST_ASSERT_EQUAL_INT(401, r.call(true, "/api/offsets/capture", "{}").status);
+    // Save is refused until all six faces exist.
+    TEST_ASSERT_EQUAL_INT(409, r.call(true, "/api/offsets/save", "{}", c).status);
+    const hal::Vec3 faces[6] = {{1, 0, 0}, {-1, 0, 0}, {0, 1, 0}, {0, -1, 0}, {0, 0, 1.1f}, {0, 0, -0.9f}};
+    for (int f = 0; f < 6; ++f) {
+        r.accel.setGravity(faces[f]);
+        JsonDocument s = parse(r.call(true, "/api/offsets/capture", "{}", c));
+        TEST_ASSERT_EQUAL_STRING("pending", s["result"] | "?");
+        for (int i = 0; i < 50; ++i) r.angle.sample();
+        JsonDocument d = parse(r.call(false, "/api/offsets", "", c));
+        TEST_ASSERT_EQUAL_STRING("ok", d["result"] | "?");
+        TEST_ASSERT_TRUE((d["faces"].as<int>() >> f) & 1);  // this face is now captured
+        TEST_ASSERT_FALSE(d["capturing"].as<bool>());
+    }
+    TEST_ASSERT_EQUAL_INT(63, parse(r.call(false, "/api/offsets", "", c))["faces"].as<int>());
+    TEST_ASSERT_EQUAL_INT(200, r.call(true, "/api/offsets/save", "{}", c).status);
+    JsonDocument d = parse(r.call(false, "/api/offsets", "", c));
+    TEST_ASSERT_TRUE(d["saved"].as<bool>());
+    TEST_ASSERT_FLOAT_WITHIN(0.01f, 0.1f, d["offset"][2].as<float>());  // (1.1 + -0.9) / 2
+    TEST_ASSERT_FLOAT_WITHIN(0.01f, 1.0f, d["scale"][2].as<float>());   // (1.1 - -0.9) / 2
+    // The status shows the RAW reading so the panel can find the live face.
+    r.accel.setGravity({0, 0, 1.1f});
+    r.angle.sample();
+    TEST_ASSERT_FLOAT_WITHIN(0.001f, 1.1f, parse(r.call(false, "/api/status"))["gravity"][2].as<float>());
+    // Reset clears everything.
+    TEST_ASSERT_EQUAL_INT(200, r.call(true, "/api/offsets/reset", "{}", c).status);
+    d = parse(r.call(false, "/api/offsets", "", c));
+    TEST_ASSERT_FALSE(d["saved"].as<bool>());
+    TEST_ASSERT_EQUAL_INT(0, d["faces"].as<int>());
+    TEST_ASSERT_EQUAL_INT(404, r.call(true, "/api/offsets/nothing", "{}", c).status);
 }
 
 int main() {
@@ -564,6 +634,8 @@ int main() {
     RUN_TEST(the_wifi_scan_is_started_and_read_in_two_steps);
     RUN_TEST(the_log_answer_includes_the_fill_of_the_log);
     RUN_TEST(unknown_paths_are_404);
+    RUN_TEST(status_shows_live_angle_and_the_warning);
+    RUN_TEST(offsets_wizard_through_the_api);
     RUN_TEST(persian_status_texts_exist_for_every_id);
     return UNITY_END();
 }

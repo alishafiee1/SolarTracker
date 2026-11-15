@@ -35,6 +35,14 @@ static void ntp_corrects_a_clock_that_is_off_by_more_than_two_seconds() {
     TEST_ASSERT_FALSE(shouldSetClockFromNtp(now, true, 0));
 }
 
+// The loop sees a stale "clock valid" for up to a second after the clock was set: one NTP write per minute, not one per tick.
+static void ntp_writes_the_clock_at_most_once_a_minute() {
+    TEST_ASSERT_TRUE(net::ntpSetAllowed(false, 5000, 0));       // never set yet
+    TEST_ASSERT_FALSE(net::ntpSetAllowed(true, 5100, 5000));    // the very next ticks
+    TEST_ASSERT_FALSE(net::ntpSetAllowed(true, 64999, 5000));
+    TEST_ASSERT_TRUE(net::ntpSetAllowed(true, 65000, 5000));    // a minute later it may correct again
+}
+
 // ------------------------------------------------------------ R3 queue
 static void messages_are_sent_one_per_ten_seconds() {
     NotifyQueue q;
@@ -162,6 +170,7 @@ int main() {
     UNITY_BEGIN();
     RUN_TEST(reconnect_delays_double_up_to_five_minutes);
     RUN_TEST(ntp_corrects_a_clock_that_is_off_by_more_than_two_seconds);
+    RUN_TEST(ntp_writes_the_clock_at_most_once_a_minute);
     RUN_TEST(messages_are_sent_one_per_ten_seconds);
     RUN_TEST(a_failed_send_is_retried_after_the_gap_and_keeps_the_message);
     RUN_TEST(the_same_fault_within_ten_minutes_is_merged);
