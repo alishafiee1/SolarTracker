@@ -59,14 +59,16 @@ function helpHtml(key) {
   return s;
 }
 function bindHelp(root) {
-  root.querySelectorAll("button.help").forEach((b) => {
-    b.onclick = (e) => {
+  root.querySelectorAll("button.help, .hl").forEach((b) => {  // the "؟" buttons of the forms, and (dashboard) the topic itself
+    const open = (e) => {
       e.preventDefault();
       const box = $("h_" + b.dataset.help);
       if (!box) return;
       box.innerHTML = helpHtml(b.dataset.help);
       box.classList.toggle("hidden");
     };
+    b.onclick = open;
+    if (b.classList.contains("lbl")) b.onkeydown = (e) => { if (e.key === "Enter" || e.key === " ") open(e); };
   });
 }
 

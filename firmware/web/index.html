@@ -38,9 +38,9 @@
     <button id="resetFault" class="danger hidden">ریست خطا</button>
   </div>
   <div class="card gaugeCard">
-    <svg id="gauge" viewBox="0 0 320 200" role="img" aria-label="زاویه پنل"></svg>
+    <svg id="gauge" class="hl" data-help="gauge" viewBox="0 0 320 200" role="img" aria-label="زاویه پنل؛ برای راهنما بزنید"></svg>
     <div class="row between">
-      <span><span id="statusBadge" class="badge">—</span> <button class="help sm" data-help="gauge" aria-label="راهنما">؟</button></span>
+      <span id="statusBadge" class="badge">—</span>
       <span class="small" id="stateName"></span>
     </div>
     <p class="helptext hidden" id="h_gauge"></p>
@@ -56,7 +56,7 @@
   </div>
   <div class="grid">
     <div class="tile"><span>ساعت دستگاه</span><b class="sm" dir="ltr" id="liveTime">—</b><small id="liveDate"></small></div>
-    <div class="tile"><span>زاویه خورشید بالای افق <button class="help sm" data-help="sunEl" aria-label="راهنما">؟</button></span><b id="sunEl">—</b><small id="sunNote"></small></div>
+    <div class="tile"><span class="hl lbl" data-help="sunEl" role="button" tabindex="0">زاویه خورشید بالای افق</span><b id="sunEl">—</b><small id="sunNote"></small></div>
     <div class="tile"><span>سرعت باد</span><b id="wind">—</b><small id="windNote">کیلومتر بر ساعت</small></div>
     <div class="tile"><span>حالت</span><b id="mode">—</b><small id="state"></small></div>
     <div class="tile wide2"><span>آخرین خطا</span><b id="fault">—</b><small id="faultText"></small></div>

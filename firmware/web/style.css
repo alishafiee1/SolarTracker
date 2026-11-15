@@ -133,3 +133,6 @@ header{flex-wrap:wrap;gap:6px}
 .wf.l1{color:var(--bad)}.wf.l2{color:var(--warn)}.wf .slash{display:none}.wf.off .slash{display:block}.wf.off .a1,.wf.off .a2,.wf.off .a3{opacity:.3}
 .bars .wf{vertical-align:middle}
 .wf.l0{color:var(--bad)}
+
+/* dashboard help: no "؟" icon; the topic itself opens the help */
+.hl{cursor:pointer}.hl.lbl{text-decoration:underline dotted var(--mute);text-underline-offset:4px}
