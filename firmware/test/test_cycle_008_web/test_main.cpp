@@ -235,12 +235,14 @@ static void status_shows_battery_and_mains_only_when_they_are_measured() {  // c
     pi.state = power::BatteryState::Low;
     pi.mainsKnown = true;
     pi.mains = false;
+    pi.mainsV = 0.1f;
     r.power = pi;
     JsonDocument d = parse(r.call(false, "/api/status"));
     TEST_ASSERT_DOUBLE_WITHIN(0.001, 3.88, d["batteryV"] | 0.0);
     TEST_ASSERT_EQUAL_INT(54, d["batteryPct"] | -1);
     TEST_ASSERT_EQUAL_STRING("low", d["batteryState"] | "?");
     TEST_ASSERT_FALSE(d["mainsOk"] | true);
+    TEST_ASSERT_DOUBLE_WITHIN(0.001, 0.1, d["mainsV"] | -1.0);
 }
 
 static void login_with_the_default_password_sets_a_safe_cookie() {

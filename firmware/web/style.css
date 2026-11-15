@@ -100,3 +100,13 @@ dialog{border:1px solid var(--line);border-radius:14px;background:var(--card);co
 
 #gGlow{animation:glow 6s ease-in-out infinite}@keyframes glow{50%{opacity:.34}}@media (prefers-reduced-motion:reduce){#gGlow{animation:none}}
 .tile.bad{border-color:var(--bad)}.tile.bad small{color:var(--bad)}
+
+/* battery and mains in the header (cycle 026) */
+header{flex-wrap:wrap;gap:6px}
+.pwr{display:inline-flex;align-items:center;gap:10px}
+.mains{display:inline-flex;align-items:center;gap:3px;color:var(--ok);font-size:.75rem;font-weight:600}.mains.off{color:var(--bad)}.mains .slash{display:none}.mains.off .slash{display:block}
+.batt{position:relative;display:inline-block;width:32px;height:16px;border:1.5px solid var(--mute);border-radius:4px;padding:1px;direction:ltr}
+.batt::after{content:"";position:absolute;right:-4.5px;top:3px;width:3px;height:6px;background:var(--mute);border-radius:0 2px 2px 0}
+.batt i{display:block;height:100%;border-radius:2px;background:var(--ok);transition:width .6s}
+.batt.low i{background:var(--warn)}.batt.crit i{background:var(--bad)}.batt.crit{border-color:var(--bad)}
+.batt b{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;line-height:1;color:var(--ink);text-shadow:0 0 2px var(--card),0 0 2px var(--card)}

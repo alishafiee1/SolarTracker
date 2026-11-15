@@ -23,6 +23,7 @@ struct Info {
     int percent = -1;  // -1 unknown
     bool mainsKnown = false;  // the charger-input pin is wired
     bool mains = true;
+    float mainsV = 0.0f;  // smoothed volts on the charger input (about 5 V when the mains is there)
     BatteryState state = BatteryState::Unknown;
 };
 

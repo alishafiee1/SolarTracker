@@ -54,6 +54,7 @@ uint8_t PowerMonitor::onSecond(float batteryV, float chargerV, bool chargerWired
 
     // Mains: seen on the charger input. In the grey zone between the two limits the last state is kept.
     info_.mainsKnown = chargerWired;
+    if (chargerWired) info_.mainsV = mainsInit_ ? info_.mainsV * 0.6f + chargerV * 0.4f : chargerV;
     if (chargerWired) {
         bool cand = mainsInit_ ? info_.mains : chargerV >= kMainsOnV;
         if (chargerV >= kMainsOnV) cand = true;

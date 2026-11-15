@@ -10,6 +10,10 @@
 <header>
   <h1>☀ تراکر خورشیدی</h1>
   <div class="hdr">
+    <span id="pwr" class="pwr hidden">
+      <span id="mainsBox" class="mains hidden"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M8 3v5M16 3v5M6 8h12v3a6 6 0 0 1-12 0zM12 17v4"/><path class="slash" d="M3 3l18 18"/></svg><b id="mainsV"></b></span>
+      <span id="batt" class="batt hidden"><i id="battFill"></i><b id="battPct"></b></span>
+    </span>
     <span id="conn" class="pill off">قطع</span>
     <button id="logoutBtn" class="mini hidden">خروج</button>
   </div>
@@ -53,7 +57,6 @@
     <div class="tile"><span>ساعت دستگاه</span><b class="sm" dir="ltr" id="liveTime">—</b><small id="liveDate"></small></div>
     <div class="tile"><span>زاویه خورشید بالای افق <button class="help sm" data-help="sunEl" aria-label="راهنما">؟</button></span><b id="sunEl">—</b><small id="sunNote"></small></div>
     <div class="tile"><span>سرعت باد</span><b id="wind">—</b><small id="windNote">کیلومتر بر ساعت</small></div>
-    <div class="tile hidden" id="batTile"><span>باتری</span><b class="sm" id="bat">—</b><small id="batNote"></small></div>
     <div class="tile"><span>حالت</span><b id="mode">—</b><small id="state"></small></div>
     <div class="tile wide2"><span>آخرین خطا</span><b id="fault">—</b><small id="faultText"></small></div>
   </div>

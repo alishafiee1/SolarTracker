@@ -21,11 +21,11 @@ const HELP = /*HELP-BEGIN*/{
   "stopSettleMs": {"t": "بعد از هر توقف، این‌قدر صبر می‌شود تا موتور کامل بایستد و بعد حرکت بعدی اجازه دارد. کم کردنش به جک و سازه ضربه می‌زند. برای تغییر جهت جریان باید صفر و زاویه ثابت هم باشد.", "min": 1000, "max": 10000, "def": 3000, "unit": "میلی‌ثانیه"},
   "minMoveGapMs": {"t": "حداقل فاصله بین پایان یک حرکت و شروع حرکت بعدی، در همه حالت‌ها (حتی دستی و باد). رله و موتور را از قطع و وصل پیاپی نگه می‌دارد. پیشنهاد: کم نکنید. تغییر جهت هم دست‌کم این‌قدر طول می‌کشد.", "min": 1000, "max": 60000, "def": 10000, "unit": "میلی‌ثانیه"},
   "maxMoveMs": {"t": "بیشترین مدت یک حرکت پیوسته. اگر تا آن موقع به هدف نرسد، برق جک قطع و خطای «زمان حرکت تمام شد» ثبت می‌شود. کورس کامل ۹۰ درجه با سرعت ۰٫۶ درجه بر ثانیه حدود ۱۵۰ ثانیه است؛ اگر جک شما کندتر است این عدد را بیشتر کنید.", "min": 10000, "max": 300000, "def": 120000, "unit": "میلی‌ثانیه"},
-  "windStowKmh": {"t": "اگر سرعت باد از این عدد بیشتر شود و برای «تأخیر ورود» بماند، پنل افقی می‌شود تا باد آسیب نزند. عدد کمتر یعنی محافظت بیشتر ولی توقف ردیابی در بادهای ملایم‌تر.", "min": 10, "max": 100, "def": 40, "unit": "km/h"},
+  "windStowKmh": {"t": "اگر سرعت باد از این عدد بیشتر شود و برای «تأخیر ورود» بماند، پنل افقی می‌شود تا باد آسیب نزند. عدد کمتر یعنی محافظت بیشتر ولی توقف ردیابی در بادهای ملایم‌تر.", "min": 10, "max": 100, "def": 40, "unit": "کیلومتر بر ساعت"},
   "windStowDelayS": {"t": "باد باید این‌قدر ثانیه پشت سر هم بالاتر از آستانه بماند تا پنل افقی شود؛ تندبادهای کوتاه نادیده گرفته می‌شوند.", "min": 1, "max": 60, "def": 5, "unit": "ثانیه"},
-  "windReturnKmh": {"t": "بعد از باد شدید، فقط وقتی باد زیر این عدد باشد شمارش بازگشت به ردیابی شروع می‌شود. باید از آستانه باد شدید کمتر باشد.", "min": 5, "max": 99, "def": 30, "unit": "km/h"},
+  "windReturnKmh": {"t": "بعد از باد شدید، فقط وقتی باد زیر این عدد باشد شمارش بازگشت به ردیابی شروع می‌شود. باید از آستانه باد شدید کمتر باشد.", "min": 5, "max": 99, "def": 30, "unit": "کیلومتر بر ساعت"},
   "windReturnMin": {"t": "باد باید این‌قدر دقیقه پیوسته زیر «آستانه بازگشت» بماند تا ردیابی دوباره شروع شود. هر تندباد بالاتر از آستانه بازگشت، شمارش را از اول می‌کند.", "min": 1, "max": 120, "def": 15, "unit": "دقیقه"},
-  "anemometerFactor": {"t": "ضریب تبدیل دور بادسنج به سرعت: چند کیلومتر بر ساعت به ازای هر دور در ثانیه. برای بادسنج ۲۰ سانتی حدود ۶٫۸ است. برای دقت بیشتر در محل نصب با یک بادسنج دستی مقایسه و تنظیم کنید.", "min": 1, "max": 20, "def": 6.8, "unit": "km/h به ازای هر دور در ثانیه"},
+  "anemometerFactor": {"t": "ضریب تبدیل دور بادسنج به سرعت: چند کیلومتر بر ساعت به ازای هر دور در ثانیه. برای بادسنج ۲۰ سانتی حدود ۶٫۸ است. برای دقت بیشتر در محل نصب با یک بادسنج دستی مقایسه و تنظیم کنید.", "min": 1, "max": 20, "def": 6.8, "unit": "کیلومتر بر ساعت به ازای هر دور در ثانیه"},
   "supplyLowV": {"t": "اگر ولتاژ تغذیه ۵ ولت دستگاه برای ۳ ثانیه زیر این عدد برود، رویداد «ولتاژ پایین» در لاگ ثبت می‌شود. فقط هشدار است و دستگاه را متوقف نمی‌کند.", "min": 3, "max": 6, "def": 4.5, "unit": "ولت"},
   "currentPresent": {"t": "اگر ترانس جریان (SCT-013) روی دستگاه نصب است ۱ بگذارید تا گیرکردن، قطع سیم، رله چسبیده و اضافه جریان با جریان واقعی تشخیص داده شود. بدون ترانس حتماً ۰ بماند، وگرنه جریان صفر خوانده می‌شود و خطای قطع سیم می‌دهد.", "min": 0, "max": 1, "def": 0, "unit": "۰ یا ۱"},
   "currentFactor": {"t": "ضریب تبدیل ولتاژ ترانس به آمپر (آمپر به ازای هر ولت rms). برای SCT-013 مدل ۵ آمپری حدود ۵ است. با یک آمپرمتر انبری روی سیم جک کالیبره کنید.", "min": 0.1, "max": 50, "def": 5, "unit": "آمپر بر ولت"},
@@ -124,6 +124,26 @@ function showTab(name) {
 }
 $("tabs").onclick = (e) => { const t = e.target.dataset && e.target.dataset.tab; if (t) showTab(t); };
 buildTabs("dash");
+
+// ---- battery and mains in the header (cycle 026) ----
+function renderPower(st) {
+  const hasBat = st.batteryV != null, hasMains = st.mainsOk != null;
+  $("pwr").classList.toggle("hidden", !hasBat && !hasMains);
+  $("batt").classList.toggle("hidden", !hasBat);
+  if (hasBat) {
+    const pct = Math.max(0, Math.min(100, st.batteryPct));
+    $("battFill").style.width = pct + "%";
+    $("battPct").textContent = toFa(pct);
+    $("batt").className = "batt" + (st.batteryState === "critical" ? " crit" : st.batteryState === "low" ? " low" : "");
+    $("batt").title = "باتری: " + toFa(st.batteryV.toFixed(2)) + " ولت، حدود " + toFa(pct) + " درصد" + (st.batteryState === "low" ? " (کم)" : st.batteryState === "critical" ? " (تقریباً خالی)" : "");
+  }
+  $("mainsBox").classList.toggle("hidden", !hasMains);
+  if (hasMains) {
+    $("mainsBox").className = "mains" + (st.mainsOk ? "" : " off");
+    $("mainsV").textContent = st.mainsOk ? toFa(st.mainsV.toFixed(1)) + " ولت" : "قطع";
+    $("mainsBox").title = st.mainsOk ? "برق شهر وصل است؛ ولتاژ ورودی شارژر " + toFa(st.mainsV.toFixed(1)) + " ولت" : "برق شهر قطع است؛ دستگاه روی باتری کار می‌کند";
+  }
+}
 
 // ---- login ----
 function setLoggedIn(v) {
@@ -270,15 +290,11 @@ async function poll() {
     status = r.data;
     $("conn").textContent = "متصل"; $("conn").className = "pill";
     $("wind").innerHTML = ltr(fa(status.windKmh, 1));
-    const hasBat = status.batteryV != null;  // cycle 023
-    $("batTile").classList.toggle("hidden", !hasBat && status.mainsOk == null);
-    $("bat").innerHTML = hasBat ? ltr(fa(status.batteryV, 2) + " V") + " · " + ltr("~" + fa(status.batteryPct, 0) + "٪") : "—";
-    $("batNote").textContent = (status.mainsOk == null ? "" : status.mainsOk ? "برق شهر وصل است" : "برق شهر قطع است — روی باتری") + (status.batteryState === "low" ? " · باتری کم" : status.batteryState === "critical" ? " · باتری تقریباً خالی" : "");
-    $("batTile").classList.toggle("bad", status.mainsOk === false || status.batteryState === "critical");
+    renderPower(status);  // cycle 026: battery and mains in the header
     $("windNote").textContent = status.windSensorFault ? "بادسنج خطا می‌دهد؛ سیم و سنسور را ببینید" : status.windStow ? "حالت ایمن باد" : "کیلومتر بر ساعت";
     $("wind").parentElement.classList.toggle("bad", !!status.windSensorFault);
     $("mode").textContent = status.mode === "manual" ? "دستی" : "اتو";
-    $("state").textContent = status.state;
+    $("state").textContent = { Auto: "ردیابی خورشید", Manual: "دستی", Wind: "حالت ایمن باد", Night: "شب", Fault: "خطا" }[status.state] || status.state;
     $("stateName").textContent = status.moving ? "در حال حرکت" : "ایستاده";
     $("fault").textContent = status.fault ? "خطا" : "—";
     $("faultText").textContent = status.fault ? status.text : "بدون خطا";
@@ -307,7 +323,7 @@ async function poll() {
     if (!$("calib").classList.contains("hidden")) refreshOffsets();
     if (document.activeElement !== $("clockAuto")) $("clockAuto").checked = !!status.clockAuto;
     autoClockSync();
-    if (!status.calibrated && status.gravity) { const g = status.gravity.map((v) => v.toFixed(2)); $("rawG").textContent = "سنسور زنده: x=" + g[0] + " y=" + g[1] + " z=" + g[2]; }
+    if (!status.calibrated && status.gravity) { const g = status.gravity.map((v) => v.toFixed(2)); $("rawG").textContent = "سنسور زنده: x=" + toFa(g[0]) + " y=" + toFa(g[1]) + " z=" + toFa(g[2]); }
     $("faultBar").classList.toggle("hidden", !status.fault);
     $("faultBarText").textContent = status.fault ? status.text : "";
     $("resetFault").classList.toggle("hidden", !(status.fault || status.windStow || status.windSensorFault) || !loggedIn);
@@ -510,7 +526,7 @@ function drawCube() {
       `<text x="${c * 68 + 34}" y="${r * 68 + 38}" text-anchor="middle" font-size="22" font-weight="700" fill="var(--ink)">${label}</text>` +
       `<text x="${c * 68 + 34}" y="${r * 68 + 56}" text-anchor="middle" font-size="11" fill="var(--mute)">${sub}</text>`;
   }).join("");
-  if (g) $("liveG").innerHTML = "سنسور زنده: " + ltr("x=" + g[0].toFixed(2) + " y=" + g[1].toFixed(2) + " z=" + g[2].toFixed(2)) + (now < 0 ? " — روی یک وجه صاف نیست" : "");
+  if (g) $("liveG").innerHTML = "سنسور زنده: " + ltr("x=" + toFa(g[0].toFixed(2)) + " y=" + toFa(g[1].toFixed(2)) + " z=" + toFa(g[2].toFixed(2))) + (now < 0 ? " — روی یک وجه صاف نیست" : "");
   $("offCap").disabled = now < 0 || offState.capturing;
   $("offSave").disabled = offState.faces !== 63;
 }

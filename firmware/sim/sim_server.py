@@ -62,6 +62,7 @@ button{padding:6px 12px;margin:2px}</style>
 <h2>شبیه‌ساز دستگاه</h2><p><a href="/">باز کردن پنل</a> (رمز: sim)</p>
 <fieldset><legend>سرعت زمان</legend>
 <button onclick="spd(1)">×۱</button><button onclick="spd(10)">×۱۰</button><button onclick="spd(60)">×۶۰</button><button onclick="spd(300)">×۳۰۰</button><button onclick="spd(0)">توقف</button></fieldset>
+<fieldset><legend>باتری و برق شهر</legend><label>باتری: <b id=bv>3.9</b> V <input id=b type=range min=0 max=4.3 step=0.05 value=3.9 oninput="bv.textContent=this.value;set({batteryV:+this.value})"></label> <label>ورودی شارژر: <b id=mv>5</b> V <input id=m type=range min=0 max=5.5 step=0.1 value=5 oninput="mv.textContent=this.value;set({mainsV:+this.value})"></label></fieldset>
 <fieldset><legend>باد</legend><label>سرعت باد: <b id=wv>0</b> km/h <input id=w type=range min=0 max=90 value=0 oninput="wv.textContent=this.value;set({windKmh:+this.value})"></label></fieldset>
 <fieldset><legend>خرابی‌ها</legend>
 <label><input type=checkbox onchange="set({jammed:this.checked})"> بازو گیر کرده</label>

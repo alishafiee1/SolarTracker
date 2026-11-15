@@ -203,8 +203,13 @@ Response WebApi::status() {
         d["batteryPct"] = nullptr;
         d["batteryState"] = nullptr;
     }
-    if (pw.mainsKnown) d["mainsOk"] = pw.mains;
-    else d["mainsOk"] = nullptr;
+    if (pw.mainsKnown) {
+        d["mainsOk"] = pw.mains;
+        d["mainsV"] = static_cast<int>(pw.mainsV * 10.0f + 0.5f) / 10.0;
+    } else {
+        d["mainsOk"] = nullptr;
+        d["mainsV"] = nullptr;
+    }
     d["currentA"] = nullptr;
     d["mode"] = modeName(d_.ctl.mode());
     d["state"] = control::stateName(s.state);

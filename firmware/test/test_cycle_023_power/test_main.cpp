@@ -71,6 +71,14 @@ static void starting_without_mains_is_not_a_loss_message() {
     TEST_ASSERT_FALSE(m.info().mains);
 }
 
+static void the_mains_voltage_is_smoothed_and_reported() {
+    PowerMonitor m;
+    run(m, 1, 3.9f, 5.0f);
+    TEST_ASSERT_FLOAT_WITHIN(0.01f, 5.0f, m.info().mainsV);
+    run(m, 30, 3.9f, 4.6f);
+    TEST_ASSERT_FLOAT_WITHIN(0.05f, 4.6f, m.info().mainsV);
+}
+
 static void an_unwired_charger_pin_gives_no_mains_events() {
     PowerMonitor m;
     TEST_ASSERT_EQUAL_UINT8(0, run(m, 60, 3.9f, 0.0f, false));
@@ -110,6 +118,7 @@ int main() {
     RUN_TEST(a_short_dip_of_the_mains_is_ignored);
     RUN_TEST(the_grey_zone_keeps_the_last_state);
     RUN_TEST(starting_without_mains_is_not_a_loss_message);
+    RUN_TEST(the_mains_voltage_is_smoothed_and_reported);
     RUN_TEST(an_unwired_charger_pin_gives_no_mains_events);
     RUN_TEST(battery_low_critical_and_recovery_with_hysteresis);
     RUN_TEST(a_missing_battery_pin_reads_as_unknown);

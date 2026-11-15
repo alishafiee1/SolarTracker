@@ -15,6 +15,8 @@ namespace {
 
 sim::World* gWorld = nullptr;
 double gWind = 0.0;
+double gBatV = 3.9;     // volts at the battery pin (0 = no battery)
+double gMainsV = 5.0;   // volts on the charger input (negative = pin not wired)
 
 std::string readLogLines(size_t n) {
     // Same line format as the device log: "utc,type,detail\n", oldest first, newest `n` lines.
@@ -49,6 +51,19 @@ int main() {
     webapi::Auth auth(rng);
     webapi::Deps deps(world.ctl(), world.cfg(), world.store(), world.blobs(), world.angle(), world.clock(), world.log(), world.wind(), auth);
     deps.fwVersion = "sim";
+    deps.powerInfo = [] {  // battery and mains for the panel preview
+        power::Info i;
+        if (gBatV > 0.0) {
+            i.batteryKnown = true;
+            i.batteryV = static_cast<float>(gBatV);
+            i.percent = power::percentFromVolts(i.batteryV);
+            i.state = gBatV < power::kCriticalV ? power::BatteryState::Critical : gBatV < power::kLowV ? power::BatteryState::Low : power::BatteryState::Ok;
+        }
+        i.mainsKnown = gMainsV >= 0.0;
+        i.mainsV = static_cast<float>(gMainsV);
+        i.mains = gMainsV >= power::kMainsOnV;
+        return i;
+    };
     deps.defaultPassword = "sim";
     deps.clockValid = [] { return gWorld->clockValid; };
     deps.utcNow = [] { return gWorld->clockValid ? gWorld->utc() : int64_t{0}; };
@@ -141,6 +156,8 @@ int main() {
         } else if (op == "sim") {
             JsonObjectConst s = in["set"].as<JsonObjectConst>();
             if (s["windKmh"].is<double>()) gWind = s["windKmh"].as<double>();
+            if (s["batteryV"].is<double>()) gBatV = s["batteryV"].as<double>();
+            if (s["mainsV"].is<double>()) gMainsV = s["mainsV"].as<double>();
             if (s["jammed"].is<bool>()) world.act.jammed = s["jammed"].as<bool>();
             if (s["wireBroken"].is<bool>()) world.act.wireBroken = s["wireBroken"].as<bool>();
             if (s["relayStuck"].is<bool>()) world.act.relayStuck = s["relayStuck"].as<bool>();
