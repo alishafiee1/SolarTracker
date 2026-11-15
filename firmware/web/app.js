@@ -172,13 +172,16 @@ function buildGauge() {
   const [x1, y1] = pt(limits.min, SC.range), [x2, y2] = pt(limits.max, SC.range);
   const [o1x, o1y] = pt(-90, SC.orbit), [o2x, o2y] = pt(90, SC.orbit);
   const lab = (a, txt) => { const [x, y] = pt(a, SC.range - 16); return `<text x="${x}" y="${y}" text-anchor="middle" font-size="11" fill="${SCENE}" fill-opacity=".8">${txt}</text>`; };
-  const stars = [[50, 30], [110, 18], [230, 26], [286, 54], [200, 70], [78, 76], [140, 52]].map(([x, y]) => `<circle cx="${x}" cy="${y}" r="1.4" fill="#fff"/>`).join("");
+  // Night scene (cycle 027): a crescent moon in the upper east corner (right) and a few stars around it, away from every label.
+  const star = (x, y, r, d) => `<g class="tw" style="--d:${d}s"><circle cx="${x}" cy="${y}" r="${r}" fill="#fff"/></g>`;
+  const night = `<g id="gNight"><defs><radialGradient id="gMoonGlow"><stop offset="0" stop-color="#cfe0ff" stop-opacity=".5"/><stop offset="1" stop-color="#cfe0ff" stop-opacity="0"/></radialGradient></defs><g class="stars">${star(228, 34, 1.5, 0)}${star(288, 30, 1.2, 1.1)}${star(284, 84, 1.4, 2.2)}${star(236, 76, 1, 0.6)}</g>` +
+    `<g class="moon"><g transform="translate(262 52) rotate(-28)"><circle class="halo" r="28" fill="url(#gMoonGlow)"/><path d="M0 -13A13 13 0 1 0 0 13A16.5 16.5 0 0 1 0 -13Z" fill="#f4f1de"/></g></g></g>`;
   const rays = Array.from({ length: 8 }, (_, i) => { const a = (i * Math.PI) / 4; return `<line x1="${(17 * Math.cos(a)).toFixed(1)}" y1="${(17 * Math.sin(a)).toFixed(1)}" x2="${(23 * Math.cos(a)).toFixed(1)}" y2="${(23 * Math.sin(a)).toFixed(1)}"/>`; }).join("");
   $("gauge").innerHTML =
     `<rect id="gSky" x="0" y="0" width="320" height="200" rx="12" fill="#2a3f66"/>` +
     `<rect id="gBand" x="0" y="116" width="320" height="34" fill="#d9825b" opacity="0"/>` +
     `<path d="M${o1x} ${o1y} A${SC.orbit} ${SC.orbit} 0 0 1 ${o2x} ${o2y}" fill="none" stroke="#fff" stroke-opacity=".25" stroke-width="2" stroke-dasharray="2 6" stroke-linecap="round"/>` +
-    `<g id="gStars" opacity="0">${stars}</g>` +
+    night +
     `<path d="M${x1} ${y1} A${SC.range} ${SC.range} 0 0 1 ${x2} ${y2}" fill="none" stroke="#fff" stroke-opacity=".22" stroke-width="8" stroke-linecap="round"/>` +
     lab(limits.min, fa(limits.min, 0) + "°") + lab(limits.max, "+" + fa(limits.max, 0) + "°") +
     `<g id="gSun" style="display:none"><circle id="gGlow" r="26" opacity=".22"/><g id="gRays" stroke-width="2.5" stroke-linecap="round">${rays}</g><circle id="gDisc" r="12"/></g>` +
@@ -221,7 +224,7 @@ function moveSun(el, az) {
   sun.style.transform = `translate(${x.toFixed(1)}px, ${y.toFixed(1)}px)`;
   $("gSky").setAttribute("fill", ramp(el, SKY));
   $("gBand").setAttribute("opacity", (Math.max(0, 1 - Math.abs(el - 2) / 10) * 0.6).toFixed(2));
-  $("gStars").setAttribute("opacity", Math.max(0, Math.min(1, (-6 - el) / 6)).toFixed(2));
+  $("gauge").classList.toggle("night", el < -4);  // the moon rises and the stars come out only at night
   const day = el >= 0, c = day ? ramp(el, SUNC) : "#8ea0b8";
   $("gGlow").setAttribute("fill", c); $("gGlow").style.display = day ? "" : "none";
   $("gRays").setAttribute("stroke", c); $("gRays").style.display = day ? "" : "none";

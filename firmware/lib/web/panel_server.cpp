@@ -1,3 +1,4 @@
+#include <string.h>
 #include "panel_server.h"
 
 #include <Arduino.h>
@@ -30,7 +31,8 @@ void sendJson(AsyncWebServerRequest* r, const webapi::Response& res) {
 void sendFile(AsyncWebServerRequest* r, const PanelFile& f) {
     AsyncWebServerResponse* out = r->beginResponse_P(200, f.type, f.data, f.size);
     out->addHeader("Content-Encoding", "gzip");
-    out->addHeader("Cache-Control", "no-cache");
+    // The fonts never change between versions of the panel, so the phone keeps them (65 KB would otherwise load at every visit).
+    out->addHeader("Cache-Control", strcmp(f.type, "font/woff2") == 0 ? "public, max-age=31536000, immutable" : "no-cache");
     r->send(out);
 }
 

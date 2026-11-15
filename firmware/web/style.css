@@ -1,8 +1,12 @@
+/* Vazirmatn (SIL Open Font License, docs/licenses/Vazirmatn-OFL.txt): Persian letters, digits drawn in Persian forms, no Latin glyphs. */
+@font-face{font-family:VazirPanel;font-weight:400;font-style:normal;font-display:swap;src:url(/Vazirmatn-FD-NL-Regular.woff2) format("woff2")}
+@font-face{font-family:VazirPanel;font-weight:600;font-style:normal;font-display:swap;src:url(/Vazirmatn-FD-NL-SemiBold.woff2) format("woff2")}
+@font-face{font-family:VazirPanel;font-weight:700;font-style:normal;font-display:swap;src:url(/Vazirmatn-FD-NL-Bold.woff2) format("woff2")}
 :root{--bg:#eef1f4;--card:#fff;--ink:#1c2630;--mute:#51606d;--line:#d8dee4;--accent:#e08a00;--ok:#1a8a4a;--warn:#b7791f;--bad:#c0392b;--sky:#dcecfb;--panel:#2c4a6b}
 @media (prefers-color-scheme:dark){:root{--bg:#10161c;--card:#1a232c;--ink:#e8edf2;--mute:#b9c7d3;--line:#33414f;--accent:#ffb02e;--ok:#46c37b;--warn:#f0b445;--bad:#ff6b5b;--sky:#16293b;--panel:#7fb0e0}}
 *{box-sizing:border-box}
 html{-webkit-text-size-adjust:100%}
-body{margin:0;font-family:Vazirmatn,Tahoma,"Segoe UI",sans-serif;background:var(--bg);color:var(--ink);font-size:16px;line-height:1.55}
+body{margin:0;font-family:VazirPanel,Tahoma,"Segoe UI",sans-serif;background:var(--bg);color:var(--ink);font-size:16px;line-height:1.55}
 header{position:sticky;top:0;z-index:5;display:flex;justify-content:space-between;align-items:center;padding:10px 16px;background:var(--card);border-bottom:1px solid var(--line)}
 h1{font-size:1.15rem;margin:0}h2{font-size:1.05rem;margin:0 0 .6rem}
 .hdr{display:flex;gap:8px;align-items:center}
@@ -110,3 +114,15 @@ header{flex-wrap:wrap;gap:6px}
 .batt i{display:block;height:100%;border-radius:2px;background:var(--ok);transition:width .6s}
 .batt.low i{background:var(--warn)}.batt.crit i{background:var(--bad)}.batt.crit{border-color:var(--bad)}
 .batt b{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;line-height:1;color:var(--ink);text-shadow:0 0 2px var(--card),0 0 2px var(--card)}
+
+/* night sky (cycle 027): the moon rises a few seconds after the page shows the night, then the stars start to twinkle */
+#gNight .moon{transform:translateY(110px);opacity:0;transition:transform .8s ease-in,opacity .6s}
+#gNight .stars .tw{opacity:0;transition:opacity .6s}
+#gauge.night #gNight .moon{transform:none;opacity:1;transition:transform 5s cubic-bezier(.2,.7,.2,1) 1.5s,opacity 2.5s 1.5s}
+#gauge.night #gNight .stars .tw{opacity:1;transition:opacity 2.5s 5.5s}
+#gNight .tw circle{transform-box:fill-box;transform-origin:center}
+#gauge.night #gNight .tw circle{animation:twinkle 3.6s ease-in-out infinite;animation-delay:calc(6s + var(--d))}
+#gNight .halo{opacity:.8}#gauge.night #gNight .halo{animation:moonglow 7s ease-in-out infinite 6.5s}
+@keyframes twinkle{0%,100%{opacity:.35;transform:scale(.7)}50%{opacity:1;transform:scale(1.35)}}
+@keyframes moonglow{50%{opacity:.4}}
+@media (prefers-reduced-motion:reduce){#gNight .moon,#gNight .stars .tw{transition:none}#gauge.night #gNight .moon,#gauge.night #gNight .stars .tw{transition:none}#gauge.night #gNight .tw circle,#gauge.night #gNight .halo{animation:none}}
