@@ -188,6 +188,18 @@ Response WebApi::status() {
     d["targetDeg"] = s.targetDeg;
     d["windKmh"] = d_.wind.speedKmh();
     d["windStow"] = d_.wind.stow();
+    const power::Info pw = d_.powerInfo();  // cycle 023: null while the pin sees no battery / the charger pin is not wired
+    if (pw.batteryKnown) {
+        d["batteryV"] = static_cast<int>(pw.batteryV * 100.0f + 0.5f) / 100.0;
+        d["batteryPct"] = pw.percent;
+        d["batteryState"] = pw.state == power::BatteryState::Critical ? "critical" : pw.state == power::BatteryState::Low ? "low" : "ok";
+    } else {
+        d["batteryV"] = nullptr;
+        d["batteryPct"] = nullptr;
+        d["batteryState"] = nullptr;
+    }
+    if (pw.mainsKnown) d["mainsOk"] = pw.mains;
+    else d["mainsOk"] = nullptr;
     d["currentA"] = nullptr;
     d["mode"] = modeName(d_.ctl.mode());
     d["state"] = control::stateName(s.state);

@@ -21,6 +21,7 @@
 #include "sct013_current.h"
 #include "settings.h"
 #include "supply_watch.h"
+#include "power_monitor.h"
 #include "tick_scheduler.h"
 #include "web_api.h"
 #include "wind_monitor.h"
@@ -53,6 +54,10 @@ constexpr int kPinSupply = 34;
 // phase); below 1 V at the pin the divider is treated as not fitted and the watch stays off.
 constexpr float kSupplyDividerRatio = 2.0f;
 constexpr float kSupplyPinPresentV = 1.0f;
+constexpr int kPinBattery = 35;        // cycle 023: Li-ion cell through a 1:2 divider (ADC1, input only)
+constexpr int kPinChargerIn = 36;      // cycle 023: charger input (mains side, 5 V) through a 1:2 divider
+constexpr float kBatteryDividerRatio = 2.0f;
+constexpr float kChargerDividerRatio = 2.0f;
 
 drivers::EspTime espTime;
 drivers::EspRandom espRandom;
@@ -64,6 +69,7 @@ drivers::LittleFsEventLog eventLog(rtcClock, espTime);
 settings::SettingsStore settingsStore(nvs);
 settings::Settings cfg;
 settings::SupplyWatch supplyWatch;
+power::PowerMonitor powerMonitor;
 angle::AngleProvider angleProvider(accel);
 motion::MotionController* motionCtl = nullptr;  // created in setup(), after the relays are forced off
 control::ControlStateMachine* controller = nullptr;
@@ -85,6 +91,7 @@ core::ControlLoop controlLoop;
 core::TickScheduler controlTick(0, core::kControlPeriodMs);
 core::ResetReason resetReason = core::ResetReason::Unknown;
 uint32_t lastSupplyMs = 0;
+uint32_t lastPowerMs = 0;
 
 motion::Timing timingFrom(const settings::Settings& s) {
     motion::Timing t;
@@ -96,6 +103,13 @@ motion::Timing timingFrom(const settings::Settings& s) {
     return t;
 }
 
+// Mean of 16 readings: one ADC sample of an ESP32 is noisy.
+float averagedVolts(int pin, float ratio) {
+    uint32_t sum = 0;
+    for (int i = 0; i < 16; ++i) sum += analogReadMilliVolts(pin);
+    return sum / 16.0f / 1000.0f * ratio;
+}
+
 float supplyVolts() { return analogReadMilliVolts(kPinSupply) / 1000.0f * kSupplyDividerRatio; }
 
 uint32_t restartAtMs = 0;                 // cycle 021: 0 = no restart asked
@@ -104,6 +118,29 @@ constexpr uint32_t kRestartDelayMs = 1500;  // shorter than stopSettleMs (3 s mi
 int64_t utcNow() { return cachedClockValid ? cachedUtc + (espTime.nowMs() - cachedUtcAtMs) / 1000 : 0; }
 
 }  // namespace
+
+// Cycle 023: a power event goes to the log and to the phone. A restored message forgets the lost one, so the next outage is told again.
+void handlePowerEvents(uint8_t ev, uint32_t now) {
+    struct Item { uint8_t bit; const char* key; const char* forget; const char* log; const char* textFa; };
+    static const Item items[] = {
+        {power::kMainsLost, "power:mains-lost", nullptr, "power: mains lost", "برق شهر قطع شد؛ دستگاه روی باتری کار می‌کند"},
+        {power::kMainsRestored, "power:mains-back", "power:mains-lost", "power: mains restored", "برق شهر دوباره وصل شد"},
+        {power::kBatteryLow, "power:battery-low", nullptr, "power: battery low", "باتری کم است"},
+        {power::kBatteryCritical, "power:battery-critical", nullptr, "power: battery critical", "باتری تقریباً خالی است"},
+        {power::kBatteryRecovered, "power:battery-ok", "power:battery-low", "power: battery recovered", "باتری به حالت عادی برگشت"},
+    };
+    for (const Item& it : items) {
+        if (!(ev & it.bit)) continue;
+        char detail[64];
+        snprintf(detail, sizeof(detail), "%s (%.2f V, %d%%)", it.log, static_cast<double>(powerMonitor.info().batteryV), powerMonitor.info().percent);
+        eventLog.append(hal::EventType::StateChange, detail);
+        if (it.bit == power::kMainsRestored) siteNet.forget("power:mains-back");
+        if (it.bit == power::kMainsLost) siteNet.forget("power:mains-back");
+        if (it.bit == power::kBatteryRecovered) siteNet.forget("power:battery-critical");
+        if (it.forget) siteNet.forget(it.forget);
+        siteNet.notify(it.key, net::formatNotification(panel->ssid(), it.textFa, utcNow(), cfg.tzOffsetMin), now);
+    }
+}
 
 void setup() {
     // R4: relays off before anything else runs. Keep this the first line.
@@ -179,6 +216,7 @@ void setup() {
         return s;
     };
     deps.logBytes = [] { return eventLog.storedBytes(); };
+    deps.powerInfo = [] { return powerMonitor.info(); };
     deps.onRestart = [] {  // relays off first; the chip restarts from loop() after the relays have settled
         motionCtl->emergencyStop(espTime.nowMs(), "restart requested");
         restartAtMs = espTime.nowMs() + kRestartDelayMs;
@@ -201,6 +239,7 @@ void setup() {
 
     controlTick = core::TickScheduler(espTime.nowMs(), core::kControlPeriodMs);
     lastSupplyMs = espTime.nowMs();
+    lastPowerMs = lastSupplyMs;
 }
 
 void loop() {
@@ -263,6 +302,12 @@ void loop() {
             snprintf(detail, sizeof(detail), "supply %.2f V below %.2f V", static_cast<double>(volts), static_cast<double>(cfg.supplyLowV));
             eventLog.append(hal::EventType::SupplyLow, detail);
         }
+    }
+    if (now - lastPowerMs >= 1000) {  // cycle 023: battery and mains
+        lastPowerMs = now;
+        const float chargerV = averagedVolts(kPinChargerIn, kChargerDividerRatio);
+        const uint8_t pe = powerMonitor.onSecond(averagedVolts(kPinBattery, kBatteryDividerRatio), chargerV, true);
+        if (pe != power::kNone) handlePowerEvents(pe, now);
     }
     eventLog.service();
     siteNet.service(now, rtcClock, cachedClockValid, &eventLog, cfg.clockAuto);

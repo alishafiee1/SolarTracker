@@ -99,3 +99,4 @@ dialog{border:1px solid var(--line);border-radius:14px;background:var(--card);co
 #netChange>summary{cursor:pointer;padding:10px 0;font-weight:600;color:var(--accent)}
 
 #gGlow{animation:glow 6s ease-in-out infinite}@keyframes glow{50%{opacity:.34}}@media (prefers-reduced-motion:reduce){#gGlow{animation:none}}
+.tile.bad{border-color:var(--bad)}.tile.bad small{color:var(--bad)}

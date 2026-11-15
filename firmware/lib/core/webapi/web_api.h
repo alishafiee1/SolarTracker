@@ -13,6 +13,7 @@
 #include "auth.h"
 #include "control_state_machine.h"
 #include "net_logic.h"
+#include "power_monitor.h"
 #include "settings.h"
 #include "wind_monitor.h"
 
@@ -74,6 +75,7 @@ struct Deps {
     std::function<void()> startWifiScan = [] {};
     std::function<WifiScan()> wifiScan = [] { return WifiScan(); };
     std::function<void()> onRestart = [] {};  // cycle 021: stop the motion, then restart the chip
+    std::function<power::Info()> powerInfo = [] { return power::Info(); };  // cycle 023
     std::function<size_t()> logBytes = [] { return size_t{0}; };  // bytes stored in the event log files
 };
 

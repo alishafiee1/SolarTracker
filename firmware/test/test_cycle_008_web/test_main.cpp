@@ -84,6 +84,7 @@ struct Rig {
     int testCalls = 0;
     int scansStarted = 0;
     int restarts = 0;
+    power::Info power;
     webapi::WifiScan scanResult;
     size_t logStored = 4200;
     bool testResult = true;
@@ -95,6 +96,7 @@ struct Rig {
         d.fwVersion = "test-1";
         d.defaultPassword = "default-pass-1";
         d.utcNow = [&r] { return r.clock.utc(); };
+        d.powerInfo = [&r] { return r.power; };
         d.onRestart = [&r] { ++r.restarts; };
         d.onSettingsChanged = [&r] { ++r.changedCalls; };
         d.onNetworkChanged = [&r] { ++r.networkChanged; };
@@ -219,6 +221,26 @@ static void restart_needs_a_session_and_asks_the_device_once() {  // cycle 021
     const std::string c = r.login();
     TEST_ASSERT_EQUAL_INT(200, r.call(true, "/api/restart", "{}", c).status);
     TEST_ASSERT_EQUAL_INT(1, r.restarts);
+}
+
+static void status_shows_battery_and_mains_only_when_they_are_measured() {  // cycle 023
+    Rig r;
+    JsonDocument none = parse(r.call(false, "/api/status"));
+    TEST_ASSERT_TRUE(none["batteryV"].isNull());
+    TEST_ASSERT_TRUE(none["mainsOk"].isNull());
+    power::Info pi;
+    pi.batteryKnown = true;
+    pi.batteryV = 3.876f;
+    pi.percent = 54;
+    pi.state = power::BatteryState::Low;
+    pi.mainsKnown = true;
+    pi.mains = false;
+    r.power = pi;
+    JsonDocument d = parse(r.call(false, "/api/status"));
+    TEST_ASSERT_DOUBLE_WITHIN(0.001, 3.88, d["batteryV"] | 0.0);
+    TEST_ASSERT_EQUAL_INT(54, d["batteryPct"] | -1);
+    TEST_ASSERT_EQUAL_STRING("low", d["batteryState"] | "?");
+    TEST_ASSERT_FALSE(d["mainsOk"] | true);
 }
 
 static void login_with_the_default_password_sets_a_safe_cookie() {
@@ -625,6 +647,7 @@ int main() {
     RUN_TEST(cities_list_has_31_entries);
     RUN_TEST(protected_endpoints_need_a_session);
     RUN_TEST(restart_needs_a_session_and_asks_the_device_once);
+    RUN_TEST(status_shows_battery_and_mains_only_when_they_are_measured);
     RUN_TEST(login_with_the_default_password_sets_a_safe_cookie);
     RUN_TEST(a_wrong_password_is_refused_and_five_failures_lock_logins);
     RUN_TEST(sessions_expire_after_30_idle_minutes_and_are_limited_to_four);

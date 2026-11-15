@@ -270,6 +270,11 @@ async function poll() {
     status = r.data;
     $("conn").textContent = "متصل"; $("conn").className = "pill";
     $("wind").innerHTML = ltr(fa(status.windKmh, 1));
+    const hasBat = status.batteryV != null;  // cycle 023
+    $("batTile").classList.toggle("hidden", !hasBat && status.mainsOk == null);
+    $("bat").innerHTML = hasBat ? ltr(fa(status.batteryV, 2) + " V") + " · " + ltr("~" + fa(status.batteryPct, 0) + "٪") : "—";
+    $("batNote").textContent = (status.mainsOk == null ? "" : status.mainsOk ? "برق شهر وصل است" : "برق شهر قطع است — روی باتری") + (status.batteryState === "low" ? " · باتری کم" : status.batteryState === "critical" ? " · باتری تقریباً خالی" : "");
+    $("batTile").classList.toggle("bad", status.mainsOk === false || status.batteryState === "critical");
     $("windNote").textContent = status.windStow ? "حالت ایمن باد" : "کیلومتر بر ساعت";
     $("mode").textContent = status.mode === "manual" ? "دستی" : "اتو";
     $("state").textContent = status.state;
@@ -563,7 +568,7 @@ const MOVES = ["MoveStart", "MoveEnd"], FAULTS = ["Fault", "FaultReset"];
 const TYPE_FA = { PowerUp: "روشن شدن", StateChange: "تغییر وضعیت", Fault: "خطا", FaultReset: "ریست خطا", MoveStart: "شروع حرکت", MoveEnd: "پایان حرکت", ClockSet: "تنظیم ساعت",
   SettingsChange: "تغییر تنظیمات", SettingsReset: "بازنشانی تنظیمات", SettingsMigrated: "به‌روزرسانی ساختار تنظیمات", SupplyLow: "ولتاژ پایین", LogReset: "پاک شدن لاگ" };
 const DETAIL_FA = [["no stored settings", "تنظیمات ذخیره‌شده‌ای نبود؛ پیش‌فرض‌ها بارگذاری شد"], ["power-on after cut", "روشن شدن پس از قطع برق"], ["power-on", "روشن شدن دستگاه"], ["wind stow start", "شروع حالت ایمن باد"], ["wind stow end", "پایان حالت ایمن باد"],
-  ["end of stroke: limit reached", "انتهای کورس جک: به حد رسید"], ["manual keep-alive lost", "ارتباط دکمه دستی قطع شد"], ["angle calibration saved", "کالیبراسیون زاویه ذخیره شد"], ["sensor offsets saved", "آفست سنسور ذخیره شد"], ["sensor offsets reset", "آفست سنسور پاک شد"],
+  ["end of stroke: limit reached", "انتهای کورس جک: به حد رسید"], ["manual keep-alive lost", "ارتباط دکمه دستی قطع شد"], ["angle calibration saved", "کالیبراسیون زاویه ذخیره شد"], ["sensor offsets saved", "آفست سنسور ذخیره شد"], ["sensor offsets reset", "آفست سنسور پاک شد"], ["power: mains lost", "برق شهر قطع شد"], ["power: mains restored", "برق شهر وصل شد"], ["power: battery low", "باتری کم است"], ["power: battery critical", "باتری تقریباً خالی است"], ["power: battery recovered", "باتری به حالت عادی برگشت"],
   ["notification settings changed", "تنظیمات هشدار عوض شد"], ["settings password changed", "رمز عوض شد"], ["site wifi changed", "وای‌فای محل عوض شد"], ["older layout", "ساختار قدیمی"],
   ["dir=east", "جهت: شرق"], ["dir=west", "جهت: غرب"], ["reason=", "علت: "], ["angle=", "زاویه: "], ["ms=", "مدت (میلی‌ثانیه): "], ["->", " ⟵ "],
   ["Auto", "خودکار"], ["Manual", "دستی"], ["Wind", "باد"], ["Night", "شب"], ["Fault", "خطا"], ["stop", "توقف"], ["target", "رسیدن به هدف"]];
