@@ -282,7 +282,6 @@ function renderClock() {
   const p = localParts(utc, tz), j = g2j(p.y, p.m, p.d);
   $("liveTime").textContent = timeText(utc, tz);
   $("liveDate").textContent = `${toFa(j[2])} ${JMONTH[j[1] - 1]} ${toFa(j[0])}`;
-  $("devTime").textContent = showDate(utc, tz);
   $("clockNow").textContent = showDate(utc, tz);
 }
 setInterval(renderClock, 1000);
@@ -308,12 +307,12 @@ async function poll() {
     $("statusBadge").className = "badge " + badge;
     $("fw").textContent = status.fwVersion;
     if (status.clockValid) { clockBase = { utc: status.utc, tz: status.tzOffsetMin, at: Date.now() }; renderClock(); }
-    else { clockBase = null; $("devTime").textContent = $("clockNow").textContent = $("liveTime").textContent = "تنظیم نشده"; $("liveDate").textContent = ""; }
+    else { clockBase = null; $("clockNow").textContent = $("liveTime").textContent = "تنظیم نشده"; $("liveDate").textContent = ""; }
     const hasSun = status.sunElevationDeg !== null && status.sunElevationDeg !== undefined;
     $("sunEl").innerHTML = hasSun ? degTxt(status.sunElevationDeg) : "—";
     $("sunNote").textContent = !hasSun ? "" : status.sunElevationDeg < 0 ? "زیر افق (شب)" : "بالای افق";
     netFromStatus();
-    $("staState").innerHTML = status.staConnected ? "متصل " + ltr(status.staIp) : "—";
+    renderWifi(status);
     $("warnDefault").classList.toggle("hidden", !status.passwordIsDefault);
     $("warnClock").classList.toggle("hidden", status.clockValid);
     $("warnCal").classList.toggle("hidden", status.calibrated);
@@ -622,7 +621,19 @@ $("logChips").onclick = (e) => {
 };
 
 // ---- site Wi-Fi and notifications ----
-function bars(rssi) { return rssi > -55 ? "▂▄▆█" : rssi > -67 ? "▂▄▆" : rssi > -78 ? "▂▄" : "▂"; }
+// Wi-Fi icon (cycle 028): the fan of arcs, not the phone's rising bars. 3 arcs = strong, 0 arcs = only the dot.
+const wifiLevel = (rssi) => (rssi > -60 ? 3 : rssi > -70 ? 2 : rssi > -80 ? 1 : 0);
+const wifiSvg = (level, off) => `<svg class="wf l${level}${off ? " off" : ""}" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path class="a3" d="M2.5 9.2a13.5 13.5 0 0 1 19 0"/><path class="a2" d="M5.6 12.6a9.1 9.1 0 0 1 12.8 0"/><path class="a1" d="M8.7 16a4.7 4.7 0 0 1 6.6 0"/><circle cx="12" cy="19.6" r="1.4" fill="currentColor" stroke="none"/><path class="slash" d="M3 3l18 18"/></svg>`;
+let wifiSeen = false;  // the header icon shows a cut connection only after it was connected once
+function renderWifi(st) {
+  const c = !!st.staConnected;
+  if (c) wifiSeen = true;
+  $("wifi").classList.toggle("hidden", !c && !wifiSeen);
+  const rssi = st.staRssi || -100;
+  $("wifi").innerHTML = wifiSvg(c ? wifiLevel(rssi) : 0, !c);
+  $("wifi").className = "wifi" + (c ? "" : " bad") + (!c && !wifiSeen ? " hidden" : "");
+  $("wifi").title = c ? "وای‌فای محل: متصل، قدرت سیگنال " + toFa(rssi) + " دسی‌بل‌میلی‌وات (dBm)، آدرس " + st.staIp : "وای‌فای محل قطع است";
+}
 const MASK = "••••••••";
 function setMasked(el, isSet) {
   if (document.activeElement === el || (el.value && el.value !== MASK)) return;
@@ -637,7 +648,7 @@ function renderNetState(connected, ip, rssi) {
   const box = $("netBox");
   box.className = "netbox " + (connected ? "on" : netCfgSsid ? "wait" : "off");
   $("netState").innerHTML = connected ? "متصل به " + (netCfgSsid ? `<bdi dir="ltr">${netCfgSsid.replace(/[<&]/g, "")}</bdi> · ` : "") + ltr(ip) : netCfgSsid ? "متصل نیست؛ در حال تلاش…" : "تنظیم نشده";
-  $("netBars").textContent = connected && rssi ? bars(rssi) + " " + fa(rssi, 0) + "dBm" : "";
+  $("netBars").innerHTML = connected && rssi ? wifiSvg(wifiLevel(rssi)) + " " + ltr(toFa(rssi) + " dBm") : "";
 }
 function netFromStatus() {
   if (!status) return;
@@ -669,7 +680,7 @@ $("scanBtn").onclick = async () => {
     const r = await api("GET", "/api/wifi/scan");
     if (r.ok && r.data.state === "done") {
       $("scanList").innerHTML = r.data.networks.length
-        ? r.data.networks.map((n) => `<li data-ssid="${n.ssid.replace(/"/g, "&quot;")}"><span>${n.ssid.replace(/[<&]/g, "")}</span><span class="bars">${bars(n.rssi)} ${n.secure ? "🔒" : ""}</span></li>`).join("")
+        ? r.data.networks.map((n) => `<li data-ssid="${n.ssid.replace(/"/g, "&quot;")}"><span>${n.ssid.replace(/[<&]/g, "")}</span><span class="bars">${wifiSvg(wifiLevel(n.rssi))} ${n.secure ? "🔒" : ""}</span></li>`).join("")
         : "<li>شبکه‌ای پیدا نشد</li>";
       break;
     }

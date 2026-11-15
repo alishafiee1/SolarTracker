@@ -15,6 +15,7 @@ namespace {
 
 sim::World* gWorld = nullptr;
 double gWind = 0.0;
+double gRssi = -52.0;   // site Wi-Fi signal in dBm (0 = not connected)
 double gBatV = 3.9;     // volts at the battery pin (0 = no battery)
 double gMainsV = 5.0;   // volts on the charger input (negative = pin not wired)
 
@@ -86,8 +87,9 @@ int main() {
     };
     deps.netInfo = [] {
         webapi::NetInfo n;
-        n.connected = true;
-        strcpy(n.ip, "127.0.0.1");
+        n.connected = gRssi < 0.0;
+        n.rssiDbm = static_cast<int>(gRssi);
+        if (n.connected) strcpy(n.ip, "127.0.0.1");
         n.lastNotify = 1;
         return n;
     };
@@ -156,6 +158,7 @@ int main() {
         } else if (op == "sim") {
             JsonObjectConst s = in["set"].as<JsonObjectConst>();
             if (s["windKmh"].is<double>()) gWind = s["windKmh"].as<double>();
+            if (s["rssi"].is<double>()) gRssi = s["rssi"].as<double>();
             if (s["batteryV"].is<double>()) gBatV = s["batteryV"].as<double>();
             if (s["mainsV"].is<double>()) gMainsV = s["mainsV"].as<double>();
             if (s["jammed"].is<bool>()) world.act.jammed = s["jammed"].as<bool>();

@@ -126,3 +126,10 @@ header{flex-wrap:wrap;gap:6px}
 @keyframes twinkle{0%,100%{opacity:.35;transform:scale(.7)}50%{opacity:1;transform:scale(1.35)}}
 @keyframes moonglow{50%{opacity:.4}}
 @media (prefers-reduced-motion:reduce){#gNight .moon,#gNight .stars .tw{transition:none}#gauge.night #gNight .moon,#gauge.night #gNight .stars .tw{transition:none}#gauge.night #gNight .tw circle,#gauge.night #gNight .halo{animation:none}}
+
+/* Wi-Fi icon (cycle 028) */
+.wifi{display:inline-flex;align-items:center;color:var(--ok)}.wifi.bad{color:var(--bad)}
+.wf .a1,.wf .a2,.wf .a3{opacity:.25}.wf.l1 .a1,.wf.l2 .a1,.wf.l2 .a2,.wf.l3 .a1,.wf.l3 .a2,.wf.l3 .a3{opacity:1}
+.wf.l1{color:var(--bad)}.wf.l2{color:var(--warn)}.wf .slash{display:none}.wf.off .slash{display:block}.wf.off .a1,.wf.off .a2,.wf.off .a3{opacity:.3}
+.bars .wf{vertical-align:middle}
+.wf.l0{color:var(--bad)}
