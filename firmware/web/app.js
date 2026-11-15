@@ -275,7 +275,8 @@ async function poll() {
     $("bat").innerHTML = hasBat ? ltr(fa(status.batteryV, 2) + " V") + " · " + ltr("~" + fa(status.batteryPct, 0) + "٪") : "—";
     $("batNote").textContent = (status.mainsOk == null ? "" : status.mainsOk ? "برق شهر وصل است" : "برق شهر قطع است — روی باتری") + (status.batteryState === "low" ? " · باتری کم" : status.batteryState === "critical" ? " · باتری تقریباً خالی" : "");
     $("batTile").classList.toggle("bad", status.mainsOk === false || status.batteryState === "critical");
-    $("windNote").textContent = status.windStow ? "حالت ایمن باد" : "کیلومتر بر ساعت";
+    $("windNote").textContent = status.windSensorFault ? "بادسنج خطا می‌دهد؛ سیم و سنسور را ببینید" : status.windStow ? "حالت ایمن باد" : "کیلومتر بر ساعت";
+    $("wind").parentElement.classList.toggle("bad", !!status.windSensorFault);
     $("mode").textContent = status.mode === "manual" ? "دستی" : "اتو";
     $("state").textContent = status.state;
     $("stateName").textContent = status.moving ? "در حال حرکت" : "ایستاده";
@@ -309,7 +310,7 @@ async function poll() {
     if (!status.calibrated && status.gravity) { const g = status.gravity.map((v) => v.toFixed(2)); $("rawG").textContent = "سنسور زنده: x=" + g[0] + " y=" + g[1] + " z=" + g[2]; }
     $("faultBar").classList.toggle("hidden", !status.fault);
     $("faultBarText").textContent = status.fault ? status.text : "";
-    $("resetFault").classList.toggle("hidden", !status.fault || !loggedIn);
+    $("resetFault").classList.toggle("hidden", !(status.fault || status.windStow || status.windSensorFault) || !loggedIn);
     moveGauge(uiAngle(status.angleDeg));
     moveSun(status.sunElevationDeg, status.sunAzimuthDeg);
     // difference between the panel and where it should point; the motor starts when it reaches the move threshold
@@ -325,7 +326,7 @@ async function poll() {
 setInterval(poll, 1000);
 
 $("resetFault").onclick = async () => {
-  if (!(await confirmDialog("خطا ریست شود؟ مطمئن شوید علت آن (مثلاً گیر کردن بازو) برطرف شده است."))) return;
+  if (!(await confirmDialog("ریست شود؟ مطمئن شوید علت آن (مثلاً گیر کردن بازو) برطرف شده است. اگر حالت ایمن باد فعال باشد هم تمام می‌شود و اگر باد واقعاً شدید باشد، بعد از چند ثانیه دوباره شروع می‌شود."))) return;
   const r = await api("POST", "/api/fault/reset", {});
   toast(r.ok ? "خطا ریست شد" : errText(r), r.ok ? "ok" : "err"); poll();
 };
@@ -568,7 +569,7 @@ const MOVES = ["MoveStart", "MoveEnd"], FAULTS = ["Fault", "FaultReset"];
 const TYPE_FA = { PowerUp: "روشن شدن", StateChange: "تغییر وضعیت", Fault: "خطا", FaultReset: "ریست خطا", MoveStart: "شروع حرکت", MoveEnd: "پایان حرکت", ClockSet: "تنظیم ساعت",
   SettingsChange: "تغییر تنظیمات", SettingsReset: "بازنشانی تنظیمات", SettingsMigrated: "به‌روزرسانی ساختار تنظیمات", SupplyLow: "ولتاژ پایین", LogReset: "پاک شدن لاگ" };
 const DETAIL_FA = [["no stored settings", "تنظیمات ذخیره‌شده‌ای نبود؛ پیش‌فرض‌ها بارگذاری شد"], ["power-on after cut", "روشن شدن پس از قطع برق"], ["power-on", "روشن شدن دستگاه"], ["wind stow start", "شروع حالت ایمن باد"], ["wind stow end", "پایان حالت ایمن باد"],
-  ["end of stroke: limit reached", "انتهای کورس جک: به حد رسید"], ["manual keep-alive lost", "ارتباط دکمه دستی قطع شد"], ["angle calibration saved", "کالیبراسیون زاویه ذخیره شد"], ["sensor offsets saved", "آفست سنسور ذخیره شد"], ["sensor offsets reset", "آفست سنسور پاک شد"], ["power: mains lost", "برق شهر قطع شد"], ["power: mains restored", "برق شهر وصل شد"], ["power: battery low", "باتری کم است"], ["power: battery critical", "باتری تقریباً خالی است"], ["power: battery recovered", "باتری به حالت عادی برگشت"],
+  ["end of stroke: limit reached", "انتهای کورس جک: به حد رسید"], ["manual keep-alive lost", "ارتباط دکمه دستی قطع شد"], ["angle calibration saved", "کالیبراسیون زاویه ذخیره شد"], ["sensor offsets saved", "آفست سنسور ذخیره شد"], ["sensor offsets reset", "آفست سنسور پاک شد"], ["wind sensor fault: unbelievable readings", "بادسنج خطا می‌دهد: سرعت غیرممکن یا نوسان شدید"], ["wind sensor readings believable again", "بادسنج دوباره عادی شد"], ["wind stow reset from the panel", "حالت ایمن باد با دکمهٔ ریست پایان یافت"], ["power: mains lost", "برق شهر قطع شد"], ["power: mains restored", "برق شهر وصل شد"], ["power: battery low", "باتری کم است"], ["power: battery critical", "باتری تقریباً خالی است"], ["power: battery recovered", "باتری به حالت عادی برگشت"],
   ["notification settings changed", "تنظیمات هشدار عوض شد"], ["settings password changed", "رمز عوض شد"], ["site wifi changed", "وای‌فای محل عوض شد"], ["older layout", "ساختار قدیمی"],
   ["dir=east", "جهت: شرق"], ["dir=west", "جهت: غرب"], ["reason=", "علت: "], ["angle=", "زاویه: "], ["ms=", "مدت (میلی‌ثانیه): "], ["->", " ⟵ "],
   ["Auto", "خودکار"], ["Manual", "دستی"], ["Wind", "باد"], ["Night", "شب"], ["Fault", "خطا"], ["stop", "توقف"], ["target", "رسیدن به هدف"]];

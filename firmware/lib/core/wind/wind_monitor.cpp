@@ -26,9 +26,79 @@ float WindMonitor::computeSpeed(uint32_t nowUs, float factor) {
     return hz * factor;  // R2
 }
 
+void WindMonitor::reset() {
+    count_ = 0;
+    speedKmh_ = 0.0f;
+    stow_ = false;
+    above_ = false;
+    below_ = false;
+    peakKmh_ = 0.0f;
+    sensorFault_ = false;
+    implausible_ = false;
+    calm_ = false;
+    prevSpeedKmh_ = 0.0f;
+    jumps_ = 0;
+}
+
 Result WindMonitor::update(uint32_t nowMs, uint32_t nowUs, const Config& cfg) {
     Result r;
     speedKmh_ = computeSpeed(nowUs, cfg.factorKmhPerHz);
+
+    // Cycle 024: believe the sensor only while it behaves like a sensor.
+    const bool unbelievable = speedKmh_ > kImplausibleKmh;
+    if (unbelievable) {
+        if (!implausible_) {
+            implausible_ = true;
+            implausibleSinceMs_ = nowMs;
+        }
+    } else {
+        implausible_ = false;
+    }
+    if (static_cast<float>(speedKmh_ > prevSpeedKmh_ ? speedKmh_ - prevSpeedKmh_ : prevSpeedKmh_ - speedKmh_) > kJumpKmh) {
+        if (jumps_ == 0 || static_cast<uint32_t>(nowMs - jumpWindowStartMs_) > kJumpWindowMs) {
+            jumps_ = 0;
+            jumpWindowStartMs_ = nowMs;
+        }
+        if (jumps_ < 255) ++jumps_;
+    }
+    prevSpeedKmh_ = speedKmh_;
+    const bool wild = jumps_ >= 3 && static_cast<uint32_t>(nowMs - jumpWindowStartMs_) <= kJumpWindowMs;
+    if (!sensorFault_ && ((implausible_ && static_cast<uint32_t>(nowMs - implausibleSinceMs_) >= kImplausibleHoldMs) || wild)) {
+        sensorFault_ = true;
+        calm_ = false;
+        r.sensorFault = true;
+    }
+    if (sensorFault_ && !r.sensorFault) {
+        if (unbelievable || wild) {
+            calm_ = false;
+        } else if (!calm_) {
+            calm_ = true;
+            calmSinceMs_ = nowMs;
+        } else if (static_cast<uint32_t>(nowMs - calmSinceMs_) >= kSensorCalmMs) {
+            sensorFault_ = false;
+            jumps_ = 0;
+            r.sensorOk = true;
+        }
+    }
+    if (sensorFault_) {  // the stow logic sees calm air: a bad sensor must neither start nor hold a stow
+        const float shown = speedKmh_;
+        speedKmh_ = 0.0f;
+        const Result inner = updateStow(nowMs, cfg);
+        speedKmh_ = shown;
+        r.stowStarted = inner.stowStarted;
+        r.stowEnded = inner.stowEnded;
+        r.peakKmh = inner.peakKmh;
+        return r;
+    }
+    const Result inner = updateStow(nowMs, cfg);
+    r.stowStarted = inner.stowStarted;
+    r.stowEnded = inner.stowEnded;
+    r.peakKmh = inner.peakKmh;
+    return r;
+}
+
+Result WindMonitor::updateStow(uint32_t nowMs, const Config& cfg) {
+    Result r;
 
     if (speedKmh_ > cfg.stowKmh) {  // R3: strictly greater
         if (!above_) {

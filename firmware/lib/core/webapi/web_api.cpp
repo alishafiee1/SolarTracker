@@ -138,6 +138,10 @@ Response WebApi::handle(const Request& req) {
         return ok();
     }
     if (req.post && p == "/api/fault/reset") {
+        if (d_.wind.stow() || d_.wind.sensorFault()) {  // cycle 024: the user says it is fine (or is testing the anemometer)
+            d_.wind.reset();
+            d_.log.append(hal::EventType::StateChange, "wind stow reset from the panel");
+        }
         d_.angle.clearFault();  // without this a latched sensor fault would latch again at once
         d_.ctl.command(control::Command::ResetFault, req.nowMs);
         return ok();
@@ -188,6 +192,7 @@ Response WebApi::status() {
     d["targetDeg"] = s.targetDeg;
     d["windKmh"] = d_.wind.speedKmh();
     d["windStow"] = d_.wind.stow();
+    d["windSensorFault"] = d_.wind.sensorFault();  // cycle 024
     const power::Info pw = d_.powerInfo();  // cycle 023: null while the pin sees no battery / the charger pin is not wired
     if (pw.batteryKnown) {
         d["batteryV"] = static_cast<int>(pw.batteryV * 100.0f + 0.5f) / 100.0;

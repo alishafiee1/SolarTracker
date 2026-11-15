@@ -274,6 +274,20 @@ void loop() {
             snprintf(detail, sizeof(detail), "wind stow %s, peak %.0f km/h", wr.stowStarted ? "start" : "end", static_cast<double>(wr.peakKmh));
             eventLog.append(hal::EventType::StateChange, detail);
             if (wr.stowStarted) siteNet.notify("wind", net::formatNotification(panel->ssid(), "باد شدید — حالت ایمن", utcNow(), cfg.tzOffsetMin), now);
+            if (wr.stowEnded) {
+                siteNet.forget("wind");  // the next storm is told again
+                siteNet.notify("wind-end", net::formatNotification(panel->ssid(), "باد آرام شد؛ ردیابی دوباره شروع می‌شود", utcNow(), cfg.tzOffsetMin), now);
+            }
+        }
+        if (wr.sensorFault || wr.sensorOk) {  // cycle 024
+            eventLog.append(hal::EventType::StateChange, wr.sensorFault ? "wind sensor fault: unbelievable readings" : "wind sensor readings believable again");
+            if (wr.sensorFault) {
+                siteNet.forget("wind-sensor-ok");
+                siteNet.notify("wind-sensor", net::formatNotification(panel->ssid(), "بادسنج خطا می‌دهد (سرعت غیرممکن یا نوسان شدید)؛ سیم و بادسنج را بررسی کنید", utcNow(), cfg.tzOffsetMin), now);
+            } else {
+                siteNet.forget("wind-sensor");
+                siteNet.notify("wind-sensor-ok", net::formatNotification(panel->ssid(), "بادسنج دوباره عادی کار می‌کند", utcNow(), cfg.tzOffsetMin), now);
+            }
         }
         in.windStow = windMonitor.stow();
         in.currentA = cfg.currentPresent ? currentSensor.rmsAmps() : 0.0f;  // optional module 009

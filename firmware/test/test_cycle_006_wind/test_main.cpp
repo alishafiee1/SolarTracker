@@ -22,6 +22,8 @@ struct Rig {
     bool ended = false;
     float peakAtEnd = 0;
     int startCount = 0;
+    int faultCount = 0;
+    int okCount = 0;
 
     explicit Rig(uint32_t startUs = 1000000) : nowUs(startUs), nextPulseUs(0) { clockUs = startUs; nextPulseUs = clockUs; }
 
@@ -44,6 +46,8 @@ struct Rig {
                 started = true;
                 ++startCount;
             }
+            if (r.sensorFault) ++faultCount;
+            if (r.sensorOk) ++okCount;
             if (r.stowEnded) {
                 ended = true;
                 peakAtEnd = r.peakKmh;
@@ -175,6 +179,59 @@ static void changed_thresholds_apply_at_once() {
     TEST_ASSERT_FALSE(r.mon.stow());
 }
 
+// ------------------------------------------------------------ cycle 024: an unbelievable sensor
+static void an_impossible_speed_is_a_sensor_fault_and_never_a_stow() {
+    Rig r;
+    r.run(1500, 300.0f);
+    TEST_ASSERT_EQUAL_INT(0, r.faultCount);  // not yet: it could be a short burst
+    r.run(10000, 300.0f);
+    TEST_ASSERT_EQUAL_INT(1, r.faultCount);
+    TEST_ASSERT_TRUE(r.mon.sensorFault());
+    TEST_ASSERT_FALSE(r.mon.stow());
+    TEST_ASSERT_FALSE(r.started);
+}
+
+static void a_real_storm_is_not_a_sensor_fault() {
+    Rig r;
+    r.run(10000, 90.0f);
+    TEST_ASSERT_TRUE(r.started);
+    TEST_ASSERT_EQUAL_INT(0, r.faultCount);
+    TEST_ASSERT_FALSE(r.mon.sensorFault());
+}
+
+static void the_sensor_fault_clears_after_a_calm_minute_of_believable_readings() {
+    Rig r;
+    r.run(12000, 300.0f);
+    TEST_ASSERT_TRUE(r.mon.sensorFault());
+    r.run(50000, 0.0f);
+    TEST_ASSERT_TRUE(r.mon.sensorFault());
+    r.run(20000, 0.0f);
+    TEST_ASSERT_FALSE(r.mon.sensorFault());
+    TEST_ASSERT_EQUAL_INT(1, r.okCount);
+}
+
+static void wild_swings_raise_the_sensor_fault() {
+    Rig r;
+    for (int i = 0; i < 3; ++i) {
+        r.run(300, 100.0f);
+        r.run(3300, 0.0f);
+    }
+    TEST_ASSERT_EQUAL_INT(1, r.faultCount);
+    TEST_ASSERT_FALSE(r.started);
+}
+
+static void reset_leaves_the_stow_and_a_real_storm_starts_it_again() {
+    Rig r;
+    r.run(10000, 60.0f);
+    TEST_ASSERT_TRUE(r.mon.stow());
+    r.mon.reset();
+    TEST_ASSERT_FALSE(r.mon.stow());
+    TEST_ASSERT_FALSE(r.mon.sensorFault());
+    r.started = false;
+    r.run(10000, 60.0f);  // the wind is still there: back in the stow after the normal delay
+    TEST_ASSERT_TRUE(r.started);
+}
+
 int main() {
     UNITY_BEGIN();
     RUN_TEST(speed_follows_the_pulse_rate);
@@ -189,5 +246,10 @@ int main() {
     RUN_TEST(a_gust_during_the_wait_restarts_the_fifteen_minutes);
     RUN_TEST(remaining_time_is_reported);
     RUN_TEST(changed_thresholds_apply_at_once);
+    RUN_TEST(an_impossible_speed_is_a_sensor_fault_and_never_a_stow);
+    RUN_TEST(a_real_storm_is_not_a_sensor_fault);
+    RUN_TEST(the_sensor_fault_clears_after_a_calm_minute_of_believable_readings);
+    RUN_TEST(wild_swings_raise_the_sensor_fault);
+    RUN_TEST(reset_leaves_the_stow_and_a_real_storm_starts_it_again);
     return UNITY_END();
 }
