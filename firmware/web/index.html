@@ -54,14 +54,28 @@
       </div>
     </div>
   </div>
-  <div class="grid">
-    <div class="tile"><span>ساعت دستگاه</span><b class="sm" dir="ltr" id="liveTime">—</b><small id="liveDate"></small></div>
-    <div class="tile"><span class="hl lbl" data-help="sunEl" role="button" tabindex="0">زاویه خورشید بالای افق</span><b id="sunEl">—</b><small id="sunNote"></small></div>
-    <div class="tile"><span>سرعت باد</span><b id="wind">—</b><small id="windNote">کیلومتر بر ساعت</small></div>
-    <div class="tile"><span>حالت</span><b id="mode">—</b><small id="state"></small></div>
-    <div class="tile wide2"><span>آخرین خطا</span><b id="fault">—</b><small id="faultText"></small></div>
+  <div class="card info" id="info">
+    <div class="hero"><b id="liveTime" dir="ltr">—</b><span><bdi id="liveDate"></bdi><br>وقت محلی</span></div>
+    <div class="li" id="rowWind">
+      <svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 9h11a3 3 0 1 0-3-3M3 14h15a3 3 0 1 1-3 3M3 19h7"/></svg>
+      <span class="t">سرعت باد<small id="windNote"></small></span>
+      <b><span id="wind">—</span><span class="u">کیلومتر بر ساعت</span></b>
+    </div>
+    <div class="li">
+      <svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M5 5l2 2M17 17l2 2M19 5l-2 2M7 17l-2 2"/></svg>
+      <span class="t"><span class="hl lbl" data-help="sunEl" role="button" tabindex="0">زاویه خورشید</span><small id="sunNote"></small></span>
+      <b id="sunEl">—</b>
+    </div>
+    <div class="li">
+      <svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><rect x="2" y="7" width="20" height="10" rx="5"/><circle cx="16" cy="12" r="2.6"/></svg>
+      <span class="t">حالت<small id="state"></small></span>
+      <span id="mode" class="pill">—</span>
+    </div>
   </div>
   <p class="helptext hidden" id="h_sunEl"></p>
+  <div class="grid">
+    <div class="tile wide2"><span>آخرین خطا</span><b id="fault">—</b><small id="faultText"></small></div>
+  </div>
   <p id="warnDefault" class="warn hidden">رمز پیش‌فرض را عوض کنید (بخش تنظیمات، برگه «رمز»).</p>
   <p id="warnClock" class="warn hidden">ساعت تنظیم نشده است؛ ردیابی خودکار تا تنظیم ساعت کار نمی‌کند (بخش تنظیمات، برگه «ساعت»).</p>
   <p id="warnReversed" class="warn hidden">دستگاه برعکسِ فرمان حرکت کرد و ایستاد. یا سیم‌های رلهٔ جهت جابه‌جا بسته شده‌اند، یا در کالیبراسیون «شرق» را به سمت غرب برده‌اید. بازو را دستی آزاد کنید، علت را درست کنید و بعد خطا را ریست کنید.</p>

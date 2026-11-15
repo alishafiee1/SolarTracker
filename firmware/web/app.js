@@ -295,8 +295,8 @@ async function poll() {
     $("conn").textContent = "متصل"; $("conn").className = "pill";
     $("wind").innerHTML = ltr(fa(status.windKmh, 1));
     renderPower(status);  // cycle 026: battery and mains in the header
-    $("windNote").textContent = status.windSensorFault ? "بادسنج خطا می‌دهد؛ سیم و سنسور را ببینید" : status.windStow ? "حالت ایمن باد" : "کیلومتر بر ساعت";
-    $("wind").parentElement.classList.toggle("bad", !!status.windSensorFault);
+    $("windNote").textContent = status.windSensorFault ? "بادسنج خطا می‌دهد؛ سیم و سنسور را ببینید" : status.windStow ? "حالت ایمن باد" : "";
+    $("rowWind").classList.toggle("bad", !!status.windSensorFault);
     $("mode").textContent = status.mode === "manual" ? "دستی" : "اتو";
     $("state").textContent = { Auto: "ردیابی خورشید", Manual: "دستی", Wind: "حالت ایمن باد", Night: "شب", Fault: "خطا" }[status.state] || status.state;
     $("stateName").textContent = status.moving ? "در حال حرکت" : "ایستاده";
