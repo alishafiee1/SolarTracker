@@ -22,6 +22,7 @@
 #include "settings.h"
 #include "supply_watch.h"
 #include "power_monitor.h"
+#include "daily_summary.h"
 #include "tick_scheduler.h"
 #include "web_api.h"
 #include "wind_monitor.h"
@@ -70,6 +71,9 @@ settings::SettingsStore settingsStore(nvs);
 settings::Settings cfg;
 settings::SupplyWatch supplyWatch;
 power::PowerMonitor powerMonitor;
+events::DailySummary dailySummary;  // cycle 025
+float trackErrDeg = -1.0f;          // distance to the target in Auto, -1 when there is none
+bool lastAngleWarn = false;
 angle::AngleProvider angleProvider(accel);
 motion::MotionController* motionCtl = nullptr;  // created in setup(), after the relays are forced off
 control::ControlStateMachine* controller = nullptr;
@@ -299,6 +303,13 @@ void loop() {
         controller->tick(now, in);  // also ticks the MotionController
         controlLoop.tick(now);
         const control::Status st = controller->status(now);  // a new fault goes to the phone (module 011)
+        trackErrDeg = (st.state == control::ActiveState::Auto && !st.angleWarning) ? fabsf(st.angleDeg - st.targetDeg) : -1.0f;
+        if (st.angleWarning != lastAngleWarn) {  // cycle 025: it used to be visible on the panel only
+            lastAngleWarn = st.angleWarning;
+            char d[48];
+            snprintf(d, sizeof(d), "angle warning %s (%.1f deg)", st.angleWarning ? "start" : "end", static_cast<double>(st.angleDeg));
+            eventLog.append(hal::EventType::StateChange, d);
+        }
         if (st.fault != lastNotifiedFault) {
             // A cleared fault that comes back later is a new event: it must not be merged with the old one.
             if (st.fault == control::FaultCode::None) siteNet.forget(std::string("fault:") + control::faultName(lastNotifiedFault));
@@ -316,6 +327,12 @@ void loop() {
             snprintf(detail, sizeof(detail), "supply %.2f V below %.2f V", static_cast<double>(volts), static_cast<double>(cfg.supplyLowV));
             eventLog.append(hal::EventType::SupplyLow, detail);
         }
+    }
+    if (now - lastPowerMs >= 1000 && cachedClockValid) {  // cycle 025: one summary line per local day
+        char line[96];
+        const float bv = powerMonitor.info().batteryKnown ? powerMonitor.info().batteryV : 0.0f;
+        if (dailySummary.onSecond((cachedUtc + cfg.tzOffsetMin * 60LL) / 86400, motionCtl->moveCount(), motionCtl->runMsTotal(), windMonitor.speedKmh(), bv, trackErrDeg, line, sizeof(line)))
+            eventLog.append(hal::EventType::StateChange, line);
     }
     if (now - lastPowerMs >= 1000) {  // cycle 023: battery and mains
         lastPowerMs = now;

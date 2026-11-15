@@ -2,6 +2,7 @@
 
 #include <math.h>
 #include <stdio.h>
+#include <string.h>
 
 namespace motion {
 
@@ -51,7 +52,10 @@ void MotionController::stopMove(uint32_t nowMs, const char* reason) {
     lastMoveDir_ = direction_;
     lastMoveEndMs_ = nowMs;
     everMoved_ = true;
-    logMove(hal::EventType::MoveEnd, reason, static_cast<float>(duration));
+    ++moveCount_;
+    runMsTotal_ += duration;
+    const bool normal = strcmp(reason, "stop") == 0 || strcmp(reason, "reverse") == 0;
+    if (!normal || duration >= kLongMoveMs) logMove(hal::EventType::MoveEnd, reason, static_cast<float>(duration));
     enterSettling(nowMs);
 }
 
@@ -165,7 +169,6 @@ void MotionController::tick(uint32_t nowMs, float angleDeg, float currentA) {
                 relays_.setPower(true);
                 state_ = State::Running;
                 moveStartMs_ = nowMs;
-                logMove(hal::EventType::MoveStart, "", 0);
             }
             return;
 

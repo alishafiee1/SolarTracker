@@ -397,9 +397,11 @@ Response WebApi::postMode(const Request& req) {
     if (strcmp(m, "auto") == 0) {
         d_.ctl.command(control::Command::ModeAuto, req.nowMs);
         next.mode = settings::Mode::Auto;
+        if (d_.cfg.mode != settings::Mode::Auto) d_.log.append(hal::EventType::StateChange, "mode auto from the panel");
     } else if (strcmp(m, "manual") == 0) {
         d_.ctl.command(control::Command::ModeManual, req.nowMs);
         next.mode = settings::Mode::Manual;
+        if (d_.cfg.mode != settings::Mode::Manual) d_.log.append(hal::EventType::StateChange, "mode manual from the panel");
     } else {
         return error(400, "bad-mode", "حالت نامعتبر است", "mode");
     }

@@ -30,6 +30,11 @@ public:
     MotionController(hal::IRelays& relays, const Timing& timing, uint32_t nowMs);
 
     static constexpr uint32_t kReleaseAfterIdleMs = 60000;  // cycle 022
+    // Cycle 025: a normal move writes no log line; it is only counted (the daily summary reports the totals).
+    // A move is logged when it ends abnormally or lasts longer than this.
+    static constexpr uint32_t kLongMoveMs = 60000;
+    uint32_t moveCount() const { return moveCount_; }
+    uint32_t runMsTotal() const { return runMsTotal_; }
     void setEventLog(hal::IEventLog* log) { log_ = log; }
     void setTiming(const Timing& timing) { timing_ = timing; }
 
@@ -74,6 +79,8 @@ private:
     hal::Dir direction_ = hal::Dir::East;
     hal::Dir lastMoveDir_ = hal::Dir::East;
     bool everMoved_ = false;
+    uint32_t moveCount_ = 0;
+    uint32_t runMsTotal_ = 0;
     uint32_t stateSinceMs_ = 0;  // start of Selecting / Settling
     uint32_t moveStartMs_ = 0;
     uint32_t lastMoveEndMs_ = 0;

@@ -43,6 +43,7 @@ private:
     bool clockSetOnce_ = false;
     uint32_t lastClockSetMs_ = 0;
     int lastNotify_ = -1;
+    volatile int notifyEvent_ = 0;  // cycle 025: set by the sender task, logged by service() (the log is not for other tasks)
     bool taskStarted_ = false;
     void* mutex_ = nullptr;
     net::NotifyQueue queue_;

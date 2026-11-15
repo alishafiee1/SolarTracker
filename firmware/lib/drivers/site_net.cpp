@@ -29,6 +29,10 @@ void SiteNet::apply(const net::NetConfig& cfg) {
 }
 
 void SiteNet::service(uint32_t nowMs, hal::IClock& rtc, bool rtcValid, hal::IEventLog* log, bool setClockFromNtp) {
+    if (notifyEvent_ != 0) {
+        if (log) log->append(hal::EventType::StateChange, notifyEvent_ == 1 ? "bale message failed" : "bale messages work again");
+        notifyEvent_ = 0;
+    }
     if (!wanted_) return;
     if (WiFi.status() == WL_CONNECTED) {
         if (!connected_) {
@@ -115,6 +119,8 @@ void SiteNet::sendLoop() {
         xSemaphoreGive(static_cast<SemaphoreHandle_t>(mutex_));
         if (!have) continue;
         const bool sent = post(text);  // up to 10 s, outside every lock
+        if (!sent && lastNotify_ != 0) notifyEvent_ = 1;  // first failure after a success (or after the start)
+        if (sent && lastNotify_ == 0) notifyEvent_ = 2;   // back after failures
         lastNotify_ = sent ? 1 : 0;
         xSemaphoreTake(static_cast<SemaphoreHandle_t>(mutex_), portMAX_DELAY);
         queue_.done(sent, millis());

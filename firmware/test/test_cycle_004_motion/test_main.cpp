@@ -306,20 +306,31 @@ static void latest_request_wins_while_held() {
 }
 
 // ---------------------------------------------------------------- R11
-static void move_start_and_end_are_logged() {
+static void normal_moves_are_counted_not_logged_and_long_or_abnormal_ones_are_logged() {  // cycle 025
     Rig r;
     startRunning(r, Dir::West);
     r.angle = 12.3f;
     r.run(1500);
     r.ctrl.request(Cmd::stop());
     r.run(20);
-    bool start = false, end = false;
+    TEST_ASSERT_EQUAL_UINT32(1, r.ctrl.moveCount());
+    TEST_ASSERT_UINT32_WITHIN(300, 1500, r.ctrl.runMsTotal());
     for (const auto& e : r.log.events()) {
-        if (e.first == hal::EventType::MoveStart && strstr(e.second.c_str(), "dir=west")) start = true;
-        if (e.first == hal::EventType::MoveEnd && strstr(e.second.c_str(), "reason=stop") && strstr(e.second.c_str(), "angle=12.3")) end = true;
+        TEST_ASSERT_FALSE_MESSAGE(e.first == hal::EventType::MoveStart, "no MoveStart line any more");
+        TEST_ASSERT_FALSE_MESSAGE(e.first == hal::EventType::MoveEnd, "a normal stop writes no line");
     }
-    TEST_ASSERT_TRUE(start);
-    TEST_ASSERT_TRUE(end);
+    // A move that lasts over a minute is worth a line.
+    r.run(15000);
+    r.ctrl.request(Cmd::move(Dir::East));
+    r.runUntil([&] { return r.ctrl.running(); }, 5000);
+    r.run(65000);
+    r.ctrl.request(Cmd::stop());
+    r.run(100);
+    bool longLine = false;
+    for (const auto& e : r.log.events())
+        if (e.first == hal::EventType::MoveEnd && strstr(e.second.c_str(), "reason=stop")) longLine = true;
+    TEST_ASSERT_TRUE(longLine);
+    TEST_ASSERT_EQUAL_UINT32(2, r.ctrl.moveCount());
 }
 
 // Cycle 022: CH2 (west) is released once the move is over and nothing else is asked.
@@ -399,7 +410,7 @@ int main() {
     RUN_TEST(stop_during_selecting_never_powers);
     RUN_TEST(same_direction_request_while_running_is_ignored);
     RUN_TEST(latest_request_wins_while_held);
-    RUN_TEST(move_start_and_end_are_logged);
+    RUN_TEST(normal_moves_are_counted_not_logged_and_long_or_abnormal_ones_are_logged);
     RUN_TEST(the_direction_relay_is_released_after_a_west_move);
     RUN_TEST(a_flickering_target_does_not_click_the_direction_relay);
     RUN_TEST(a_waiting_west_request_keeps_the_direction_relay_and_east_never_energises_it);
