@@ -135,7 +135,7 @@ header{flex-wrap:wrap;gap:6px}
 .wf.l0{color:var(--bad)}
 
 /* dashboard help: no "؟" icon; the topic itself opens the help */
-.hl{cursor:pointer}.hl.lbl{text-decoration:underline dotted var(--mute);text-underline-offset:4px}
+.hl{cursor:pointer}
 
 /* dashboard info card (cycle 029, design B): the clock is the hero, then three quiet rows */
 .info{padding:0;overflow:hidden;margin-bottom:12px}
@@ -150,3 +150,13 @@ header{flex-wrap:wrap;gap:6px}
 .info .li>b .u{font-size:.75rem;font-weight:400;color:var(--mute);margin-inline-start:4px}
 .info .pill{padding:2px 14px;font-size:.85rem;font-weight:600;background:var(--sky);color:var(--accent)}
 .info .li.bad .t small{color:var(--bad)}.info .li.bad .ic{stroke:var(--bad)}
+
+/* digital clock (cycle 030): seven segments drawn in SVG, fixed size, nothing moves when the seconds change */
+.lcd{width:min(52vw,196px);flex:none}.lcd svg{display:block;width:100%;height:auto}
+.lcd rect{fill:var(--ink);opacity:.09}.lcd rect.on{opacity:1}
+.info .hero #liveOff{font-size:1.4rem}
+.info .li.hl:hover,.info .li.hl:focus-visible{background:color-mix(in srgb,var(--accent) 7%,transparent);outline:none}
+.mseg{display:inline-flex;background:var(--bg);border:1px solid var(--line);border-radius:99px;padding:2px;direction:rtl}
+.mseg i{font-style:normal;font-size:.8rem;padding:2px 12px;border-radius:99px;color:var(--mute)}.mseg i.on{background:var(--accent);color:#111;font-weight:700}
+.xbox{margin:-4px 0 12px}
+.warn.xp,.faultBar .xp,.tile.xp{cursor:pointer}

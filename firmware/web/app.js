@@ -50,7 +50,6 @@ function helpHtml(key) {
   const h = HELP[key];
   if (!h) return "";
   let s = h.t;
-  if (key === "sunEl" && status && status.sunMaxElevationDeg !== null && status.sunMaxElevationDeg !== undefined) s += `<br><b>بالاترین زاویه امروز:</b> ${degTxt(status.sunMaxElevationDeg)} (نزدیک ظهر خورشیدی)`;
   if (h.min !== undefined && key !== "currentPresent") {
     const lo = FLIP[key] ? uiAngle(h.max) : h.min, hi = FLIP[key] ? uiAngle(h.min) : h.max, def = FLIP[key] ? uiAngle(h.def) : h.def;
     s += `<br><b>بازه مجاز:</b> ${ltr(fa(lo, lo % 1 ? 2 : 0))} تا ${ltr(fa(hi, hi % 1 ? 2 : 0))} ${h.unit || ""} · <b>پیش‌فرض:</b> ${ltr(fa(def, def % 1 ? 1 : 0))}`;
@@ -59,7 +58,7 @@ function helpHtml(key) {
   return s;
 }
 function bindHelp(root) {
-  root.querySelectorAll("button.help, .hl").forEach((b) => {  // the "؟" buttons of the forms, and (dashboard) the topic itself
+  root.querySelectorAll("button.help, .hl[data-help]").forEach((b) => {  // the "؟" buttons of the forms, and (dashboard) the topic itself
     const open = (e) => {
       e.preventDefault();
       const box = $("h_" + b.dataset.help);
@@ -68,7 +67,7 @@ function bindHelp(root) {
       box.classList.toggle("hidden");
     };
     b.onclick = open;
-    if (b.classList.contains("lbl")) b.onkeydown = (e) => { if (e.key === "Enter" || e.key === " ") open(e); };
+    if (b.getAttribute("role") === "button") b.onkeydown = (e) => { if (e.key === "Enter" || e.key === " ") open(e); };
   });
 }
 
@@ -146,6 +145,61 @@ function renderPower(st) {
     $("mainsBox").title = st.mainsOk ? "برق شهر وصل است؛ ولتاژ ورودی شارژر " + toFa(st.mainsV.toFixed(1)) + " ولت" : "برق شهر قطع است؛ دستگاه روی باتری کار می‌کند";
   }
 }
+
+// ---- tap an error, a warning or the wind row to read what it means (cycle 030) ----
+const XP = {
+  "fault:none": "خطایی ثبت نشده است. اگر خطایی رخ بدهد، علت و راه‌حل آن با زدن روی همین‌جا توضیح داده می‌شود.",
+  "fault:stall": "گیر کردن بازو: بعد از فرمان حرکت، زاویه تغییر نکرد. علت‌های محتمل: بازو یا جک گیر کرده، سیم جک یا رله مشکل دارد، یا جهت رله برعکس بسته شده است. مسیر حرکت و سیم‌ها را ببینید و بعد «ریست خطا» را بزنید.",
+  "fault:move-timeout": "زمان حرکت تمام شد: حرکت بیش از حد مجاز طول کشید و دستگاه آن را قطع کرد. علت محتمل: جک کند شده، به انتهای کورس نرسیده یا زاویه‌سنج درست نمی‌خواند. بعد از بررسی «ریست خطا» را بزنید.",
+  "fault:angle-sensor": "سنسور زاویه جواب نمی‌دهد یا عدد نادرست می‌دهد. حرکت خودکار متوقف است. سیم‌های I2C و برد سنسور را ببینید. تا برطرف نشود دستگاه حرکت نمی‌کند.",
+  "fault:interlock": "قفل ایمنی فعال شد: چیزی می‌خواست جهت را وقتی برق جک وصل بود عوض کند. این یک خطای نرم‌افزاری یا رله است. دستگاه را ریست کنید؛ اگر تکرار شد، رله‌ها را بررسی کنید.",
+  "fault:reset-loop": "دستگاه چند بار پشت سر هم خودش را ریست کرده است (watchdog). علت محتمل: افت برق، سیم‌کشی ناپایدار یا نرم‌افزار. برق و سیم‌ها را بررسی کنید.",
+  "fault:wire-break": "سیم جک قطع است: رله وصل شد ولی جریانی دیده نشد. سیم‌های جک و ترمینال‌ها را ببینید.",
+  "fault:relay-stuck": "رله چسبیده: بعد از دستور توقف هنوز جریان می‌رود. برق جک را از کلید دستگاه قطع کنید و رله را بررسی یا عوض کنید.",
+  "fault:overcurrent": "جریان جک بیش از حد مجاز شد. علت محتمل: بار سنگین، گیرکردن یا خرابی جک. بعد از بررسی «ریست خطا» را بزنید.",
+  "warn:default": "رمز ورود پنل هنوز مقدار پیش‌فرض است و هر کسی که رمز را بداند می‌تواند دستگاه را کنترل کند. از بخش تنظیمات، برگه «رمز» آن را عوض کنید.",
+  "warn:clock": "ساعت تنظیم نشده است و بدون ساعت، خورشید و ردیابی خودکار کار نمی‌کند. از بخش تنظیمات، برگه «ساعت» آن را تنظیم کنید یا همگام‌سازی خودکار را روشن کنید.",
+  "warn:reversed": "دستگاه برعکس فرمان حرکت کرد. یا سیم‌های رله جهت جابه‌جا بسته شده‌اند یا در کالیبراسیون «شرق» به سمت اشتباه گرفته شده است. جلوی خطر، حرکت خودکار نمی‌کند.",
+  "warn:angle": "زاویه دستگاه بیرون از محدودهٔ عادی است، مثلاً دستگاه برعکس یا کج نصب شده است. حرکت خودکار متوقف است ولی این خرابی سنسور نیست. دستگاه را در وضعیت نصب بگذارید.",
+  "warn:cal": "کالیبراسیون زاویه انجام نشده است. بدون آن دستگاه زاویهٔ پنل را نمی‌داند و حرکت خودکار نمی‌کند. از بخش کنترل، برگه «کالیبراسیون» دو مرحله را انجام دهید.",
+  "wind:normal": "سرعت باد از شمارندهٔ بادسنج حساب می‌شود. اگر بیش از آستانه (پیش‌فرض ۴۰ کیلومتر بر ساعت) چند ثانیه بماند، پنل برای ایمنی افقی می‌شود و بعد از ۱۵ دقیقه باد آرام برمی‌گردد.",
+  "wind:stow": "حالت ایمن باد: باد شدید بوده و پنل افقی شده است. وقتی باد ۱۵ دقیقه پیوسته زیر آستانهٔ بازگشت بماند، ردیابی دوباره شروع می‌شود. دکمهٔ «ریست» بالای صفحه این حالت را زودتر تمام می‌کند.",
+  "wind:sensor": "بادسنج عدد غیرممکن (بیش از ۱۲۰ کیلومتر بر ساعت) یا نوسان شدید می‌دهد. احتمالاً سیم بادسنج نویز می‌گیرد یا سنسور خراب است. تا آن موقع پنل به‌خاطر این عدد افقی نمی‌شود.",
+};
+function explainKey(el) {
+  const k = el.dataset.x;
+  if (k === "fault") return "fault:" + (status && status.fault ? status.fault : "none");
+  if (k === "wind") return status && status.windSensorFault ? "wind:sensor" : status && status.windStow ? "wind:stow" : "wind:normal";
+  return k;
+}
+function bindExplain() {
+  document.querySelectorAll(".xp").forEach((el) => {
+    el.classList.add("hl");
+    const open = (e) => {
+      if (e.target.closest("button")) return;  // the reset button keeps its own job
+      const text = XP[explainKey(el)];
+      if (!text) return;
+      const at = el.closest(".grid, .faultBar, .li") || el;
+      let box = at.nextElementSibling && at.nextElementSibling.classList.contains("xbox") ? at.nextElementSibling : null;
+      if (!box) { box = document.createElement("p"); box.className = "helptext xbox hidden"; at.after(box); }
+      box.textContent = text;
+      box.classList.toggle("hidden");
+    };
+    el.addEventListener("click", open);
+    if (el.getAttribute("role") === "button") el.addEventListener("keydown", (e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); open(e); } });
+  });
+}
+bindExplain();
+// tap the mode row to switch between automatic and manual
+async function toggleMode() {
+  if (!loggedIn) { toast("برای تغییر حالت ابتدا وارد شوید", "err"); return; }
+  const to = status && status.mode === "manual" ? "auto" : "manual";
+  const r = await api("POST", "/api/mode", { mode: to });
+  toast(r.ok ? (to === "auto" ? "حالت اتوماتیک" : "حالت دستی") : errText(r), r.ok ? "ok" : "err");
+  poll();
+}
+$("rowMode").onclick = toggleMode;
+$("rowMode").onkeydown = (e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); toggleMode(); } };
 
 // ---- login ----
 function setLoggedIn(v) {
@@ -276,13 +330,32 @@ function timeText(utc, tz) { const p = localParts(utc, tz); return toFa(`${pad2(
 function deviceDate(utc, tz) { return new Date((utc + tz * 60) * 1000).toISOString().replace("T", " ").slice(0, 19); }
 // Persian digits with "-" or a plain space between them are reordered by the bidi algorithm (the date shows reversed): use "/" and a left-to-right mark.
 function showDate(utc, tz) { return jalaliText(utc, tz) + " ‎" + timeText(utc, tz); }
+// Digital clock drawn with seven segments (no font, so every digit has the same width and nothing shifts when the seconds change).
+const SEGS = ["abcdef", "bc", "abdeg", "abcdg", "bcfg", "acdfg", "acdefg", "abc", "abcdefg", "abcdfg"];
+function lcdDigit(x, w, h, t, g) {
+  const m = (h - t) / 2, vh = m - t - 2 * g;
+  const r = { a: [t, 0, w - 2 * t, t], g: [t, m, w - 2 * t, t], d: [t, h - t, w - 2 * t, t], f: [0, t + g, t, vh], b: [w - t, t + g, t, vh], e: [0, m + t + g, t, vh], c: [w - t, m + t + g, t, vh] };
+  return `<g class="dg" transform="translate(${x} ${h === 40 ? 0 : 16})">` + Object.entries(r).map(([k, v]) => `<rect data-s="${k}" x="${v[0]}" y="${v[1]}" width="${v[2]}" height="${v[3]}" rx="${t / 2.4}"/>`).join("") + "</g>";
+}
+function buildLcd() {
+  const big = [0, 28, 66, 94], small = [122, 139];
+  const dots = (x, y) => `<rect class="on" x="${x}" y="${y}" width="5" height="5" rx="1.5"/>`;
+  $("liveTime").innerHTML = `<svg viewBox="0 0 152 40" aria-hidden="true">` + big.map((x) => lcdDigit(x, 22, 40, 5, 1.2)).join("") + dots(55, 12) + dots(55, 25) + small.map((x) => lcdDigit(x, 13, 24, 3, 0.8)).join("") + `</svg>`;
+}
+function setLcd(hh, mm, ss) {
+  const d = [hh, mm, ss].map((v) => String(v).padStart(2, "0")).join("");
+  $("liveOff").classList.add("hidden"); $("liveTime").classList.remove("hidden");
+  if (!$("liveTime").firstChild) buildLcd();
+  $("liveTime").setAttribute("aria-label", `${pad2(hh)}:${pad2(mm)}:${pad2(ss)}`);
+  $("liveTime").querySelectorAll(".dg").forEach((g, i) => { const on = SEGS[+d[i]]; g.querySelectorAll("rect").forEach((r) => r.classList.toggle("on", on.includes(r.dataset.s))); });
+}
 // Live clock: the device time from the last poll, advanced locally every second.
 let clockBase = null;
 function renderClock() {
   if (!clockBase) return;
   const utc = clockBase.utc + Math.floor((Date.now() - clockBase.at) / 1000), tz = clockBase.tz;
   const p = localParts(utc, tz), j = g2j(p.y, p.m, p.d);
-  $("liveTime").textContent = timeText(utc, tz);
+  setLcd(p.hh, p.mm, p.ss);
   $("liveDate").textContent = `${toFa(j[2])} ${JMONTH[j[1] - 1]} ${toFa(j[0])}`;
   $("clockNow").textContent = showDate(utc, tz);
 }
@@ -297,7 +370,7 @@ async function poll() {
     renderPower(status);  // cycle 026: battery and mains in the header
     $("windNote").textContent = status.windSensorFault ? "بادسنج خطا می‌دهد؛ سیم و سنسور را ببینید" : status.windStow ? "حالت ایمن باد" : "";
     $("rowWind").classList.toggle("bad", !!status.windSensorFault);
-    $("mode").textContent = status.mode === "manual" ? "دستی" : "اتو";
+    $("segAuto").classList.toggle("on", status.mode !== "manual"); $("segMan").classList.toggle("on", status.mode === "manual");
     $("state").textContent = { Auto: "ردیابی خورشید", Manual: "دستی", Wind: "حالت ایمن باد", Night: "شب", Fault: "خطا" }[status.state] || status.state;
     $("stateName").textContent = status.moving ? "در حال حرکت" : "ایستاده";
     $("fault").textContent = status.fault ? "خطا" : "—";
@@ -309,10 +382,10 @@ async function poll() {
     $("statusBadge").className = "badge " + badge;
     $("fw").textContent = status.fwVersion;
     if (status.clockValid) { clockBase = { utc: status.utc, tz: status.tzOffsetMin, at: Date.now() }; renderClock(); }
-    else { clockBase = null; $("clockNow").textContent = $("liveTime").textContent = "تنظیم نشده"; $("liveDate").textContent = ""; }
+    else { clockBase = null; $("clockNow").textContent = "تنظیم نشده"; $("liveTime").classList.add("hidden"); $("liveOff").classList.remove("hidden"); $("liveDate").textContent = ""; }
     const hasSun = status.sunElevationDeg !== null && status.sunElevationDeg !== undefined;
     $("sunEl").innerHTML = hasSun ? degTxt(status.sunElevationDeg) : "—";
-    $("sunNote").textContent = !hasSun ? "" : status.sunElevationDeg < 0 ? "زیر افق (شب)" : "بالای افق";
+    $("sunNote").innerHTML = !hasSun ? "" : (status.sunElevationDeg < 0 ? "زیر افق · " : "") + (status.sunMaxElevationDeg != null ? "اوج امروز " + degTxt(status.sunMaxElevationDeg) : "");
     netFromStatus();
     renderWifi(status);
     $("warnDefault").classList.toggle("hidden", !status.passwordIsDefault);
