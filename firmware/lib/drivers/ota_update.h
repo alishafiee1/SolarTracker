@@ -6,6 +6,9 @@
 #include <hal.h>
 #include <stdint.h>
 
+#include <vector>
+
+#include "hmac_sha256.h"
 #include "ota_logic.h"
 
 namespace drivers {
@@ -30,6 +33,8 @@ public:
     // Probation state for the bench console: pending flag and boot count.
     static void probationState(bool& pending, uint8_t& tries);
 
+    // Cycle 021: with a key set, only a file signed with it is installed (see ota::SignedStream). Empty = unsigned files are accepted.
+    void setSignKey(const char* key) { signKey_ = key ? key : ""; }
     bool updating() const { return updating_; }
     bool succeeded() const { return succeeded_; }
     const char* errorText() const { return error_; }
@@ -45,6 +50,10 @@ private:
     const char* error_ = "";
     uint32_t doneAtMs_ = 0;
     ota::UploadSession* session_ = nullptr;
+    ota::SignedStream* stream_ = nullptr;
+    const char* signKey_ = "";
+    std::vector<uint8_t> buf_;
+    void dropSession();
 };
 
 }  // namespace drivers

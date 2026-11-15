@@ -73,6 +73,7 @@ struct Deps {
     std::function<bool()> sendTestMessage = [] { return false; };
     std::function<void()> startWifiScan = [] {};
     std::function<WifiScan()> wifiScan = [] { return WifiScan(); };
+    std::function<void()> onRestart = [] {};  // cycle 021: stop the motion, then restart the chip
     std::function<size_t()> logBytes = [] { return size_t{0}; };  // bytes stored in the event log files
 };
 

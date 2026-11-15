@@ -83,6 +83,11 @@
     </div>
     <p id="manualMsg" class="msg"></p>
   </div>
+  <div class="card">
+    <h2>راه‌اندازی دوباره</h2>
+    <p class="small">اول موتور و رله‌ها خاموش می‌شوند، بعد دستگاه دوباره روشن می‌شود. کالیبراسیون و تنظیمات می‌مانند.</p>
+    <button id="restartBtn" class="danger">ریستارت دستگاه</button>
+  </div>
 </section>
 
 <section id="settings" class="hidden">
@@ -194,7 +199,7 @@
   <div class="card">
     <h2>به‌روزرسانی نرم‌افزار</h2>
     <p class="warn">این کار حساس است. در حین نصب برق جک قطع می‌شود و دستگاه خودش دوباره راه‌اندازی می‌شود. فایل اشتباه یا قطع شدن ارتباط ممکن است نصب را ناموفق کند؛ اگر نسخه جدید درست کار نکند به نسخه قبلی برمی‌گردد.</p>
-    <p>فایل نرم‌افزار جدید (<code dir="ltr">.bin</code>) را از گوشی انتخاب کنید.</p>
+    <p>فایل نرم‌افزار جدید را از گوشی انتخاب کنید (اگر دستگاه کلید امضا دارد، فایل <code dir="ltr">firmware.signed.bin</code>).</p>
     <input id="fwFile" type="file" accept=".bin" class="hidden">
     <div class="row"><button id="fwPick">انتخاب فایل نرم‌افزار</button><span id="fwName" class="small fname">فایلی انتخاب نشده</span></div>
     <button id="fwSend" class="danger wide">ارسال و نصب</button>

@@ -83,6 +83,7 @@ struct Rig {
     int networkChanged = 0;
     int testCalls = 0;
     int scansStarted = 0;
+    int restarts = 0;
     webapi::WifiScan scanResult;
     size_t logStored = 4200;
     bool testResult = true;
@@ -94,6 +95,7 @@ struct Rig {
         d.fwVersion = "test-1";
         d.defaultPassword = "default-pass-1";
         d.utcNow = [&r] { return r.clock.utc(); };
+        d.onRestart = [&r] { ++r.restarts; };
         d.onSettingsChanged = [&r] { ++r.changedCalls; };
         d.onNetworkChanged = [&r] { ++r.networkChanged; };
         d.sendTestMessage = [&r] {
@@ -203,11 +205,20 @@ static void protected_endpoints_need_a_session() {
     Rig r;
     const char* paths[] = {"/api/settings", "/api/calibrate", "/api/log"};
     for (const char* p : paths) TEST_ASSERT_EQUAL_INT(401, r.call(false, p).status);
-    const char* posts[] = {"/api/mode", "/api/manual", "/api/manual/keepalive", "/api/settings", "/api/location", "/api/clock", "/api/fault/reset", "/api/calibrate/east", "/api/password"};
+    const char* posts[] = {"/api/mode", "/api/manual", "/api/manual/keepalive", "/api/settings", "/api/location", "/api/clock", "/api/fault/reset", "/api/restart", "/api/calibrate/east", "/api/password"};
     for (const char* p : posts) TEST_ASSERT_EQUAL_INT(401, r.call(true, p, "{}").status);
     TEST_ASSERT_EQUAL_INT(401, r.call(false, "/api/settings", "", "st=not-a-real-token").status);
     JsonDocument d = parse(r.call(false, "/api/settings"));
     TEST_ASSERT_EQUAL_STRING("login-required", d["error"] | "?");
+}
+
+static void restart_needs_a_session_and_asks_the_device_once() {  // cycle 021
+    Rig r;
+    TEST_ASSERT_EQUAL_INT(401, r.call(true, "/api/restart", "{}").status);
+    TEST_ASSERT_EQUAL_INT(0, r.restarts);
+    const std::string c = r.login();
+    TEST_ASSERT_EQUAL_INT(200, r.call(true, "/api/restart", "{}", c).status);
+    TEST_ASSERT_EQUAL_INT(1, r.restarts);
 }
 
 static void login_with_the_default_password_sets_a_safe_cookie() {
@@ -613,6 +624,7 @@ int main() {
     RUN_TEST(status_is_public_and_complete);
     RUN_TEST(cities_list_has_31_entries);
     RUN_TEST(protected_endpoints_need_a_session);
+    RUN_TEST(restart_needs_a_session_and_asks_the_device_once);
     RUN_TEST(login_with_the_default_password_sets_a_safe_cookie);
     RUN_TEST(a_wrong_password_is_refused_and_five_failures_lock_logins);
     RUN_TEST(sessions_expire_after_30_idle_minutes_and_are_limited_to_four);

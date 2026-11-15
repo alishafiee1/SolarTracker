@@ -132,6 +132,11 @@ Response WebApi::handle(const Request& req) {
         d_.ctl.command(control::Command::KeepAlive, req.nowMs);
         return ok();
     }
+    if (req.post && p == "/api/restart") {
+        d_.log.append(hal::EventType::StateChange, "restart requested from the panel");
+        d_.onRestart();
+        return ok();
+    }
     if (req.post && p == "/api/fault/reset") {
         d_.angle.clearFault();  // without this a latched sensor fault would latch again at once
         d_.ctl.command(control::Command::ResetFault, req.nowMs);

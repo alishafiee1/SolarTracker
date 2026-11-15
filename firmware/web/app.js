@@ -324,6 +324,13 @@ $("resetFault").onclick = async () => {
   toast(r.ok ? "خطا ریست شد" : errText(r), r.ok ? "ok" : "err"); poll();
 };
 
+// ---- restart (cycle 021) ----
+$("restartBtn").onclick = async () => {
+  if (!(await confirmDialog("دستگاه دوباره راه‌اندازی شود؟ اگر در حال حرکت باشد اول می‌ایستد."))) return;
+  const r = await api("POST", "/api/restart", {});
+  toast(r.ok ? "در حال ریستارت… چند ثانیه صبر کنید" : errText(r), r.ok ? "ok" : "err");
+};
+
 // ---- manual ----
 function setSeg() { $("modeAuto").classList.toggle("on", status && status.mode === "auto"); $("modeManual").classList.toggle("on", status && status.mode === "manual"); }
 $("modeAuto").onclick = async () => { const r = await api("POST", "/api/mode", { mode: "auto" }); toast(r.ok ? "حالت اتوماتیک" : errText(r), r.ok ? "ok" : "err"); };

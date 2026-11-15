@@ -98,6 +98,9 @@ motion::Timing timingFrom(const settings::Settings& s) {
 
 float supplyVolts() { return analogReadMilliVolts(kPinSupply) / 1000.0f * kSupplyDividerRatio; }
 
+uint32_t restartAtMs = 0;                 // cycle 021: 0 = no restart asked
+constexpr uint32_t kRestartDelayMs = 1500;  // shorter than stopSettleMs (3 s min 1 s), so no move starts meanwhile
+
 int64_t utcNow() { return cachedClockValid ? cachedUtc + (espTime.nowMs() - cachedUtcAtMs) / 1000 : 0; }
 
 }  // namespace
@@ -121,6 +124,9 @@ void setup() {
     if (!eventLog.begin()) Serial.println("E event log: flash not usable, events are not stored");
     settingsStore.load(cfg, &eventLog);  // defaults + an event if nothing valid is stored
     angleProvider.loadFrom(nvs);         // the calibration, if one was saved
+#ifdef OTA_SIGN_KEY
+    otaUpdate.setSignKey(OTA_SIGN_KEY);  // cycle 021: only files signed with this key are installed
+#endif
     otaUpdate.bootCheck(&eventLog);      // probation after an update; rolls back and restarts if the new image keeps failing
     eventLog.append(hal::EventType::PowerUp, core::resetReasonName(resetReason));  // R7
 
@@ -173,6 +179,10 @@ void setup() {
         return s;
     };
     deps.logBytes = [] { return eventLog.storedBytes(); };
+    deps.onRestart = [] {  // relays off first; the chip restarts from loop() after the relays have settled
+        motionCtl->emergencyStop(espTime.nowMs(), "restart requested");
+        restartAtMs = espTime.nowMs() + kRestartDelayMs;
+    };
     deps.onSettingsChanged = [] {
         motionCtl->setTiming(timingFrom(cfg));
         if (cfg.currentPresent) currentSensor.begin(cfg.currentFactor);
@@ -257,6 +267,11 @@ void loop() {
     eventLog.service();
     siteNet.service(now, rtcClock, cachedClockValid, &eventLog, cfg.clockAuto);
     otaUpdate.confirmIfHealthy(now, panelStarted && controlLoop.ticks() > 100, &eventLog);
+    if (restartAtMs != 0 && static_cast<int32_t>(now - restartAtMs) >= 0) {
+        motionCtl->emergencyStop(now, "restart");  // both relays are released while the chip is still running
+        eventLog.flush();
+        ESP.restart();
+    }
     if (otaUpdate.restartDue(now)) {
         eventLog.flush();
         ESP.restart();
