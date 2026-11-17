@@ -1,55 +1,13 @@
-# 032 — کنسول USB کامل: technical spec
+# سند فنی: کنسول USB کامل
 
-> Source of truth for the coder. Written in the technical language (`project.json`). Anything not here is not expected.
-> Every rule has a bold ID (**R1**, **R2** ...). If the card has scenarios, tag each scenario with the rules it proves (`@R1`) and try to cover every rule.
-
-## 1. Summary
-
-{{three lines}}
-
-## 2. Rules
-
-- **R1** {{rule}}
-- **R2** {{rule, including the exact error message the user sees}}
-
-## 3. Data
-
-{{new tables/fields, types, constraints}}
-
-## 4. API / logic
-
-{{endpoints, inputs, outputs, errors}}
-
-## 5. Screens
-
-{{what is shown where; exact message texts}}
-
-## 6. Files to create or change
-
-- `{{path}}` — {{what}}
-
-## 7. Edge cases
-
-- {{case}}
-
-## 8. Acceptance run (if the card has scenarios)
-
-Optional. `rodo test` (the card's `test.command`, or `testCommand` from `project.json` with `{NNN}` = `032`).
-
-## Acceptance criteria
-
-- **Must happen:** {{observable results; link rules, e.g. R1, R2}}
-- **Must not happen:** {{regressions or side effects that would be wrong}}
-- **Done when:** {{how we know: which checks pass, what the user can see}}
-
-## Documentation Impact
-
-- {{path}} — {{what changes}}   <!-- or: - none — why -->
-
-## Open Questions
-
-- {{question}} — default if no answer: {{default}}   <!-- or: - none -->
+**R1.** کنسول در همهٔ نسخه‌ها فعال است (دیگر پشت `BENCH_CONSOLE` نیست). خط فرمان تا ۹۵ نویسه.
+**R2.** `json` و `selftest` یک شیء JSON در یک خط می‌دهند؛ بقیه `I ...` یا `E ...`.
+**R3.** `raw on [ثانیه]` (۱ تا ۶۰۰، پیش‌فرض ۶۰): ماشین حالت و MotionController تیک نمی‌خورند، `relay 1|2|all 0|1` پایه‌ها را مستقیم می‌نویسد و تایمر را تمدید می‌کند؛ با پایان تایمر یا `raw off` یا ریست، هر دو رله آزاد می‌شوند و یک خط لاگ نوشته می‌شود.
+**R4.** در حالت raw، `move` و `ctl` رد می‌شوند. watchdog و ترتیب راه‌اندازی (رله‌ها اول خاموش) برقرارند.
+**R5.** `AngleProvider::faultCause()` علت آخرین داده بد را می‌دهد (`i2c` یا `gravity`)؛ هنگام قفل‌شدن خطا یک خط لاگ با علت (و |g|) نوشته می‌شود.
+**R6.** `bench.py` پورت را بدون ریست باز می‌کند (DTR و RTS قبل از باز شدن خاموش).
 
 ## Decisions
 
-- {{decision}}. Because {{reason}}.
+- حالت raw عمداً قفل‌های ایمنی را رد می‌کند (کاربر خواست؛ دستگاه روی میز به پنل وصل نیست). برای جلوگیری از اشتباه: ورود صریح با `raw on`، تایمر خاموش‌شدن خودکار، و لاگ.
+- ورود به raw بدون رمز است، چون دسترسی فیزیکی به USB لازم است (default, not asked). Because همین دسترسی دستگاه را به‌هرحال کنترل می‌کند.
