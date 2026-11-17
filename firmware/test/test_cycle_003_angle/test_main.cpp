@@ -150,16 +150,16 @@ static void moving_average_smooths_noise() {
 }
 
 // R5: a sensor fault is reported within 1 s (5 samples at 10 Hz); single bad samples are tolerated.
-static void fault_within_one_second_when_unplugged() {
+static void fault_within_two_seconds_when_unplugged() {  // cycle 034: 20 samples (it was 5)
     sim::FakeAccel accel;
     AngleProvider p(accel);
     const Mount m{0, 0, 0};
     calibrate(p, accel, m);
     feed(p, accel, reading(m, 10), 5);
     accel.setOk(false);
-    for (int i = 0; i < 4; ++i) p.sample();
+    for (int i = 0; i < 19; ++i) p.sample();
     TEST_ASSERT_TRUE(p.ok());
-    p.sample();  // 5th consecutive failed read = 0.5 s
+    p.sample();  // 20th consecutive failed read = 2 s
     TEST_ASSERT_FALSE(p.ok());
 }
 
@@ -171,7 +171,7 @@ static void the_fault_cause_is_remembered() {  // cycle 033
         calibrate(p, accel, m);
         TEST_ASSERT_EQUAL_STRING("", p.faultCause());
         accel.setOk(false);
-        for (int i = 0; i < 5; ++i) p.sample();
+        for (int i = 0; i < 20; ++i) p.sample();
         TEST_ASSERT_FALSE(p.ok());
         TEST_ASSERT_EQUAL_STRING("i2c", p.faultCause());
     }
@@ -179,11 +179,27 @@ static void the_fault_cause_is_remembered() {  // cycle 033
         sim::FakeAccel accel;
         AngleProvider p(accel);
         calibrate(p, accel, m);
-        feed(p, accel, reading(m, 0, 1.5f), 5);
+        feed(p, accel, reading(m, 0, 1.5f), 20);
         TEST_ASSERT_FALSE(p.ok());
         TEST_ASSERT_EQUAL_STRING("gravity", p.faultCause());
         TEST_ASSERT_FLOAT_WITHIN(0.05f, 1.5f, p.lastBadMagnitude());
     }
+}
+
+static void a_short_bad_run_is_counted_as_a_glitch_and_never_latches() {  // cycle 034
+    sim::FakeAccel accel;
+    AngleProvider p(accel);
+    const Mount m{0, 0, 0};
+    calibrate(p, accel, m);
+    feed(p, accel, reading(m, 10), 10);
+    TEST_ASSERT_EQUAL_UINT16(0, p.glitches());
+    feed(p, accel, reading(m, 0, 2.01f), 12);  // 1.2 s of |g| = 2 (a flipped bit while the board is pressed)
+    TEST_ASSERT_TRUE(p.ok());
+    feed(p, accel, reading(m, 10), 10);
+    TEST_ASSERT_TRUE(p.ok());
+    TEST_ASSERT_EQUAL_UINT16(1, p.glitches());
+    TEST_ASSERT_EQUAL_UINT8(12, p.lastGlitchSamples());
+    TEST_ASSERT_FLOAT_WITHIN(0.3f, 10.0f, p.angleDeg());
 }
 
 static void single_bad_sample_is_tolerated() {
@@ -207,14 +223,14 @@ static void fault_on_nan_and_impossible_gravity_and_implausible_angle() {
         sim::FakeAccel accel;
         AngleProvider p(accel);
         calibrate(p, accel, m);
-        feed(p, accel, {nan, 0, 1}, 5);
+        feed(p, accel, {nan, 0, 1}, 20);
         TEST_ASSERT_FALSE(p.ok());
     }
     {
         sim::FakeAccel accel;
         AngleProvider p(accel);
         calibrate(p, accel, m);
-        feed(p, accel, reading(m, 0, 1.5f), 5);  // 1.5 g: free fall or a shock cannot last 0.5 s
+        feed(p, accel, reading(m, 0, 1.5f), 20);  // 1.5 g: free fall or a shock cannot last 2 s
         TEST_ASSERT_FALSE(p.ok());
     }
 }
@@ -254,7 +270,7 @@ static void out_of_range_angle_is_a_warning_that_clears() {
     // A sensor that goes silent while out of range is still a fault.
     feed(p, accel, reading(m, 80.0f), 6);
     TEST_ASSERT_TRUE(p.outOfRange());
-    feed(p, accel, {nanf(""), 0, 1}, 5);
+    feed(p, accel, {nanf(""), 0, 1}, 20);
     TEST_ASSERT_FALSE(p.ok());
     TEST_ASSERT_FALSE(p.liveAngle(live));
 }
@@ -266,7 +282,7 @@ static void fault_is_latched_until_cleared() {
     const Mount m{0, 0, 0};
     calibrate(p, accel, m);
     accel.setOk(false);
-    for (int i = 0; i < 5; ++i) p.sample();
+    for (int i = 0; i < 20; ++i) p.sample();
     TEST_ASSERT_FALSE(p.ok());
     accel.setOk(true);
     feed(p, accel, reading(m, 15), 10);
@@ -469,8 +485,9 @@ int main() {
     RUN_TEST(east_is_negative);
     RUN_TEST(rejects_bad_calibrations);
     RUN_TEST(moving_average_smooths_noise);
-    RUN_TEST(fault_within_one_second_when_unplugged);
+    RUN_TEST(fault_within_two_seconds_when_unplugged);
     RUN_TEST(the_fault_cause_is_remembered);
+    RUN_TEST(a_short_bad_run_is_counted_as_a_glitch_and_never_latches);
     RUN_TEST(single_bad_sample_is_tolerated);
     RUN_TEST(fault_on_nan_and_impossible_gravity_and_implausible_angle);
     RUN_TEST(out_of_range_angle_is_a_warning_that_clears);

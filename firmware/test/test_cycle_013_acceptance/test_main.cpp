@@ -122,8 +122,8 @@ static void scenario_05_angle_sensor_fault() {
         w.run(10000);
         TEST_ASSERT_TRUE(w.relays().power());  // moving
         w.sensorUnplugged = true;
-        w.run(1000);
-        TEST_ASSERT_FALSE(w.relays().power());  // stopped within a second
+        w.run(2500);
+        TEST_ASSERT_FALSE(w.relays().power());  // stopped within 2.5 s (the fault needs 2 s of bad data, cycle 034)
         TEST_ASSERT_EQUAL(static_cast<int>(FaultCode::AngleSensor), static_cast<int>(w.ctl().fault()));
         const double stopped = w.act.angleDeg;
         w.run(60000);

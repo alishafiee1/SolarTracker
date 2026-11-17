@@ -420,7 +420,7 @@ static void fault_reset_also_clears_a_latched_angle_sensor_fault() {
     for (int i = 0; i < 10; ++i) r.angle.sample();
     TEST_ASSERT_TRUE(r.angle.ok());
     r.accel.setGravity({0.0f, 0.0f, 0.0f});  // a glitching sensor
-    for (int i = 0; i < 10; ++i) r.angle.sample();
+    for (int i = 0; i < 25; ++i) r.angle.sample();
     TEST_ASSERT_FALSE(r.angle.ok());
     r.accel.setGravity({0.0f, 0.1392f, 0.9903f});
     TEST_ASSERT_EQUAL_INT(200, r.call(true, "/api/fault/reset", "{}", c).status);

@@ -69,9 +69,14 @@ bool Mpu6050Accel::read(hal::Vec3& g) {
     }
     uint8_t raw[6];
     if (!readRegs(kRegAccelXout, raw, sizeof(raw))) {
-        ok_ = false;
-        configured_ = false;  // re-initialise when the sensor comes back
-        return false;
+        // Cycle 034: the first failure after a good read gets one immediate recovery try (a flicker of the contact must not cost a
+        // second of data); later failures keep the 1 s retry rhythm so a missing sensor does not flood the log with I2C errors.
+        const bool recovered = ok_ && begin() && readRegs(kRegAccelXout, raw, sizeof(raw));
+        if (!recovered) {
+            ok_ = false;
+            configured_ = false;  // re-initialise when the sensor comes back
+            return false;
+        }
     }
     auto toInt = [&](int i) { return static_cast<int16_t>((raw[i] << 8) | raw[i + 1]); };
     g = {toInt(0) / kLsbPerG, toInt(2) / kLsbPerG, toInt(4) / kLsbPerG};

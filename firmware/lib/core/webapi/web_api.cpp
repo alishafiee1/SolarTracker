@@ -225,6 +225,13 @@ Response WebApi::status() {
     d["clockValid"] = d_.clockValid();
     d["calibrated"] = d_.angle.calibrated();
     d["angleWarning"] = s.angleWarning;
+    d["angleGlitches"] = d_.angle.glitches();  // cycle 034
+    if (!d_.angle.ok() && d_.angle.faultCause()[0]) {
+        d["angleFaultCause"] = d_.angle.faultCause();
+        d["angleFaultG"] = static_cast<int>(d_.angle.lastBadMagnitude() * 100.0f + 0.5f) / 100.0;
+    } else {
+        d["angleFaultCause"] = nullptr;
+    }
     d["reversedHint"] = s.reversedHint;
     {
         float live = 0.0f;

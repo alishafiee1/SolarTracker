@@ -62,7 +62,14 @@ Vec3 AngleProvider::correct(const Vec3& raw) const {
 
 void AngleProvider::sample() {
     Vec3 raw{0, 0, 0};
-    const bool readOk = accel_.read(raw);
+    bool readOk = accel_.read(raw);
+    // Cycle 034: a reading that is impossible (a flipped bit on the bus gives exactly +1 g) is read again at once, up to twice,
+    // before it counts as bad data. A real fault repeats; a glitch does not.
+    for (int again = 0; readOk && !capturing_ && again < 2 && !validGravity(correct(raw), 0.8f, 1.2f); ++again) {
+        Vec3 second{0, 0, 0};
+        if (!accel_.read(second)) break;
+        raw = second;
+    }
     if (readOk) lastRaw_ = raw;
 
     if (capturing_ && faceCapture_) {  // the six-face measurement works on the raw reading (cycle 018 R1)
@@ -104,6 +111,10 @@ void AngleProvider::sample() {
             windowPos_ = 0;
         }
         return;
+    }
+    if (invalidRun_ > 0 && !fault_) {  // a run of bad samples that ended by itself
+        ++glitches_;
+        lastGlitchRun_ = invalidRun_;
     }
     invalidRun_ = 0;
     if (!calibrated_) {

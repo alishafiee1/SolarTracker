@@ -12,7 +12,7 @@ namespace angle {
 
 constexpr size_t kAverageSamples = 5;     // R4: moving average length
 constexpr size_t kCaptureSamples = 50;    // R3: 5 s at 10 Hz
-constexpr uint8_t kFaultAfterInvalid = 5; // R5: consecutive bad samples (0.5 s at 10 Hz)
+constexpr uint8_t kFaultAfterInvalid = 20; // R5, cycle 034: consecutive bad samples before the fault latches (2 s at 10 Hz; was 0.5 s: a contact glitch while the board was pressed latched it)
 constexpr uint8_t kWarnSamples = 5;       // cycle 019 R2: consecutive samples to raise or clear the out-of-range warning
 
 struct AngleCalibration {
@@ -68,6 +68,9 @@ public:
     // Cycle 033: why the data was bad the last time ("" = never). "i2c" = the sensor did not answer, "gravity" = an impossible |g|.
     const char* faultCause() const { return cause_ == 1 ? "i2c" : cause_ == 2 ? "gravity" : ""; }
     float lastBadMagnitude() const { return badMag_; }  // |g| of the last impossible sample
+    // Cycle 034: runs of bad samples that ended by themselves (no fault). A rising count means a loose wire or noise on the bus.
+    uint16_t glitches() const { return glitches_; }
+    uint8_t lastGlitchSamples() const { return lastGlitchRun_; }
     void clearFault();
 
     // Non-blocking calibration capture: begin, keep calling sample(), poll captureResult().
@@ -117,6 +120,8 @@ private:
     hal::Vec3 lastRaw_{0, 0, 0};
     uint8_t invalidRun_ = 0;
     uint8_t cause_ = 0;
+    uint16_t glitches_ = 0;
+    uint8_t lastGlitchRun_ = 0;
     float badMag_ = 0.0f;
     bool fault_ = false;
     uint8_t outRun_ = 0;

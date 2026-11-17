@@ -177,7 +177,11 @@ function bindExplain() {
     el.classList.add("hl");
     const open = (e) => {
       if (e.target.closest("button")) return;  // the reset button keeps its own job
-      const text = XP[explainKey(el)];
+      const key = explainKey(el);
+      let text = XP[key];
+      if (key === "fault:angle-sensor" && status && status.angleFaultCause)
+        text += status.angleFaultCause === "gravity" ? ` علت ثبت‌شده: عدد گرانش غیرممکن (${toFa(Number(status.angleFaultG).toFixed(2))} g). معمولاً یعنی نویز یا تماس بد روی سیم‌های I2C یا لحیم سنسور.` : " علت ثبت‌شده: سنسور اصلاً جواب نداد (قطع شدن ارتباط I2C).";
+      if (key === "fault:angle-sensor" && status && status.angleGlitches) text += ` از روشن شدن تا حالا ${toFa(status.angleGlitches)} بار داده‌ٔ بد کوتاه (که خودش برطرف شد) دیده شده است.`;
       if (!text) return;
       const at = el.closest(".grid, .faultBar, .li") || el;
       let box = at.nextElementSibling && at.nextElementSibling.classList.contains("xbox") ? at.nextElementSibling : null;
