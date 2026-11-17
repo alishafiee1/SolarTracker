@@ -5,10 +5,11 @@ Usage:
   python firmware/tools/bench.py COM8 "angle" "motion"    several commands in a row
   python firmware/tools/bench.py COM8 --log 10            only read the log for 10 s (works on the normal image too)
   python firmware/tools/bench.py COM8 --reset status      reset the board first (EN pin), then send commands
-Commands exist only in the esp32dev-bench image; see docs/serial.md. Needs pyserial (`pio pkg exec -- python ...`).
+Commands exist in every image (see docs/serial.md); opening the port does not reset the board. Needs pyserial (`pio pkg exec -- python ...`).
 Answer lines start with "I " (info) or "E " (error); the tool stops reading when the line stays quiet for --quiet seconds.
 """
 import argparse
+import json
 import sys
 import time
 
@@ -33,9 +34,15 @@ def main():
     ap.add_argument("commands", nargs="*")
     ap.add_argument("--log", type=float, metavar="SECONDS", help="only read the log for this long")
     ap.add_argument("--reset", action="store_true", help="reset the board before anything else")
+    ap.add_argument("--json", action="store_true", help="pretty-print the JSON answers")
     ap.add_argument("--quiet", type=float, default=0.8, help="seconds of silence that end an answer")
     a = ap.parse_args()
-    with serial.Serial(a.port, 115200, timeout=0.2) as ser:
+    ser = serial.Serial()  # DTR and RTS are set before the port opens: opening it must not reset the board
+    ser.port, ser.baudrate, ser.timeout = a.port, 115200, 0.2
+    ser.dtr = False
+    ser.rts = False
+    ser.open()
+    with ser:
         if a.reset:
             ser.dtr = False
             ser.rts = True
@@ -56,6 +63,12 @@ def main():
             ser.write((cmd + "\n").encode())
             print("> " + cmd)
             for line in read_until_quiet(ser, a.quiet, 10):
+                if a.json and line.startswith("{"):
+                    try:
+                        print(json.dumps(json.loads(line), ensure_ascii=False, indent=2))
+                        continue
+                    except ValueError:
+                        pass
                 print(line)
 
 

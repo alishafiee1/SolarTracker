@@ -163,6 +163,29 @@ static void fault_within_one_second_when_unplugged() {
     TEST_ASSERT_FALSE(p.ok());
 }
 
+static void the_fault_cause_is_remembered() {  // cycle 033
+    const Mount m{0, 0, 0};
+    {
+        sim::FakeAccel accel;
+        AngleProvider p(accel);
+        calibrate(p, accel, m);
+        TEST_ASSERT_EQUAL_STRING("", p.faultCause());
+        accel.setOk(false);
+        for (int i = 0; i < 5; ++i) p.sample();
+        TEST_ASSERT_FALSE(p.ok());
+        TEST_ASSERT_EQUAL_STRING("i2c", p.faultCause());
+    }
+    {
+        sim::FakeAccel accel;
+        AngleProvider p(accel);
+        calibrate(p, accel, m);
+        feed(p, accel, reading(m, 0, 1.5f), 5);
+        TEST_ASSERT_FALSE(p.ok());
+        TEST_ASSERT_EQUAL_STRING("gravity", p.faultCause());
+        TEST_ASSERT_FLOAT_WITHIN(0.05f, 1.5f, p.lastBadMagnitude());
+    }
+}
+
 static void single_bad_sample_is_tolerated() {
     sim::FakeAccel accel;
     AngleProvider p(accel);
@@ -447,6 +470,7 @@ int main() {
     RUN_TEST(rejects_bad_calibrations);
     RUN_TEST(moving_average_smooths_noise);
     RUN_TEST(fault_within_one_second_when_unplugged);
+    RUN_TEST(the_fault_cause_is_remembered);
     RUN_TEST(single_bad_sample_is_tolerated);
     RUN_TEST(fault_on_nan_and_impossible_gravity_and_implausible_angle);
     RUN_TEST(out_of_range_angle_is_a_warning_that_clears);

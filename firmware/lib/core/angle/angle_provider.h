@@ -65,6 +65,9 @@ public:
     const hal::Vec3& lastGravityRaw() const { return lastRaw_; }
     // False after a latched sensor fault (R5) until clearFault().
     bool ok() const { return !fault_; }
+    // Cycle 033: why the data was bad the last time ("" = never). "i2c" = the sensor did not answer, "gravity" = an impossible |g|.
+    const char* faultCause() const { return cause_ == 1 ? "i2c" : cause_ == 2 ? "gravity" : ""; }
+    float lastBadMagnitude() const { return badMag_; }  // |g| of the last impossible sample
     void clearFault();
 
     // Non-blocking calibration capture: begin, keep calling sample(), poll captureResult().
@@ -113,6 +116,8 @@ private:
     hal::Vec3 lastG_{0, 0, 0};
     hal::Vec3 lastRaw_{0, 0, 0};
     uint8_t invalidRun_ = 0;
+    uint8_t cause_ = 0;
+    float badMag_ = 0.0f;
     bool fault_ = false;
     uint8_t outRun_ = 0;
     uint8_t inRun_ = 0;

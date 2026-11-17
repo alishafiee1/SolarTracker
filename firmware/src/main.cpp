@@ -26,9 +26,7 @@
 #include "tick_scheduler.h"
 #include "web_api.h"
 #include "wind_monitor.h"
-#ifdef BENCH_CONSOLE
 #include "bench_console.h"
-#endif
 
 // Default passwords come from an untracked secrets.h (see secrets.example.h); the placeholders are public.
 #if __has_include("secrets.h")
@@ -74,6 +72,7 @@ power::PowerMonitor powerMonitor;
 events::DailySummary dailySummary;  // cycle 025
 float trackErrDeg = -1.0f;          // distance to the target in Auto, -1 when there is none
 bool lastAngleWarn = false;
+bool lastAngleOk = true;
 angle::AngleProvider angleProvider(accel);
 motion::MotionController* motionCtl = nullptr;  // created in setup(), after the relays are forced off
 control::ControlStateMachine* controller = nullptr;
@@ -295,12 +294,22 @@ void loop() {
         }
         in.windStow = windMonitor.stow();
         in.currentA = cfg.currentPresent ? currentSensor.rmsAmps() : 0.0f;  // optional module 009
-#ifdef BENCH_CONSOLE
-        if (drivers::benchDirectMotion()) {
+        if (drivers::benchRawActive()) {
+            // `raw on` over USB: the host owns the relay pins, nothing else may touch them
+        } else if (drivers::benchDirectMotion()) {
             motionCtl->tick(now, in.angleDeg, in.currentA);  // relay bench tests drive the motion layer directly
-        } else
-#endif
-        controller->tick(now, in);  // also ticks the MotionController
+        } else {
+            controller->tick(now, in);  // also ticks the MotionController
+        }
+        if (!angleProvider.ok() && lastAngleOk) {  // cycle 033: the log says WHY the sensor was declared bad
+            char why[72];
+            if (strcmp(angleProvider.faultCause(), "gravity") == 0)
+                snprintf(why, sizeof(why), "angle fault cause: impossible gravity (|g|=%.2f)", static_cast<double>(angleProvider.lastBadMagnitude()));
+            else
+                snprintf(why, sizeof(why), "angle fault cause: sensor did not answer (i2c)");
+            eventLog.append(hal::EventType::StateChange, why);
+        }
+        lastAngleOk = angleProvider.ok();
         controlLoop.tick(now);
         const control::Status st = controller->status(now);  // a new fault goes to the phone (module 011)
         trackErrDeg = (st.state == control::ActiveState::Auto && !st.angleWarning) ? fabsf(st.angleDeg - st.targetDeg) : -1.0f;
@@ -354,10 +363,8 @@ void loop() {
     }
     panel->unlock();
     panel->service();  // DNS answers for the captive portal (outside the lock)
-#ifdef BENCH_CONSOLE
     drivers::benchConsolePoll({FW_VERSION, core::resetReasonName(resetReason), now, controlLoop.ticks(),
                                controlLoop.lastTickMs(), &accel, &angleProvider, motionCtl, &cfg, &settingsStore, &rtcClock, controller,
-                               &eventLog, &windMonitor, &anemometer, &currentSensor});
-#endif
+                               &eventLog, &windMonitor, &anemometer, &currentSensor, &relays, &powerMonitor});
     delay(1);
 }

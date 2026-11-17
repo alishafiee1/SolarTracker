@@ -1,7 +1,8 @@
 #pragma once
-// Bench-only serial console (env esp32dev-bench, -DBENCH_CONSOLE). It lets a
-// developer check the real board over USB. It is never part of the production
-// image: the esp32dev env does not define BENCH_CONSOLE.
+// USB serial console (cycle 033: part of every image now). A developer or an automation script checks and drives the
+// real board over USB. Answers are one line each: `I ...` / `E ...` text or, for `json` and `selftest`, one JSON object.
+// `raw on` is the bench mode: it hands the two relay pins to the host, skips every interlock and the control loop, and
+// switches itself off after a dead-man time. Use it with the actuator disconnected.
 #include <stdint.h>
 
 #include "angle_provider.h"
@@ -12,6 +13,8 @@
 #include "sct013_current.h"
 #include "motion_controller.h"
 #include "ota_update.h"
+#include "power_monitor.h"
+#include "relays_gpio.h"
 #include "mpu6050_accel.h"
 #include "settings.h"
 #include "wind_monitor.h"
@@ -35,11 +38,15 @@ struct BenchStatus {
     wind::WindMonitor* wind;
     Anemometer* anemometer;
     Sct013Current* current;
+    RelaysGpio* relays;
+    power::PowerMonitor* power;
 };
 
 // True after `move`/`stop`: the console then drives the MotionController directly and the state
 // machine is not ticked (relay bench tests). Any `ctl ...` command gives control back.
 bool benchDirectMotion();
+// True while `raw on` is active: the control loop must not tick (the host owns the relays).
+bool benchRawActive();
 
 // Event log that prints every event on the serial port (bench image only).
 hal::IEventLog* benchEventLog();
@@ -63,6 +70,10 @@ hal::IEventLog* benchEventLog();
 //   wind      wind speed, stow state, pulses seen; `windgen <hz>` makes the real pin generate pulses (0 stops)
 //   current   SCT-013 reading (volts rms at the pin and amps with the factor); `current on` fits the module for this boot
 //   ota arm   put the running image on probation (like after an update); `ota` shows the probation state
+//   json      one JSON line with the whole state (version, reset, angle, power, wind, relays, clock, wifi, heap)
+//   selftest  one JSON line: i2c, gravity, rtc, relays_off, hotspot -> "pass"
+//   raw on [s]   bench mode for s seconds (default 60, max 600); `raw off` ends it; the control loop is paused meanwhile
+//   relay 1|2|all 0|1   raw relay pins (only in raw mode): CH1 power on/off, CH2 west/east; every command extends the dead-man time
 //   pins      relay pin levels (1 = inactive/high, 0 = active/low)
 //   hang      stop feeding the watchdog; the chip must reset with reason "watchdog"
 //   reboot    software reset (reason "software")

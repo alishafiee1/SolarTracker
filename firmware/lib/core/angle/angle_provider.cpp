@@ -95,6 +95,8 @@ void AngleProvider::sample() {
     // a warning (cycle 019): the installer may be turning the box in his hands.
     if (!valid) {
         hasLive_ = false;
+        cause_ = readOk ? 2 : 1;
+        if (readOk) badMag_ = norm(g);
         if (invalidRun_ < 255) ++invalidRun_;
         if (invalidRun_ >= kFaultAfterInvalid) {
             fault_ = true;

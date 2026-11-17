@@ -1,6 +1,8 @@
 #include "bench_console.h"
 
 #include <Arduino.h>
+#include <ArduinoJson.h>
+#include <WiFi.h>
 #include <math.h>
 #include <stdlib.h>
 #include <string.h>
@@ -27,12 +29,116 @@ bool directMotion = false;
 uint32_t genHz = 0;       // pulse generator on the anemometer pin (bench only)
 uint32_t genLastUs = 0;
 
-char lineBuf[32];
+bool rawActive = false;
+uint32_t rawUntilMs = 0;
+uint32_t rawSeconds = 60;
+
+char lineBuf[96];
 size_t lineLen = 0;
 
 void printPins() {
     Serial.printf("I pins: CH1(power)=%d CH2(direction)=%d  (1 = inactive)\n", digitalRead(kPinRelayPower),
                   digitalRead(kPinRelayDirection));
+}
+
+void printJsonLine(const JsonDocument& d) {
+    serializeJson(d, Serial);
+    Serial.println();
+}
+
+void relaysJson(JsonObject o) {
+    o["ch1"] = digitalRead(kPinRelayPower) == LOW;      // true = energised
+    o["ch2"] = digitalRead(kPinRelayDirection) == LOW;  // true = west
+}
+
+void rawOff(const BenchStatus& s, const char* why) {
+    digitalWrite(kPinRelayPower, HIGH);
+    digitalWrite(kPinRelayDirection, HIGH);
+    s.relays->setPower(false);  // the driver object learns that the pins are back to "off"
+    s.relays->setDirection(hal::Dir::East);
+    s.motion->emergencyStop(s.uptimeMs, "usb raw off");
+    rawActive = false;
+    char detail[48];
+    snprintf(detail, sizeof(detail), "usb raw mode off (%s)", why);
+    s.log->append(hal::EventType::StateChange, detail);
+    JsonDocument d;
+    d["raw"] = false;
+    d["why"] = why;
+    printJsonLine(d);
+}
+
+void printState(const BenchStatus& s) {
+    JsonDocument d;
+    const control::Status st = s.ctl->status(s.uptimeMs);
+    d["version"] = s.version;
+    d["reset"] = s.resetReason;
+    d["uptimeMs"] = s.uptimeMs;
+    d["ticks"] = s.ticks;
+    d["freeHeap"] = ESP.getFreeHeap();
+    d["raw"] = rawActive;
+    d["state"] = control::stateName(st.state);
+    d["fault"] = control::faultName(st.fault);
+    d["moving"] = st.moving;
+    JsonObject a = d["angle"].to<JsonObject>();
+    a["deg"] = s.angle->angleDeg();
+    a["ok"] = s.angle->ok();
+    a["calibrated"] = s.angle->calibrated();
+    a["warning"] = st.angleWarning;
+    a["faultCause"] = s.angle->faultCause();
+    float live = 0.0f;
+    if (s.angle->liveAngle(live)) a["live"] = live;
+    const hal::Vec3& g = s.angle->lastGravityRaw();
+    JsonArray ga = a["gravityRaw"].to<JsonArray>();
+    ga.add(g.x);
+    ga.add(g.y);
+    ga.add(g.z);
+    a["whoami"] = s.accel->lastWhoAmI();
+    const power::Info& pi = s.power->info();
+    JsonObject p = d["power"].to<JsonObject>();
+    if (pi.batteryKnown) {
+        p["batteryV"] = pi.batteryV;
+        p["batteryPct"] = pi.percent;
+    }
+    if (pi.mainsKnown) {
+        p["mainsOk"] = pi.mains;
+        p["mainsV"] = pi.mainsV;
+    }
+    JsonObject w = d["wind"].to<JsonObject>();
+    w["kmh"] = s.wind->speedKmh();
+    w["stow"] = s.wind->stow();
+    w["sensorFault"] = s.wind->sensorFault();
+    relaysJson(d["relays"].to<JsonObject>());
+    JsonObject c = d["clock"].to<JsonObject>();
+    c["present"] = s.clock->present();
+    c["lostPower"] = s.clock->lostPower();
+    c["utc"] = static_cast<int64_t>(s.clock->utc());
+    JsonObject n = d["wifi"].to<JsonObject>();
+    n["station"] = WiFi.status() == WL_CONNECTED;
+    n["rssi"] = WiFi.status() == WL_CONNECTED ? WiFi.RSSI() : 0;
+    n["hotspotClients"] = WiFi.softAPgetStationNum();
+    printJsonLine(d);
+}
+
+void selftest(const BenchStatus& s) {
+    JsonDocument d;
+    hal::Vec3 g{0, 0, 0};
+    const bool read = s.accel->read(g);
+    const float mag = sqrtf(g.x * g.x + g.y * g.y + g.z * g.z);
+    const bool i2c = read && s.accel->lastWhoAmI() != 0;
+    const bool gravity = i2c && mag >= 0.7f && mag <= 1.3f;
+    const bool rtc = s.clock->present() && !s.clock->lostPower();
+    const bool relaysOff = rawActive || (digitalRead(kPinRelayPower) == HIGH && digitalRead(kPinRelayDirection) == HIGH);
+    const bool hotspot = WiFi.softAPIP() != IPAddress(0, 0, 0, 0);
+    JsonObject t = d["selftest"].to<JsonObject>();
+    t["i2c"] = i2c;
+    t["gravity"] = gravity;
+    t["gravityG"] = mag;
+    t["rtc"] = rtc;
+    t["relays_off"] = relaysOff;
+    t["hotspot"] = hotspot;
+    t["battery_pin"] = s.power->info().batteryKnown;  // information only: the hardware may not be wired yet
+    d["pass"] = i2c && gravity && rtc && relaysOff && hotspot;
+    printJsonLine(d);
 }
 
 void handle(const char* cmd, const BenchStatus& s) {
@@ -57,9 +163,9 @@ void handle(const char* cmd, const BenchStatus& s) {
     } else if (strcmp(cmd, "angle") == 0) {
         hal::Vec3 g{0, 0, 0};
         const bool read = s.accel->read(g);
-        Serial.printf("I angle: whoami=0x%02X read=%d g=(%.3f,%.3f,%.3f) |g|=%.3f calibrated=%d angle_deg=%.2f ok=%d\n",
+        Serial.printf("I angle: whoami=0x%02X read=%d g=(%.3f,%.3f,%.3f) |g|=%.3f calibrated=%d angle_deg=%.2f ok=%d cause=%s\n",
                       s.accel->lastWhoAmI(), read, g.x, g.y, g.z, sqrtf(g.x * g.x + g.y * g.y + g.z * g.z),
-                      s.angle->calibrated(), s.angle->angleDeg(), s.angle->ok());
+                      s.angle->calibrated(), s.angle->angleDeg(), s.angle->ok(), s.angle->faultCause());
     } else if (strcmp(cmd, "cal h") == 0 || strcmp(cmd, "cal e") == 0) {
         const bool east = cmd[4] == 'e';
         const bool started = s.angle->beginCapture(east ? angle::CalStep::East : angle::CalStep::Horizontal);
@@ -70,6 +176,8 @@ void handle(const char* cmd, const BenchStatus& s) {
                                             "bad-gravity", "sensor-fault", "not-captured"};
         Serial.printf("I cal: capturing=%d result=%s calibrated=%d\n", s.angle->capturing(),
                       names[static_cast<int>(s.angle->captureResult())], s.angle->calibrated());
+    } else if (rawActive && (strncmp(cmd, "move", 4) == 0 || strncmp(cmd, "ctl", 3) == 0)) {
+        Serial.println("E raw mode is on: use `relay ...` or `raw off` first");
     } else if (strcmp(cmd, "move e") == 0 || strcmp(cmd, "move w") == 0) {
         directMotion = true;
         s.motion->request(motion::Cmd::move(cmd[5] == 'e' ? hal::Dir::East : hal::Dir::West));
@@ -177,6 +285,49 @@ void handle(const char* cmd, const BenchStatus& s) {
         if (strcmp(cmd, "current on") == 0) s.current->begin(s.cfg->currentFactor);
         Serial.printf("I current: started=%d rms_v=%.4f amps=%.3f factor=%.2f module_present_setting=%d\n", s.current->present(),
                       s.current->rmsVolts(), s.current->rmsAmps(), s.cfg->currentFactor, s.cfg->currentPresent);
+    } else if (strcmp(cmd, "json") == 0) {
+        printState(s);
+    } else if (strcmp(cmd, "selftest") == 0) {
+        selftest(s);
+    } else if (strncmp(cmd, "raw", 3) == 0) {
+        if (strncmp(cmd, "raw on", 6) == 0) {
+            rawSeconds = 60;
+            if (cmd[6] == ' ') rawSeconds = static_cast<uint32_t>(atoi(cmd + 7));
+            if (rawSeconds < 1) rawSeconds = 1;
+            if (rawSeconds > 600) rawSeconds = 600;
+            s.motion->emergencyStop(s.uptimeMs, "usb raw on");
+            directMotion = false;
+            rawActive = true;
+            rawUntilMs = s.uptimeMs + rawSeconds * 1000u;
+            s.log->append(hal::EventType::StateChange, "usb raw mode on (interlocks and control loop off)");
+            JsonDocument d;
+            d["raw"] = true;
+            d["seconds"] = rawSeconds;
+            printJsonLine(d);
+        } else if (strcmp(cmd, "raw off") == 0) {
+            if (rawActive) rawOff(s, "host");
+            else Serial.println("I raw: was not active");
+        } else {
+            Serial.println("E raw: use `raw on [seconds]` or `raw off`");
+        }
+    } else if (strncmp(cmd, "relay ", 6) == 0) {
+        const bool all = strncmp(cmd + 6, "all ", 4) == 0;
+        const char ch = cmd[6];
+        const char val = all ? cmd[10] : cmd[8];
+        const bool valid = (all || ((ch == '1' || ch == '2') && cmd[7] == ' ')) && (val == '0' || val == '1');
+        if (!rawActive) {
+            Serial.println("E relay: not in raw mode (send `raw on` first)");
+        } else if (!valid) {
+            Serial.println("E relay: use `relay 1|2|all 0|1`");
+        } else {
+            const bool on = val == '1';
+            if (all || ch == '1') digitalWrite(kPinRelayPower, on ? LOW : HIGH);
+            if (all || ch == '2') digitalWrite(kPinRelayDirection, on ? LOW : HIGH);
+            rawUntilMs = s.uptimeMs + rawSeconds * 1000u;  // a command from the host keeps the dead-man timer running
+            JsonDocument d;
+            relaysJson(d["relay"].to<JsonObject>());
+            printJsonLine(d);
+        }
     } else if (strcmp(cmd, "pins") == 0) {
         printPins();
     } else if (strcmp(cmd, "hang") == 0) {
@@ -198,10 +349,12 @@ void handle(const char* cmd, const BenchStatus& s) {
 }  // namespace
 
 bool benchDirectMotion() { return directMotion; }
+bool benchRawActive() { return rawActive; }
 
 hal::IEventLog* benchEventLog() { return &serialEventLog; }
 
 void benchConsolePoll(const BenchStatus& status) {
+    if (rawActive && static_cast<int32_t>(status.uptimeMs - rawUntilMs) >= 0) rawOff(status, "timeout");  // dead-man: the host went away
     if (genHz > 0 && micros() - genLastUs >= 1000000UL / genHz) {  // one falling edge on the real input pin
         genLastUs = micros();
         pinMode(Anemometer::kPin, OUTPUT);
